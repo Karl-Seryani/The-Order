@@ -4,7 +4,7 @@ namespace TheOrder
 {
     /// <summary>
     /// ScriptableObject defining a single clue's data.
-    /// 17 instances total across 3 categories: Truth, Mike, Weapon.
+    /// 17 instances total across 2 categories: Truth (11), Mike (6).
     /// </summary>
     [CreateAssetMenu(fileName = "NewClue", menuName = "The Order/Clue Data")]
     public class ClueData : ScriptableObject
@@ -25,7 +25,7 @@ namespace TheOrder
         /// <summary>Unique identifier for this clue.</summary>
         public string Id => _id;
 
-        /// <summary>Which category this clue belongs to (Truth, Mike, Weapon).</summary>
+        /// <summary>Which category this clue belongs to (Truth, Mike).</summary>
         public ClueCategory Category => _category;
 
         /// <summary>Display title shown in journal and pickup notification.</summary>

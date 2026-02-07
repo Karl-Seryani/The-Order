@@ -31,9 +31,9 @@ namespace TheOrder.Tests.EditMode
         }
 
         [Test]
-        public void Enums_ClueCategory_HasThreeCategories()
+        public void Enums_ClueCategory_HasTwoCategories()
         {
-            Assert.AreEqual(3, System.Enum.GetValues(typeof(ClueCategory)).Length);
+            Assert.AreEqual(2, System.Enum.GetValues(typeof(ClueCategory)).Length);
         }
 
         [Test]

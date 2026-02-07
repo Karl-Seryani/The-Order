@@ -20,8 +20,7 @@ namespace TheOrder
     public enum ClueCategory
     {
         Truth,
-        Mike,
-        Weapon
+        Mike
     }
 
     public enum EndingType
@@ -39,6 +38,7 @@ namespace TheOrder
 
     public enum KnowledgeLevel
     {
+        None,
         Low,
         Medium,
         High

@@ -27,10 +27,6 @@ namespace TheOrder
         public static event Action OnPlayerSprinted;
         public static void PlayerSprinted() => OnPlayerSprinted?.Invoke();
 
-        /// <summary>Fired when the player crouches or stands up.</summary>
-        public static event Action<bool> OnPlayerCrouched;
-        public static void PlayerCrouched(bool isCrouching) => OnPlayerCrouched?.Invoke(isCrouching);
-
         /// <summary>Fired when the flashlight is toggled. True = on.</summary>
         public static event Action<bool> OnFlashlightToggled;
         public static void FlashlightToggled(bool isOn) => OnFlashlightToggled?.Invoke(isOn);
@@ -75,6 +71,10 @@ namespace TheOrder
 
         #region Clues
 
+        /// <summary>Fired when a clue is viewed (first interaction). Passes the clue data for display.</summary>
+        public static event Action<ClueData> OnClueViewed;
+        public static void ClueViewed(ClueData clue) => OnClueViewed?.Invoke(clue);
+
         /// <summary>Fired when a clue is collected. Passes the clue data.</summary>
         public static event Action<ClueData> OnClueCollected;
         public static void ClueCollected(ClueData clue) => OnClueCollected?.Invoke(clue);
@@ -87,6 +87,10 @@ namespace TheOrder
         public static event Action<Vector3> OnDoorOpened;
         public static void DoorOpened(Vector3 position) => OnDoorOpened?.Invoke(position);
 
+        /// <summary>Fired when a door is closed. Passes door world position for sound propagation.</summary>
+        public static event Action<Vector3> OnDoorClosed;
+        public static void DoorClosed(Vector3 position) => OnDoorClosed?.Invoke(position);
+
         /// <summary>Fired when the player enters a hiding spot.</summary>
         public static event Action OnPlayerHid;
         public static void PlayerHid() => OnPlayerHid?.Invoke();
@@ -98,6 +102,14 @@ namespace TheOrder
         /// <summary>Fired when the player fails the breath-hold QTE while hiding.</summary>
         public static event Action OnBreathHoldFailed;
         public static void BreathHoldFailed() => OnBreathHoldFailed?.Invoke();
+
+        #endregion
+
+        #region UI
+
+        /// <summary>Fired when the current objective text changes.</summary>
+        public static event Action<string> OnObjectiveChanged;
+        public static void ObjectiveChanged(string objectiveText) => OnObjectiveChanged?.Invoke(objectiveText);
 
         #endregion
 

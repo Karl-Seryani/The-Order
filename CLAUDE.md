@@ -10,7 +10,7 @@
 - **Namespace:** `TheOrder`
 - **Target Platform:** Windows build
 
-The player is trapped in an underground bunker, hunted by an entity known as "The Hunter." Gameplay revolves around exploring the bunker, managing sanity, collecting clues about what happened, and ultimately making choices that determine one of nine possible endings.
+The player is trapped in an underground bunker, hunted by an entity known as "The Hunter." Gameplay revolves around exploring the bunker, managing sanity, collecting clues about what happened, and ultimately making choices that determine the ending. There are no hiding spots — survival depends on outrunning the Hunter and breaking line of sight.
 
 ---
 
@@ -73,12 +73,11 @@ Assets/
       Player/          # PlayerController, PlayerInput, Flashlight, Stamina
       Hunter/          # HunterAI, HunterStateMachine, HunterStates
       Sanity/          # SanityManager, SanityEffects, SanityUI
-      Clues/           # ClueSystem, CluePickup, ClueUI, ClueJournal
+      Clues/           # ClueManager, CluePickup, ClueData
       Endings/         # EndingSystem, EndingEvaluator, EndingUI
       UI/              # MainMenuUI, PauseMenuUI, HUDManager
       Audio/           # AudioManager, AmbientController, FootstepSystem
       Doors/           # DoorController, LockedDoor, KeySystem
-      Hiding/          # HidingSpot, HidingController
       Camera/          # CameraController, HeadBob, CameraShake
       Prologue/        # PrologueManager, PrologueSequence
       Core/            # GameManager, GameEvents, GameState, IInteractable
@@ -155,9 +154,10 @@ Assets/
 - Sanity is a `float` value clamped between `0` and `100`. Starts at `75`.
 - Passive drain over time (configurable rate via ScriptableObject).
 - Accelerated drain from events: darkness, seeing the Hunter, finding disturbing clues.
-- Recovery from: hiding, using certain items, being in lit areas.
+- Recovery from: being in lit areas, using certain items.
 - Publishes `OnSanityChanged(float)` event for UI and effects.
 - At low sanity: visual distortions (chromatic aberration, vignette), audio hallucinations, unreliable HUD.
+- No sanity bar on HUD — effects are the feedback.
 
 ### HunterAI
 - Finite State Machine with states: `Patrol`, `Investigate`, `Chase`, `Search`.
@@ -167,17 +167,19 @@ Assets/
 - Configurable via `HunterConfig` ScriptableObject (speeds, detection ranges, timers).
 
 ### ClueSystem
-- 17 total clues across 3 categories:
-  - **Truth clues** — what really happened in the bunker.
-  - **Mike clues** — information about Mike and his role.
-  - **Weapon clues** — evidence about the weapon used.
-- Each category has a knowledge level based on clues found: `None`, `Partial`, `Full`.
+- 17 total clues across 2 categories:
+  - **Truth clues (11)** — what really happened in the bunker.
+  - **Mike clues (6)** — information about Mike and his role.
+- Each category has a knowledge level based on clues found: `None`, `Low`, `Medium`, `High`.
 - Clues are `ClueData` ScriptableObjects with text, category, and optional audio/image.
-- Publishes `OnClueCollected(ClueData)` event.
+- Two-state pickup: first E reads the clue (shows reading panel), second E collects it.
+- HUD shows per-category counter: `Truth: 0/11` / `Mike: 0/6`.
+- Publishes `OnClueViewed(ClueData)` and `OnClueCollected(ClueData)` events.
+- No journal — objective displayed via fade in/out at top-center (Tab key or auto on change).
 
 ### EndingSystem
-- 9 endings derived from: 3 knowledge levels (what you know) x 3 final choices (what you do).
-- Knowledge level determined by clue categories at the point of the final choice.
+- Endings derived from: 2 knowledge categories (Truth, Mike) x knowledge levels x final choices.
+- Knowledge level per category determined by clues collected at the point of the final choice.
 - Ending data stored in `EndingData` ScriptableObjects.
 - `EndingEvaluator` calculates the ending based on current clue state + player choice.
 
@@ -186,4 +188,43 @@ Assets/
 - Checks for `IInteractable` on hit colliders.
 - Displays interaction prompt UI when hovering over interactable.
 - Calls `IInteractable.Interact(PlayerController)` on input.
-- Supports contextual prompts (e.g., "Pick up", "Open", "Read", "Hide").
+- Supports contextual prompts (e.g., "Read", "Open/Close", "Interact").
+
+---
+
+## Implementation Progress
+
+### Completed
+- [x] Project scaffolding (folder structure, asmdefs, core scripts)
+- [x] `GameEvents.cs` — full event bus (incl. `OnClueViewed`, `OnObjectiveChanged`)
+- [x] `GameManager.cs` — singleton, state FSM, scene management
+- [x] `IInteractable.cs` — interaction interface
+- [x] `Enums.cs` — all game enums (ClueCategory: Truth, Mike)
+- [x] `ClueData.cs`, `EndingData.cs`, `HunterConfig.cs` — ScriptableObject data
+- [x] `PrologueManager.cs` — prologue system
+- [x] `InputSystem_Actions.inputactions` — input bindings (WASD, mouse, gamepad)
+- [x] Test infrastructure (EditMode + PlayMode asmdefs)
+- [x] `PlayerInputHandler.cs` — input caching, pause disable
+- [x] `PlayerStamina.cs` — drain/regen math, sprint gating
+- [x] `PlayerController.cs` — CharacterController movement, walk + sprint only
+- [x] `PlayerInteraction.cs` — raycast interaction, IInteractable detection
+- [x] `PlayerFlashlight.cs` — spotlight toggle
+- [x] `FirstPersonCamera.cs` — manual mouse look (pitch/yaw)
+- [x] `BunkerSceneBootstrap.cs` — sets GameState.Playing
+- [x] Bunker scene (Asylum prefab, lighting, URP volume, player hierarchy, 17 clue pickups)
+- [x] `PlayerStaminaTests.cs` — EditMode tests for stamina math
+- [x] `ClueManager.cs` — tracks collected clues, knowledge levels per category
+- [x] `CluePickup.cs` — two-state interaction (read → collect)
+- [x] `HUDManager.cs` — interaction prompt, clue notification, clue reading panel, objective fade, per-category counter
+- [x] `ObjectiveManager.cs` — objective text management, fade in/out on Tab
+- [x] `DoorController.cs` — doors open/close with E, Hunter-navigable
+- [x] `UILayoutSetup.cs` — editor utility for HUD layout
+- [x] 17 ClueData ScriptableObjects (11 Truth + 6 Mike)
+- [x] 26 EditMode tests passing
+
+### Upcoming — Next Phase
+- [ ] HunterAI + state machine (Patrol → Investigate → Chase → Search)
+- [ ] SanityManager + visual/audio effects
+- [ ] EndingSystem + evaluator (knowledge levels x final choices)
+- [ ] Audio system (ambient, footsteps, music)
+- [ ] UI polish (pause menu, main menu)
