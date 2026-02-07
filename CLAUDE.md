@@ -160,11 +160,22 @@ Assets/
 - No sanity bar on HUD — effects are the feedback.
 
 ### HunterAI
-- Finite State Machine with states: `Patrol`, `Investigate`, `Chase`, `Search`.
+- Finite State Machine: `Patrol` → `Investigate` → `Chase` (no separate Search — merged into Investigate).
+- `HunterStateMachine.cs` (plain C#) manages transitions, fires `GameEvents.HunterStateChanged`.
+- `HunterAI.cs` (MonoBehaviour) owns the FSM, NavMeshAgent, detection, and event subscriptions.
+- `PatrolState`, `InvestigateState`, `ChaseState` implement `IHunterState` interface.
 - Uses `NavMeshAgent` for pathfinding (always validate with `SamplePosition`).
-- Detection via sight (raycast cone) and sound (proximity + player noise level).
-- Publishes `OnHunterStateChanged(HunterState)` for music/ambience shifts.
-- Configurable via `HunterConfig` ScriptableObject (speeds, detection ranges, timers).
+- Detection: sight (raycast cone, flashlight doubles range) + sound (sprint <12m, walk <2m proximity, door open <15m).
+- Ignores door sounds within 3m (self-opened doors).
+- Opens closed doors via forward raycast + `GetComponentInParent<DoorController>()`.
+- Same dimensions as player (height 1.6, radius 0.28) — never gets stuck in doorways.
+- 27 manual patrol waypoints across 3 floors under `--- WAYPOINTS ---` parent.
+- 3-second LOS grace period before losing chase target.
+- Catch = instant death, scene reload (no checkpoints).
+- Animator Controller: Idle/Walking/Running/LookingAround states, driven by `Speed` float + `IsLooking` bool.
+- Configurable via `BunkerHunterConfig` ScriptableObject (speeds, detection ranges, timers).
+- Door layer (layer 9) excludes doors/frames from NavMesh bake — walkable paths through doorways.
+- Publishes `OnHunterStateChanged(HunterState)`, `OnPlayerDetected`, `OnPlayerLost`.
 
 ### ClueSystem
 - 17 total clues across 2 categories:
@@ -220,11 +231,21 @@ Assets/
 - [x] `DoorController.cs` — doors open/close with E, Hunter-navigable
 - [x] `UILayoutSetup.cs` — editor utility for HUD layout
 - [x] 17 ClueData ScriptableObjects (11 Truth + 6 Mike)
-- [x] 26 EditMode tests passing
+- [x] Hunter AI — FSM (Patrol/Investigate/Chase), NavMesh pathfinding, door opening
+- [x] Hunter detection — sound (sprint <12m, walk <2m, door <15m), ignores self-opened doors
+- [x] Hunter Animator Controller — Walking/Running/LookingAround from Mixamo FBX clips
+- [x] `BunkerHunterConfig` ScriptableObject with tuned values
+- [x] 27 patrol waypoints across 3 floors
+- [x] Door layer (layer 9) — doors/frames excluded from NavMesh bake
+- [x] 48 EditMode tests passing (14 detection + 8 state machine + 26 existing)
 
-### Upcoming — Next Phase
-- [ ] HunterAI + state machine (Patrol → Investigate → Chase → Search)
-- [ ] SanityManager + visual/audio effects
+### Upcoming — Hunter Phase 2B
+- [ ] Vision cone detection (sight raycast with obstruction check)
+- [ ] Chase catch → game over screen + scene reload
+- [ ] Door closing after Hunter passes through
+- [ ] Animations playing correctly in-game (walk/run/look)
+- [ ] Dark bunker (remove/dim all scene lights, flashlight only)
+- [ ] Audio system (ambient, footsteps, chase music stingers)
+- [ ] SanityManager (deferred — non-functional/optional)
 - [ ] EndingSystem + evaluator (knowledge levels x final choices)
-- [ ] Audio system (ambient, footsteps, music)
 - [ ] UI polish (pause menu, main menu)

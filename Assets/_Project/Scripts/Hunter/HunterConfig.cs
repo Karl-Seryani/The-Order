@@ -22,8 +22,8 @@ namespace TheOrder
         [SerializeField] private float _flashlightSightMultiplier = 2f;
 
         [Header("Detection — Hearing")]
-        [SerializeField] private float _sprintHearingRadius = 20f;
-        [SerializeField] private float _walkHearingRadius = 5f;
+        [SerializeField] private float _sprintHearingRadius = 12f;
+        [SerializeField] private float _walkHearingRadius = 2f;
         [SerializeField] private float _doorOpenHearingRadius = 15f;
 
         [Header("Detection — Proximity")]
@@ -43,7 +43,7 @@ namespace TheOrder
         [SerializeField] private int _investigateCheckSpots = 3;
 
         [Header("Chase")]
-        [SerializeField] private float _losTimeout = 5f;
+        [SerializeField] private float _losTimeout = 3f;
         [SerializeField] private float _catchDistance = 1.5f;
 
         [Header("Search")]
