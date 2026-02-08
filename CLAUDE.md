@@ -10,7 +10,7 @@
 - **Namespace:** `TheOrder`
 - **Target Platform:** Windows build
 
-The player is trapped in an underground bunker, hunted by an entity known as "The Hunter." Gameplay revolves around exploring the bunker, managing sanity, collecting clues about what happened, and ultimately making choices that determine the ending. There are no hiding spots — survival depends on outrunning the Hunter and breaking line of sight.
+The player (John) is trapped in an underground bunker, hunted by his brother Mike ("The Hunter") — a mute operative whose tongue was surgically removed by The Order. Gameplay revolves around exploring the bunker, collecting clues about what happened, and ultimately making choices that determine the ending. There are no hiding spots — survival depends on outrunning the Hunter and breaking line of sight.
 
 ---
 
@@ -29,6 +29,10 @@ The player is trapped in an underground bunker, hunted by an entity known as "Th
 6. **NavMesh Validation** — Before every `NavMeshAgent.SetDestination()` call, validate the target position with `NavMesh.SamplePosition()`. Never assume a position is on the NavMesh.
 
 7. **URP Volume Overrides** — All post-processing effects (vignette, color grading, chromatic aberration for sanity, etc.) must use URP Volume overrides. Do not use legacy post-processing.
+
+8. **PlayerMoved Always Fires** — `PlayerController` fires `GameEvents.PlayerMoved` every frame (even at speed 0) so systems like HunterAI can detect stationary players via vision cone.
+
+9. **Hunter Cannot Vocalize** — Mike's tongue was surgically removed. HunterAudio is footsteps only. No breathing, no voice, no chase stinger on the Hunter.
 
 ---
 
@@ -70,17 +74,18 @@ The player is trapped in an underground bunker, hunted by an entity known as "Th
 Assets/
   _Project/
     Scripts/
-      Player/          # PlayerController, PlayerInput, Flashlight, Stamina
-      Hunter/          # HunterAI, HunterStateMachine, HunterStates
+      Player/          # PlayerController, PlayerInput, Flashlight, Stamina, PlayerAudio
+      Hunter/          # HunterAI, HunterStateMachine, HunterStates, HunterAudio
       Sanity/          # SanityManager, SanityEffects, SanityUI
       Clues/           # ClueManager, CluePickup, ClueData
       Endings/         # EndingSystem, EndingEvaluator, EndingUI
-      UI/              # MainMenuUI, PauseMenuUI, HUDManager
-      Audio/           # AudioManager, AmbientController, FootstepSystem
+      UI/              # MainMenuUI, PauseMenuUI, HUDManager, DeathScreenUI
+      Audio/           # AudioConfig, AmbientAudioManager
       Doors/           # DoorController, LockedDoor, KeySystem
       Camera/          # CameraController, HeadBob, CameraShake
       Prologue/        # PrologueManager, PrologueSequence
       Core/            # GameManager, GameEvents, GameState, IInteractable
+      Editor/          # Setup utilities, DarkBunkerSetup, FixAnimationImport
     Scenes/
       MainMenu/
       Prologue/
@@ -149,6 +154,7 @@ Assets/
 - Manages game state FSM: `MainMenu`, `Prologue`, `Playing`, `Paused`, `Ending`.
 - Handles scene loading/unloading transitions.
 - Persists across scenes via `DontDestroyOnLoad`.
+- `SetState()` has a same-state guard — always go through GameManager, never fire `GameEvents.GameStateChanged` directly.
 
 ### SanityManager
 - Sanity is a `float` value clamped between `0` and `100`. Starts at `75`.
@@ -158,6 +164,7 @@ Assets/
 - Publishes `OnSanityChanged(float)` event for UI and effects.
 - At low sanity: visual distortions (chromatic aberration, vignette), audio hallucinations, unreliable HUD.
 - No sanity bar on HUD — effects are the feedback.
+- **Status: deferred / non-functional / optional.**
 
 ### HunterAI
 - Finite State Machine: `Patrol` → `Investigate` → `Chase` (no separate Search — merged into Investigate).
@@ -165,26 +172,50 @@ Assets/
 - `HunterAI.cs` (MonoBehaviour) owns the FSM, NavMeshAgent, detection, and event subscriptions.
 - `PatrolState`, `InvestigateState`, `ChaseState` implement `IHunterState` interface.
 - Uses `NavMeshAgent` for pathfinding (always validate with `SamplePosition`).
-- Detection: sight (raycast cone, flashlight doubles range) + sound (sprint <12m, walk <2m proximity, door open <15m).
+- **Vision detection:** `CanSeePlayer()` uses `Physics.RaycastAll` on all layers from EyePoint to player center mass (+0.8 Y). Skips self-colliders, first non-self hit determines visibility. No `_obstructionLayer` — any hit that isn't the player is an obstruction.
+- **Sound detection:** sprint <12m, walk <2m proximity, door open <15m.
 - Ignores door sounds within 3m (self-opened doors).
-- Opens closed doors via forward raycast + `GetComponentInParent<DoorController>()`.
+- Opens closed doors via forward raycast + `GetComponentInParent<DoorController>()`. Closes doors 3s after passing.
 - Same dimensions as player (height 1.6, radius 0.28) — never gets stuck in doorways.
-- 27 manual patrol waypoints across 3 floors under `--- WAYPOINTS ---` parent.
+- 26 patrol waypoints across 3 floors under `--- WAYPOINTS ---` parent.
+- LookingAround animation plays during waypoint idle.
 - 3-second LOS grace period before losing chase target.
-- Catch = instant death, scene reload (no checkpoints).
+- Catch = instant death → DeathScreenUI fade → scene reload (no checkpoints).
+- Uses `_isPaused` flag (not `enabled = false`) to pause during non-Playing states. Never toggle `enabled` on event-driven MonoBehaviours.
 - Animator Controller: Idle/Walking/Running/LookingAround states, driven by `Speed` float + `IsLooking` bool.
 - Configurable via `BunkerHunterConfig` ScriptableObject (speeds, detection ranges, timers).
 - Door layer (layer 9) excludes doors/frames from NavMesh bake — walkable paths through doorways.
-- Publishes `OnHunterStateChanged(HunterState)`, `OnPlayerDetected`, `OnPlayerLost`.
+- Player must be on layer 8 (Player) for vision detection to work.
+- Publishes `OnHunterStateChanged(HunterState)`, `OnPlayerDetected`, `OnPlayerLost`, `OnPlayerCaught`.
+- **Mike cannot vocalize** — tongue surgically removed. HunterAudio is footsteps only.
+
+### HunterAudio
+- Footsteps only — walk and run clips on a 3D spatial AudioSource.
+- Interval scales with NavMeshAgent speed (0.55s walk, 0.3s run).
+- No breathing, no voice, no chase stinger (Mike is mute — lore clue Mike_07).
+
+### PlayerAudio
+- Manages John's breathing reactions via event bus.
+- **Idle breathing** (`Frozen_Loop_Mono`): plays after 5s of no WASD input (requires player to have moved at least once first).
+- **Chase shock** (`Shocked_Mono_02`): one-shot gasp on `OnPlayerDetected`.
+- **Post-chase relief** (`Mouth_Normal_Loop_Mono`): loops for 4s after `OnPlayerLost`.
+- 2D AudioSource (spatialBlend = 0) — first-person audio.
+- State machine: Moving → Idle → InChase → PostChase.
+
+### DeathScreenUI
+- Subscribes to `GameEvents.OnPlayerCaught`.
+- Sequence: `GameManager.SetState(Paused)` → enable canvas → fade black 0.5s → fade "YOU DIED" text 0.3s → hold 1.5s → reload scene.
+- Uses `Time.unscaledDeltaTime` and `WaitForSecondsRealtime` for pause-safe timing.
+- Must go through `GameManager.SetState()` (never fire `GameStateChanged` directly) to keep state in sync for scene reload.
 
 ### ClueSystem
-- 17 total clues across 2 categories:
+- 18 total clues across 2 categories:
   - **Truth clues (11)** — what really happened in the bunker.
-  - **Mike clues (6)** — information about Mike and his role.
+  - **Mike clues (7)** — information about Mike and his role (includes Mike_07 Medical Report documenting tongue removal).
 - Each category has a knowledge level based on clues found: `None`, `Low`, `Medium`, `High`.
 - Clues are `ClueData` ScriptableObjects with text, category, and optional audio/image.
 - Two-state pickup: first E reads the clue (shows reading panel), second E collects it.
-- HUD shows per-category counter: `Truth: 0/11` / `Mike: 0/6`.
+- HUD shows per-category counter: `Truth: 0/11` / `Mike: 0/7`.
 - Publishes `OnClueViewed(ClueData)` and `OnClueCollected(ClueData)` events.
 - No journal — objective displayed via fade in/out at top-center (Tab key or auto on change).
 
@@ -193,6 +224,7 @@ Assets/
 - Knowledge level per category determined by clues collected at the point of the final choice.
 - Ending data stored in `EndingData` ScriptableObjects.
 - `EndingEvaluator` calculates the ending based on current clue state + player choice.
+- **Status: not yet implemented.**
 
 ### InteractionSystem
 - Raycasts from camera center with configurable range.
@@ -207,7 +239,7 @@ Assets/
 
 ### Completed
 - [x] Project scaffolding (folder structure, asmdefs, core scripts)
-- [x] `GameEvents.cs` — full event bus (incl. `OnClueViewed`, `OnObjectiveChanged`)
+- [x] `GameEvents.cs` — full event bus (incl. `OnPlayerCaught`, `OnClueViewed`, `OnObjectiveChanged`)
 - [x] `GameManager.cs` — singleton, state FSM, scene management
 - [x] `IInteractable.cs` — interaction interface
 - [x] `Enums.cs` — all game enums (ClueCategory: Truth, Mike)
@@ -217,12 +249,13 @@ Assets/
 - [x] Test infrastructure (EditMode + PlayMode asmdefs)
 - [x] `PlayerInputHandler.cs` — input caching, pause disable
 - [x] `PlayerStamina.cs` — drain/regen math, sprint gating
-- [x] `PlayerController.cs` — CharacterController movement, walk + sprint only
+- [x] `PlayerController.cs` — CharacterController movement, walk + sprint only, always fires PlayerMoved
 - [x] `PlayerInteraction.cs` — raycast interaction, IInteractable detection
 - [x] `PlayerFlashlight.cs` — spotlight toggle
+- [x] `PlayerAudio.cs` — idle breathing, chase shock gasp, post-chase relief breathing
 - [x] `FirstPersonCamera.cs` — manual mouse look (pitch/yaw)
 - [x] `BunkerSceneBootstrap.cs` — sets GameState.Playing
-- [x] Bunker scene (Asylum prefab, lighting, URP volume, player hierarchy, 17 clue pickups)
+- [x] Bunker scene (Asylum prefab, dark lighting, URP volume, player hierarchy, 18 clue pickups)
 - [x] `PlayerStaminaTests.cs` — EditMode tests for stamina math
 - [x] `ClueManager.cs` — tracks collected clues, knowledge levels per category
 - [x] `CluePickup.cs` — two-state interaction (read → collect)
@@ -230,22 +263,27 @@ Assets/
 - [x] `ObjectiveManager.cs` — objective text management, fade in/out on Tab
 - [x] `DoorController.cs` — doors open/close with E, Hunter-navigable
 - [x] `UILayoutSetup.cs` — editor utility for HUD layout
-- [x] 17 ClueData ScriptableObjects (11 Truth + 6 Mike)
-- [x] Hunter AI — FSM (Patrol/Investigate/Chase), NavMesh pathfinding, door opening
-- [x] Hunter detection — sound (sprint <12m, walk <2m, door <15m), ignores self-opened doors
-- [x] Hunter Animator Controller — Walking/Running/LookingAround from Mixamo FBX clips
+- [x] 18 ClueData ScriptableObjects (11 Truth + 7 Mike, includes Mike_07 Medical Report)
+- [x] Hunter AI — FSM (Patrol/Investigate/Chase), NavMesh pathfinding, door opening + auto-close
+- [x] Hunter vision detection — RaycastAll on all layers, EyePoint at Y=1.2, flashlight doubles range
+- [x] Hunter sound detection — sprint <12m, walk <2m, door <15m, ignores self-opened <3m
+- [x] Hunter Animator Controller — Walking/Running/LookingAround from Mixamo Humanoid FBX clips
+- [x] LookingAround animation plays during patrol waypoint idle
 - [x] `BunkerHunterConfig` ScriptableObject with tuned values
-- [x] 27 patrol waypoints across 3 floors
+- [x] 26 patrol waypoints across 3 floors
 - [x] Door layer (layer 9) — doors/frames excluded from NavMesh bake
+- [x] `DeathScreenUI.cs` — fade-to-black death screen on catch, scene reload
+- [x] `HunterAudio.cs` — footsteps only (Mike is mute)
+- [x] `PlayerAudio.cs` — idle/chase/post-chase breathing
+- [x] `AudioConfig.cs` + `AmbientAudioManager.cs` — ambient audio, door SFX, player footsteps
+- [x] Dark bunker (80 lights disabled, ambient near-black, flashlight only)
+- [x] `DarkBunkerSetup.cs` — editor tool for light management
+- [x] Mixamo FBX clips reimported as Humanoid, stripped keepOriginalPositionY
 - [x] 48 EditMode tests passing (14 detection + 8 state machine + 26 existing)
 
-### Upcoming — Hunter Phase 2B
-- [ ] Vision cone detection (sight raycast with obstruction check)
-- [ ] Chase catch → game over screen + scene reload
-- [ ] Door closing after Hunter passes through
-- [ ] Animations playing correctly in-game (walk/run/look)
-- [ ] Dark bunker (remove/dim all scene lights, flashlight only)
-- [ ] Audio system (ambient, footsteps, chase music stingers)
+### Upcoming
 - [ ] SanityManager (deferred — non-functional/optional)
 - [ ] EndingSystem + evaluator (knowledge levels x final choices)
 - [ ] UI polish (pause menu, main menu)
+- [ ] Place CluePickup for Mike_07 Medical Report in scene
+- [ ] Audio polish (ambient sounds, more footstep variety)
