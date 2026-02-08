@@ -20,7 +20,7 @@ namespace TheOrder.Clues
 
         [Header("Clue Totals Per Category")]
         [SerializeField] private int _totalTruthClues = 11;
-        [SerializeField] private int _totalMikeClues = 6;
+        [SerializeField] private int _totalMikeClues = 7;
 
         #endregion
 
@@ -82,7 +82,7 @@ namespace TheOrder.Clues
 
             if (count == 0) return KnowledgeLevel.None;
             if (count >= total) return KnowledgeLevel.High;
-            if (count >= total / 2) return KnowledgeLevel.Medium;
+            if (count * 2 >= total) return KnowledgeLevel.Medium;
             return KnowledgeLevel.Low;
         }
 
@@ -134,6 +134,12 @@ namespace TheOrder.Clues
         internal void HandleClueCollected(ClueData clue)
         {
             if (clue == null) return;
+
+            if (string.IsNullOrEmpty(clue.Id))
+            {
+                Debug.LogWarning($"[ClueManager] Clue '{clue.Title}' has no ID — skipping collection.", clue);
+                return;
+            }
 
             // Prevent duplicate collection
             if (!_collectedClueIds.Add(clue.Id)) return;

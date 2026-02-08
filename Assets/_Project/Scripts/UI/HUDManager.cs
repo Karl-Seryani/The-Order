@@ -132,6 +132,13 @@ namespace TheOrder.UI
 
         private void UpdateInteractionPrompt()
         {
+            // Don't show prompts outside of Playing state
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Playing)
+            {
+                if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
+                return;
+            }
+
             if (_playerInteraction == null)
             {
                 _playerInteraction = FindFirstObjectByType<Player.PlayerInteraction>();

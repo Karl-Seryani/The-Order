@@ -89,6 +89,14 @@ namespace TheOrder.Audio
         {
             if (_config == null) return;
 
+            // No footsteps when stationary
+            if (speed < 0.1f)
+            {
+                _isMoving = false;
+                _footstepTimer = 0f;
+                return;
+            }
+
             _isMoving = true;
             _lastMoveTime = Time.time;
 

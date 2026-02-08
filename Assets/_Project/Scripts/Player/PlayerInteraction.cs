@@ -49,6 +49,11 @@ namespace TheOrder.Player
             {
                 _playerCamera = GetComponentInChildren<UnityEngine.Camera>();
             }
+
+            if (_playerCamera == null)
+            {
+                Debug.LogWarning("[PlayerInteraction] No camera found — interaction disabled.", this);
+            }
         }
 
         private void Update()
@@ -68,6 +73,8 @@ namespace TheOrder.Player
 
         private void DetectInteractable()
         {
+            if (_playerCamera == null) { _currentTarget = null; return; }
+
             Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
 
             if (Physics.Raycast(ray, out RaycastHit hit, _interactionRange, _interactionMask))

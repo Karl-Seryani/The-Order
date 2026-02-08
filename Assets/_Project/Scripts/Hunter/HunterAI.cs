@@ -498,7 +498,7 @@ namespace TheOrder.Hunter
             // Walking footsteps — only heard within 2m
             else if (speed > 0.1f)
             {
-                if (distanceToPlayer <= _config.ProximityDetectionRange)
+                if (distanceToPlayer <= _config.WalkHearingRadius)
                 {
                     RegisterSound(position);
                 }

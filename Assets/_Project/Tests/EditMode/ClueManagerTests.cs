@@ -84,6 +84,16 @@ namespace TheOrder.Tests.EditMode
         }
 
         [Test]
+        public void GetKnowledgeLevel_FiveOfEleven_ReturnsLow()
+        {
+            // 5/11 is less than half (5.5) — should be Low, not Medium
+            for (int i = 0; i < 5; i++)
+                CollectClue(CreateTestClue($"t{i}", ClueCategory.Truth));
+
+            Assert.AreEqual(KnowledgeLevel.Low, _manager.GetKnowledgeLevel(ClueCategory.Truth));
+        }
+
+        [Test]
         public void GetKnowledgeLevel_AllClues_ReturnsHigh()
         {
             // 11 truth clues total
@@ -154,6 +164,55 @@ namespace TheOrder.Tests.EditMode
             Assert.AreEqual(2, truthClues.Count);
             foreach (var clue in truthClues)
                 Assert.AreEqual(ClueCategory.Truth, clue.Category);
+        }
+
+        #endregion
+
+        #region ID Validation Tests
+
+        [Test]
+        public void HandleClueCollected_NullClue_DoesNotThrow()
+        {
+            CollectClue(null);
+
+            Assert.AreEqual(0, _manager.CollectedCount);
+        }
+
+        [Test]
+        public void HandleClueCollected_EmptyId_SkipsCollection()
+        {
+            var clue = CreateTestClue("", ClueCategory.Truth);
+            CollectClue(clue);
+
+            Assert.AreEqual(0, _manager.CollectedCount);
+        }
+
+        [Test]
+        public void HandleClueCollected_NullId_SkipsCollection()
+        {
+            var clue = ScriptableObject.CreateInstance<ClueData>();
+            var so = new SerializedObject(clue);
+            so.FindProperty("_category").enumValueIndex = (int)ClueCategory.Truth;
+            so.FindProperty("_title").stringValue = "No ID Clue";
+            // _id left as null
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            CollectClue(clue);
+
+            Assert.AreEqual(0, _manager.CollectedCount);
+        }
+
+        [Test]
+        public void HandleClueCollected_TwoCluesWithEmptyIds_DoNotCollapse()
+        {
+            var clue1 = CreateTestClue("", ClueCategory.Truth);
+            var clue2 = CreateTestClue("", ClueCategory.Mike);
+
+            CollectClue(clue1);
+            CollectClue(clue2);
+
+            // Both should be skipped — 0, not collapsed into 1
+            Assert.AreEqual(0, _manager.CollectedCount);
         }
 
         #endregion
