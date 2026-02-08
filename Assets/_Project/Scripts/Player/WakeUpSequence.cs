@@ -52,6 +52,22 @@ namespace TheOrder.Player
             StartCoroutine(PlayWakeUpSequence());
         }
 
+        /// <summary>Immediately finish the wake-up sequence (used on respawn).</summary>
+        public void Skip()
+        {
+            if (_playerCamera != null)
+                _firstPersonCamera = _playerCamera.GetComponent<PlayerCamera.FirstPersonCamera>();
+
+            SetCameraRoll(0f);
+            if (_blinkOverlay != null)
+                _blinkOverlay.alpha = 0f;
+
+            if (_firstPersonCamera != null)
+                _firstPersonCamera.IsEnabled = true;
+
+            _sequenceComplete = true;
+        }
+
         #endregion
 
         #region Sequence

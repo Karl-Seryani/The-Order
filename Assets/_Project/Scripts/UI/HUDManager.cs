@@ -114,15 +114,18 @@ namespace TheOrder.UI
         {
             UpdateInteractionPrompt();
 
-            // Tab key shows the current objective
+            // Tab or Escape toggles pause
             if (_input == null)
             {
                 _input = FindFirstObjectByType<Player.PlayerInputHandler>();
             }
 
-            if (_input != null && _input.JournalPressed)
+            if (_input != null && (_input.JournalPressed || _input.PausePressed))
             {
-                ShowObjective();
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.TogglePause();
+                }
             }
         }
 
@@ -294,7 +297,7 @@ namespace TheOrder.UI
             }
             else
             {
-                _clueCounterText.text = "Truth: 0/11\nMike: 0/7";
+                _clueCounterText.text = "Truth: 0/11\nMike: 0/6";
             }
         }
 

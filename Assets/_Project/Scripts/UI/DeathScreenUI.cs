@@ -107,6 +107,10 @@ namespace TheOrder.UI
             yield return new WaitForSecondsRealtime(_holdDuration);
 
             // Reload scene
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetSkipWakeUpSequence(true);
+            }
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 

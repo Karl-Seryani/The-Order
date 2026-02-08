@@ -44,6 +44,12 @@ namespace TheOrder.Clues
             else
             {
                 // Second press — collect and destroy
+                if (string.IsNullOrEmpty(_clueData.Id))
+                {
+                    Debug.LogWarning($"[CluePickup] Clue '{_clueData.Title}' has no ID — not collecting.", this);
+                    _isReading = false;
+                    return;
+                }
                 GameEvents.ClueCollected(_clueData);
                 Destroy(gameObject);
             }

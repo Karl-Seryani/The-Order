@@ -15,6 +15,7 @@ namespace TheOrder
         [SerializeField] private GameState _currentState = GameState.MainMenu;
 
         public GameState CurrentState => _currentState;
+        public bool SkipWakeUpSequence { get; private set; }
 
         #region Unity Lifecycle
 
@@ -99,6 +100,12 @@ namespace TheOrder
                 SetState(GameState.Paused);
             else if (_currentState == GameState.Paused)
                 SetState(GameState.Playing);
+        }
+
+        /// <summary>Skip the wake-up sequence on the next bunker load (e.g., after respawn).</summary>
+        public void SetSkipWakeUpSequence(bool skip)
+        {
+            SkipWakeUpSequence = skip;
         }
 
         #endregion

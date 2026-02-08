@@ -10,6 +10,19 @@ namespace TheOrder.Core
     {
         private void Start()
         {
+            // If respawning, skip wake-up and go straight to gameplay
+            if (GameManager.Instance != null && GameManager.Instance.SkipWakeUpSequence)
+            {
+                GameManager.Instance.SetSkipWakeUpSequence(false);
+                GameManager.Instance.SetState(GameState.Playing);
+                var wakeUpSequence = FindFirstObjectByType<Player.WakeUpSequence>();
+                if (wakeUpSequence != null)
+                {
+                    wakeUpSequence.Skip();
+                }
+                return;
+            }
+
             // Set Prologue state — input disabled, cursor locked, Hunter paused
             if (GameManager.Instance != null)
                 GameManager.Instance.SetState(GameState.Prologue);

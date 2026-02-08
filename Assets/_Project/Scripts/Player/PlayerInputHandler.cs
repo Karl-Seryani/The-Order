@@ -67,6 +67,10 @@ namespace TheOrder.Player
         private void OnEnable()
         {
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
+            if (GameManager.Instance != null)
+            {
+                HandleGameStateChanged(GameManager.Instance.CurrentState);
+            }
         }
 
         private void OnDisable()
