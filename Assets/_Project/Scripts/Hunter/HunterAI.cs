@@ -1,6 +1,6 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.SceneManagement;
 
 namespace TheOrder.Hunter
 {
@@ -23,7 +23,6 @@ namespace TheOrder.Hunter
 
         [Header("Detection Layers")]
         [SerializeField] private LayerMask _playerLayer;
-        [SerializeField] private LayerMask _obstructionLayer;
 
         #endregion
 
@@ -55,6 +54,12 @@ namespace TheOrder.Hunter
         // Patrol tracking
         private Vector3 _lastPatrolPosition;
         private int _lastPatrolWaypointIndex;
+
+        // Debug
+        private float _debugTimer;
+
+        // Paused state
+        private bool _isPaused;
 
         // Animator hashes
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -115,6 +120,12 @@ namespace TheOrder.Hunter
             _agent = GetComponent<NavMeshAgent>();
             _animator = GetComponent<Animator>();
 
+            // Ensure root motion is off — NavMeshAgent controls position
+            if (_animator != null)
+            {
+                _animator.applyRootMotion = false;
+            }
+
             _stateMachine = new HunterStateMachine();
 
             _patrolState = new PatrolState(this);
@@ -128,6 +139,7 @@ namespace TheOrder.Hunter
             GameEvents.OnFlashlightToggled += HandleFlashlightToggled;
             GameEvents.OnDoorOpened += HandleDoorOpened;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
+            Debug.Log($"[HunterAI] OnEnable — subscribed to events, isPaused={_isPaused}");
         }
 
         private void OnDisable()
@@ -154,14 +166,34 @@ namespace TheOrder.Hunter
                 return;
             }
 
+            Debug.Log($"[HunterAI] Starting — {_patrolWaypoints.Length} waypoints, " +
+                      $"onNavMesh={_agent.isOnNavMesh}, " +
+                      $"pos={transform.position}, " +
+                      $"playerLayer={_playerLayer.value}, " +
+                      $"eyePoint={((_eyePoint != null) ? "assigned" : "MISSING")}");
+
             _lastPatrolPosition = transform.position;
             _stateMachine.ChangeState(_patrolState, HunterState.Patrol);
         }
 
         private void Update()
         {
+            if (_isPaused) return;
+
             _stateMachine.Update();
             UpdateAnimator();
+
+            // Debug: periodic state info
+            _debugTimer -= Time.deltaTime;
+            if (_debugTimer <= 0f)
+            {
+                _debugTimer = 3f;
+                Debug.Log($"[HunterAI] State={_stateMachine.CurrentStateType}, " +
+                          $"speed={_agent.velocity.magnitude:F1}, " +
+                          $"hasPlayerPos={_hasPlayerPosition}, " +
+                          $"onNavMesh={_agent.isOnNavMesh}, " +
+                          $"canSee={(_hasPlayerPosition ? CanSeePlayer().ToString() : "no_pos")}");
+            }
         }
 
         #endregion
@@ -171,34 +203,39 @@ namespace TheOrder.Hunter
         /// <summary>
         /// Check if the player is currently visible to the Hunter.
         /// Uses distance, angle, and obstruction raycast.
+        /// Casts on all layers — first non-self hit determines visibility.
         /// </summary>
         public bool CanSeePlayer()
         {
             if (!_hasPlayerPosition) return false;
 
             Vector3 eyePos = _eyePoint != null ? _eyePoint.position : transform.position;
-            Vector3 directionToPlayer = _playerPosition - eyePos;
-            float distance = directionToPlayer.magnitude;
+            Vector3 playerCenter = _playerPosition + Vector3.up * 0.8f;
+            Vector3 toPlayer = playerCenter - eyePos;
+            float distance = toPlayer.magnitude;
 
-            // Check range (doubled if player flashlight is on)
-            float effectiveRange = GetEffectiveSightRange();
-            if (distance > effectiveRange) return false;
+            // Range check (doubled if player flashlight is on)
+            if (distance > GetEffectiveSightRange()) return false;
 
-            // Check angle
-            float angle = Vector3.Angle(transform.forward, directionToPlayer.normalized);
+            // Angle check
+            float angle = Vector3.Angle(transform.forward, toPlayer.normalized);
             if (angle > _config.SightAngle * 0.5f) return false;
 
-            // Check obstruction
-            if (Physics.Raycast(eyePos, directionToPlayer.normalized, out RaycastHit hit, distance, _obstructionLayer | _playerLayer))
+            // Obstruction check — cast on ALL layers, skip self colliders
+            Vector3 dir = toPlayer.normalized;
+            RaycastHit[] hits = Physics.RaycastAll(eyePos, dir, distance, ~0, QueryTriggerInteraction.Ignore);
+
+            // Sort by distance, find first non-self hit
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (RaycastHit hit in hits)
             {
-                // If the first thing hit is on the player layer, we can see them
-                if (((1 << hit.collider.gameObject.layer) & _playerLayer) != 0)
-                {
-                    return true;
-                }
+                if (IsSelfCollider(hit.collider)) continue;
+                // First non-self hit — is it the player?
+                return ((1 << hit.collider.gameObject.layer) & _playerLayer) != 0;
             }
 
-            return false;
+            // Nothing hit between eye and player — clear line of sight
+            return true;
         }
 
         /// <summary>
@@ -227,6 +264,17 @@ namespace TheOrder.Hunter
 
             float angle = Vector3.Angle(hunterForward, direction.normalized);
             return angle <= sightAngle * 0.5f;
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private bool IsSelfCollider(Collider collider)
+        {
+            if (collider == null) return false;
+            Transform t = collider.transform;
+            return t == transform || t.IsChildOf(transform);
         }
 
         #endregion
@@ -309,6 +357,7 @@ namespace TheOrder.Hunter
         /// <summary>
         /// Raycast forward to detect closed doors and open them.
         /// Called from Chase and Investigate states.
+        /// Automatically closes doors after passing through.
         /// </summary>
         public void CheckForDoors()
         {
@@ -320,7 +369,22 @@ namespace TheOrder.Hunter
                 if (door != null && !door.IsOpen && !door.IsAnimating)
                 {
                     door.OpenDoor();
+                    StartCoroutine(DelayedDoorClose(door));
                 }
+            }
+        }
+
+        private IEnumerator DelayedDoorClose(Doors.DoorController door)
+        {
+            yield return new WaitForSeconds(3f);
+
+            if (door == null || !door.IsOpen || door.IsAnimating) yield break;
+
+            // Only close if the Hunter has moved away from the door
+            float distanceToDoor = Vector3.Distance(transform.position, door.transform.position);
+            if (distanceToDoor > 3f)
+            {
+                door.CloseDoor();
             }
         }
 
@@ -348,12 +412,14 @@ namespace TheOrder.Hunter
         #region Game Over
 
         /// <summary>
-        /// Called when the Hunter catches the player. Instant death, reload scene.
+        /// Called when the Hunter catches the player. Fires event for death screen.
         /// </summary>
         public void CatchPlayer()
         {
             Debug.Log("[HunterAI] Player caught! Game Over.");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            _isPaused = true;
+            _agent.isStopped = true;
+            GameEvents.PlayerCaught();
         }
 
         #endregion
@@ -362,6 +428,13 @@ namespace TheOrder.Hunter
 
         private void HandlePlayerMoved(Vector3 position, float speed)
         {
+            // Clamp to sane max — CharacterController.velocity can spike on first grounded frame
+            speed = Mathf.Min(speed, 10f);
+
+            if (!_hasPlayerPosition)
+            {
+                Debug.Log($"[HunterAI] First player position received: {position}, speed={speed:F1}");
+            }
             _playerPosition = position;
             _playerSpeed = speed;
             _hasPlayerPosition = true;
@@ -407,9 +480,12 @@ namespace TheOrder.Hunter
         private void HandleGameStateChanged(GameState newState)
         {
             // Pause/resume the Hunter based on game state
-            bool shouldBeActive = newState == GameState.Playing;
-            _agent.isStopped = !shouldBeActive;
-            enabled = shouldBeActive;
+            _isPaused = newState != GameState.Playing;
+            Debug.Log($"[HunterAI] GameStateChanged → {newState}, isPaused={_isPaused}");
+            if (_agent.isOnNavMesh)
+            {
+                _agent.isStopped = _isPaused;
+            }
         }
 
         #endregion

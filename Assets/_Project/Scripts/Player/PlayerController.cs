@@ -87,13 +87,9 @@ namespace TheOrder.Player
             // Apply gravity
             _controller.Move(_velocity * Time.deltaTime);
 
-            // Fire events
+            // Fire events — always send position so Hunter can detect stationary players
             float horizontalSpeed = new Vector3(_controller.velocity.x, 0f, _controller.velocity.z).magnitude;
-
-            if (horizontalSpeed > 0.1f)
-            {
-                GameEvents.PlayerMoved(transform.position, horizontalSpeed);
-            }
+            GameEvents.PlayerMoved(transform.position, horizontalSpeed);
 
             // Sprint started event
             if (_stamina.IsSprinting && !_wasSprinting)

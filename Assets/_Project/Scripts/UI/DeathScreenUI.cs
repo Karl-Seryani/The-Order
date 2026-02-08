@@ -1,0 +1,155 @@
+using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+namespace TheOrder.UI
+{
+    /// <summary>
+    /// Death screen overlay — fades to black with "YOU DIED" text, then reloads the scene.
+    /// Subscribes to GameEvents.OnPlayerCaught.
+    /// </summary>
+    public class DeathScreenUI : MonoBehaviour
+    {
+        #region Serialized Fields
+
+        [Header("References")]
+        [SerializeField] private Canvas _deathCanvas;
+        [SerializeField] private Image _fadeImage;
+        [SerializeField] private Text _deathText;
+
+        [Header("Timing")]
+        [SerializeField] private float _fadeDuration = 0.5f;
+        [SerializeField] private float _textFadeDuration = 0.3f;
+        [SerializeField] private float _holdDuration = 1.5f;
+
+        #endregion
+
+        #region Private Fields
+
+        private bool _isDying;
+
+        #endregion
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (_deathCanvas != null)
+            {
+                _deathCanvas.enabled = false;
+            }
+
+            // Ensure fade image starts transparent
+            if (_fadeImage != null)
+            {
+                Color c = _fadeImage.color;
+                c.a = 0f;
+                _fadeImage.color = c;
+            }
+
+            // Ensure death text starts transparent
+            if (_deathText != null)
+            {
+                Color c = _deathText.color;
+                c.a = 0f;
+                _deathText.color = c;
+            }
+        }
+
+        private void OnEnable()
+        {
+            GameEvents.OnPlayerCaught += HandlePlayerCaught;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnPlayerCaught -= HandlePlayerCaught;
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandlePlayerCaught()
+        {
+            if (_isDying) return;
+            StartCoroutine(DeathSequence());
+        }
+
+        #endregion
+
+        #region Death Sequence
+
+        private IEnumerator DeathSequence()
+        {
+            _isDying = true;
+
+            // Disable player input via GameManager (keeps state in sync for scene reload)
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetState(GameState.Paused);
+            }
+
+            // Enable the death canvas
+            if (_deathCanvas != null)
+            {
+                _deathCanvas.enabled = true;
+            }
+
+            // Fade black image from transparent to opaque
+            yield return StartCoroutine(FadeImage(_fadeImage, 0f, 1f, _fadeDuration));
+
+            // Fade in "YOU DIED" text
+            yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
+
+            // Hold
+            yield return new WaitForSecondsRealtime(_holdDuration);
+
+            // Reload scene
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        private IEnumerator FadeImage(Image image, float startAlpha, float endAlpha, float duration)
+        {
+            if (image == null) yield break;
+
+            float elapsed = 0f;
+            Color color = image.color;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                color.a = Mathf.Lerp(startAlpha, endAlpha, t);
+                image.color = color;
+                yield return null;
+            }
+
+            color.a = endAlpha;
+            image.color = color;
+        }
+
+        private IEnumerator FadeText(Text text, float startAlpha, float endAlpha, float duration)
+        {
+            if (text == null) yield break;
+
+            float elapsed = 0f;
+            Color color = text.color;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                color.a = Mathf.Lerp(startAlpha, endAlpha, t);
+                text.color = color;
+                yield return null;
+            }
+
+            color.a = endAlpha;
+            text.color = color;
+        }
+
+        #endregion
+    }
+}

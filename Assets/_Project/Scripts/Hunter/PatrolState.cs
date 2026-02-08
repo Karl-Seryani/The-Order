@@ -61,6 +61,7 @@ namespace TheOrder.Hunter
                 if (_idleTimer <= 0f)
                 {
                     _isIdling = false;
+                    _ai.SetLooking(false);
                     AdvanceToNextWaypoint();
                     NavigateToCurrentWaypoint();
                 }
@@ -108,6 +109,7 @@ namespace TheOrder.Hunter
             _idleDuration = Random.Range(_ai.Config.WaypointIdleMin, _ai.Config.WaypointIdleMax);
             _idleTimer = _idleDuration;
             _ai.Agent.ResetPath();
+            _ai.SetLooking(true);
         }
 
         #endregion

@@ -55,6 +55,10 @@ namespace TheOrder
         public static event Action OnPlayerLost;
         public static void PlayerLost() => OnPlayerLost?.Invoke();
 
+        /// <summary>Fired when Mike catches the player. Triggers death screen.</summary>
+        public static event Action OnPlayerCaught;
+        public static void PlayerCaught() => OnPlayerCaught?.Invoke();
+
         #endregion
 
         #region Sanity
