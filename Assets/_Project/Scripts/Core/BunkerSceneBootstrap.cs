@@ -10,16 +10,27 @@ namespace TheOrder.Core
     {
         private void Start()
         {
+            // Set Prologue state — input disabled, cursor locked, Hunter paused
             if (GameManager.Instance != null)
+                GameManager.Instance.SetState(GameState.Prologue);
+
+            // Start wake-up sequence if present
+            var wakeUp = FindFirstObjectByType<Player.WakeUpSequence>();
+            if (wakeUp != null)
             {
-                GameManager.Instance.SetState(GameState.Playing);
+                wakeUp.Begin();
             }
             else
             {
-                Debug.LogWarning("[BunkerSceneBootstrap] GameManager not found. Creating temporary instance.");
-                // Cursor lock fallback if no GameManager exists (e.g., testing scene directly)
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                // Fallback: no wake-up sequence, go straight to Playing
+                Debug.LogWarning("[BunkerSceneBootstrap] No WakeUpSequence found. Setting Playing immediately.");
+                if (GameManager.Instance != null)
+                    GameManager.Instance.SetState(GameState.Playing);
+                else
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
             }
         }
     }

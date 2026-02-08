@@ -87,8 +87,11 @@ namespace TheOrder.UI
 
             UpdateClueCounter();
 
-            // Show objective on start
-            ShowObjective();
+            // Show objective on start — only if already Playing (not during wake-up)
+            if (GameManager.Instance == null || GameManager.Instance.CurrentState == GameState.Playing)
+            {
+                ShowObjective();
+            }
         }
 
         private void OnEnable()

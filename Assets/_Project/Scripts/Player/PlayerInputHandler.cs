@@ -102,6 +102,11 @@ namespace TheOrder.Player
                     _pauseAction.Enable();
                     _journalAction.Enable();
                     break;
+                case GameState.Prologue:
+                case GameState.MainMenu:
+                case GameState.Ending:
+                    _playerInput.actions.FindActionMap("Player").Disable();
+                    break;
             }
         }
 

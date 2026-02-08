@@ -23,6 +23,18 @@ namespace TheOrder.PlayerCamera
 
         private Player.PlayerInputHandler _input;
         private float _pitch;
+        private bool _isEnabled = true;
+
+        #endregion
+
+        #region Public API
+
+        /// <summary>Enable or disable camera look. Used during wake-up sequence.</summary>
+        public bool IsEnabled
+        {
+            get => _isEnabled;
+            set => _isEnabled = value;
+        }
 
         #endregion
 
@@ -38,7 +50,7 @@ namespace TheOrder.PlayerCamera
 
         private void LateUpdate()
         {
-            if (_input == null) return;
+            if (_input == null || !_isEnabled) return;
 
             Vector2 lookInput = _input.LookInput;
 

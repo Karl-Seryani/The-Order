@@ -150,7 +150,7 @@ Assets/
 ## Key Systems Reference
 
 ### GameManager
-- Singleton pattern via a base `Singleton<T>` MonoBehaviour.
+- Singleton pattern (manual, not base class).
 - Manages game state FSM: `MainMenu`, `Prologue`, `Playing`, `Paused`, `Ending`.
 - Handles scene loading/unloading transitions.
 - Persists across scenes via `DontDestroyOnLoad`.
@@ -173,7 +173,9 @@ Assets/
 - `PatrolState`, `InvestigateState`, `ChaseState` implement `IHunterState` interface.
 - Uses `NavMeshAgent` for pathfinding (always validate with `SamplePosition`).
 - **Vision detection:** `CanSeePlayer()` uses `Physics.RaycastAll` on all layers from EyePoint to player center mass (+0.8 Y). Skips self-colliders, first non-self hit determines visibility. No `_obstructionLayer` — any hit that isn't the player is an obstruction.
-- **Sound detection:** sprint <12m, walk <2m proximity, door open <15m.
+- **Flashlight cone detection:** `IsFlashlightHittingTarget()` — if Hunter is inside the player's flashlight cone (60°), detected regardless of Hunter's facing direction. Triggers investigate.
+- **Detection ranges:** 3m dark vision, 24m flashlight (8x multiplier), 8m sprint hearing, 3m walk proximity, 15m door sounds.
+- **Sound detection:** sprint <8m, walk <3m proximity, door open <15m. Sounds trigger investigate during BOTH Patrol AND Investigate states.
 - Ignores door sounds within 3m (self-opened doors).
 - Opens closed doors via forward raycast + `GetComponentInParent<DoorController>()`. Closes doors 3s after passing.
 - Same dimensions as player (height 1.6, radius 0.28) — never gets stuck in doorways.
@@ -188,6 +190,7 @@ Assets/
 - Player must be on layer 8 (Player) for vision detection to work.
 - Publishes `OnHunterStateChanged(HunterState)`, `OnPlayerDetected`, `OnPlayerLost`, `OnPlayerCaught`.
 - **Mike cannot vocalize** — tongue surgically removed. HunterAudio is footsteps only.
+- `PlayerController` reports intended speed (`CurrentSpeed`: 3.0 walk / 5.5 sprint) not `CharacterController.velocity` for reliable detection.
 
 ### HunterAudio
 - Footsteps only — walk and run clips on a 3D spatial AudioSource.
@@ -225,6 +228,30 @@ Assets/
 - Ending data stored in `EndingData` ScriptableObjects.
 - `EndingEvaluator` calculates the ending based on current clue state + player choice.
 - **Status: not yet implemented.**
+
+### MainMenuUI
+- `MainMenuUI.cs` — sets `GameState.MainMenu` in `Start()`.
+- Play button → `GameManager.Instance.LoadScene("Prologue")`.
+- Tutorial button → shows `TutorialUI` panel (3-section tabbed: Controls, Survival Tips, Clues & Endings).
+- Quit button → `Application.Quit()`.
+- Public `ShowMainMenu()` for tutorial back button.
+- **Must use `InputSystemUIInputModule`** on EventSystem (not `StandaloneInputModule`) — project uses New Input System exclusively.
+
+### TutorialUI
+- `TutorialUI.cs` — multi-page tutorial with tab navigation.
+- 3 sections: Controls, Survival Tips, Clues & Endings. Each has 1 page.
+- Tab buttons jump to section. Prev/Next cycle pages. Back returns to main menu.
+- Content hardcoded as static strings (not ScriptableObject — static UI text).
+
+### WakeUpSequence
+- `WakeUpSequence.cs` — coroutine-based first-person wake-up cinematic.
+- Camera starts tilted 90° Z-roll (lying sideways on bed), blink overlay fully black.
+- 3 blinks: Z-roll lerps 90°→60°→30°→0° with overlay fades simulating eye blinks.
+- Final rise uses smoothstep easing for natural motion.
+- Disables `FirstPersonCamera.IsEnabled` during sequence to prevent mouse look overriding Z-roll.
+- `BunkerSceneBootstrap` sets `GameState.Prologue` first, then calls `WakeUpSequence.Begin()`.
+- On completion: sets `GameState.Playing` → input enables, HUD appears, Hunter starts patrol.
+- Replays on death + scene reload (wake-up is part of scene lifecycle).
 
 ### InteractionSystem
 - Raycasts from camera center with configurable range.
@@ -279,11 +306,26 @@ Assets/
 - [x] Dark bunker (80 lights disabled, ambient near-black, flashlight only)
 - [x] `DarkBunkerSetup.cs` — editor tool for light management
 - [x] Mixamo FBX clips reimported as Humanoid, stripped keepOriginalPositionY
-- [x] 48 EditMode tests passing (14 detection + 8 state machine + 26 existing)
+- [x] 57 EditMode tests passing (21 detection + 8 state machine + 28 existing)
+- [x] Flashlight cone detection — `IsFlashlightHittingTarget()` with 60° cone, 8x range multiplier
+- [x] PlayerController reports intended speed (not CharacterController.velocity) for reliable detection
+- [x] Sound registration works in Patrol AND Investigate states
+- [x] Hunter Idle state uses LookingAround clip (no T-pose)
+- [x] `PlayerFacingChanged` event for flashlight direction tracking
+- [x] `MainMenuUI.cs` — Play/Tutorial/Quit with `InputSystemUIInputModule`
+- [x] `TutorialUI.cs` — 3-section tabbed tutorial (Controls, Survival Tips, Clues & Endings)
+- [x] `WakeUpSequence.cs` — first-person wake-up with camera blink + rise from bed
+- [x] `FirstPersonCamera.cs` — `IsEnabled` property for cutscene camera control
+- [x] `PlayerInputHandler.cs` — handles Prologue/MainMenu/Ending states (disables input)
+- [x] `BunkerSceneBootstrap.cs` — triggers wake-up sequence before gameplay
+- [x] `HUDManager.cs` — suppresses objective display during wake-up
+- [x] MainMenu scene with full UI (created via `SetupMainMenuScene.cs` editor utility)
+- [x] WakeUpCanvas + WakeUpSequence in Bunker scene (created via `SetupWakeUpSequence.cs`)
+- [x] Build settings: MainMenu=0, Prologue=1, Bunker=2
 
 ### Upcoming
 - [ ] SanityManager (deferred — non-functional/optional)
 - [ ] EndingSystem + evaluator (knowledge levels x final choices)
-- [ ] UI polish (pause menu, main menu)
+- [ ] Pause menu UI
 - [ ] Place CluePickup for Mike_07 Medical Report in scene
 - [ ] Audio polish (ambient sounds, more footstep variety)
