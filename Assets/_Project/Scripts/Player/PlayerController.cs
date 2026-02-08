@@ -88,8 +88,12 @@ namespace TheOrder.Player
             _controller.Move(_velocity * Time.deltaTime);
 
             // Fire events — always send position so Hunter can detect stationary players
+            // Use intended speed when actively moving, actual velocity when idle
+            // CharacterController.velocity can underreport due to collisions/slopes
             float horizontalSpeed = new Vector3(_controller.velocity.x, 0f, _controller.velocity.z).magnitude;
-            GameEvents.PlayerMoved(transform.position, horizontalSpeed);
+            float reportedSpeed = (moveInput.sqrMagnitude > 0.01f) ? CurrentSpeed : horizontalSpeed;
+            GameEvents.PlayerMoved(transform.position, reportedSpeed);
+            GameEvents.PlayerFacingChanged(transform.forward);
 
             // Sprint started event
             if (_stamina.IsSprinting && !_wasSprinting)

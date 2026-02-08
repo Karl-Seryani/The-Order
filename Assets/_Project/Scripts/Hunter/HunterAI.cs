@@ -39,6 +39,7 @@ namespace TheOrder.Hunter
 
         // Player tracking — updated via events
         private Vector3 _playerPosition;
+        private Vector3 _playerForward;
         private float _playerSpeed;
         private bool _playerFlashlightOn;
         private bool _hasPlayerPosition;
@@ -136,6 +137,7 @@ namespace TheOrder.Hunter
         private void OnEnable()
         {
             GameEvents.OnPlayerMoved += HandlePlayerMoved;
+            GameEvents.OnPlayerFacingChanged += HandlePlayerFacingChanged;
             GameEvents.OnFlashlightToggled += HandleFlashlightToggled;
             GameEvents.OnDoorOpened += HandleDoorOpened;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
@@ -145,6 +147,7 @@ namespace TheOrder.Hunter
         private void OnDisable()
         {
             GameEvents.OnPlayerMoved -= HandlePlayerMoved;
+            GameEvents.OnPlayerFacingChanged -= HandlePlayerFacingChanged;
             GameEvents.OnFlashlightToggled -= HandleFlashlightToggled;
             GameEvents.OnDoorOpened -= HandleDoorOpened;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
@@ -264,6 +267,48 @@ namespace TheOrder.Hunter
 
             float angle = Vector3.Angle(hunterForward, direction.normalized);
             return angle <= sightAngle * 0.5f;
+        }
+
+        #endregion
+
+        #region Detection — Flashlight
+
+        /// <summary>
+        /// Check if the player's flashlight beam is hitting the Hunter.
+        /// The flashlight is a cone — if the Hunter is inside that cone and within range,
+        /// the Hunter senses the light regardless of which direction they're facing.
+        /// A flashlight shining on you from behind is still noticeable.
+        /// </summary>
+        public bool IsFlashlightHittingHunter()
+        {
+            if (!_hasPlayerPosition || !_playerFlashlightOn) return false;
+
+            Vector3 hunterPos = _eyePoint != null ? _eyePoint.position : transform.position;
+            Vector3 playerCenter = _playerPosition + Vector3.up * 0.8f;
+
+            return IsFlashlightHittingTarget(
+                hunterPos, playerCenter, _playerForward,
+                _config.FlashlightConeAngle, GetEffectiveSightRange());
+        }
+
+        /// <summary>
+        /// Static testable version: checks if a target is inside the player's flashlight cone.
+        /// Only requires the target to be within the flashlight's cone angle and range.
+        /// The target's facing direction doesn't matter — light hits you from any angle.
+        /// </summary>
+        public static bool IsFlashlightHittingTarget(
+            Vector3 targetPos, Vector3 playerPos, Vector3 playerForward,
+            float flashlightConeAngle, float maxRange)
+        {
+            Vector3 playerToTarget = targetPos - playerPos;
+            float distance = playerToTarget.magnitude;
+
+            // Must be within flashlight range
+            if (distance > maxRange) return false;
+
+            // Is the target within the flashlight cone?
+            float angle = Vector3.Angle(playerForward, playerToTarget.normalized);
+            return angle <= flashlightConeAngle * 0.5f;
         }
 
         #endregion
@@ -439,10 +484,10 @@ namespace TheOrder.Hunter
             _playerSpeed = speed;
             _hasPlayerPosition = true;
 
-            // Sound detection — running player heard within sprint hearing radius
+            // Sound detection
             float distanceToPlayer = Vector3.Distance(transform.position, position);
 
-            // Running player (speed > walk speed threshold of ~4.0)
+            // Sprint footsteps heard within 6m
             if (speed > 4.0f)
             {
                 if (distanceToPlayer <= _config.SprintHearingRadius)
@@ -450,7 +495,7 @@ namespace TheOrder.Hunter
                     RegisterSound(position);
                 }
             }
-            // Walking player — only heard if extremely close (proximity)
+            // Walking footsteps — only heard within 2m
             else if (speed > 0.1f)
             {
                 if (distanceToPlayer <= _config.ProximityDetectionRange)
@@ -458,11 +503,40 @@ namespace TheOrder.Hunter
                     RegisterSound(position);
                 }
             }
+
+            // Flashlight cone intersection — player shining light into Hunter's view
+            if (_playerFlashlightOn)
+            {
+                CheckFlashlightDetection();
+            }
+        }
+
+        /// <summary>
+        /// Check if player's flashlight is hitting the Hunter.
+        /// If so, register the player's position as a sound (triggers investigate).
+        /// </summary>
+        private void CheckFlashlightDetection()
+        {
+            if (IsFlashlightHittingHunter())
+            {
+                RegisterSound(_playerPosition);
+            }
+        }
+
+        private void HandlePlayerFacingChanged(Vector3 forward)
+        {
+            _playerForward = forward;
         }
 
         private void HandleFlashlightToggled(bool isOn)
         {
             _playerFlashlightOn = isOn;
+
+            // If flashlight just turned on, immediately check cone intersection
+            if (isOn && _hasPlayerPosition)
+            {
+                CheckFlashlightDetection();
+            }
         }
 
         private void HandleDoorOpened(Vector3 position)
@@ -498,11 +572,15 @@ namespace TheOrder.Hunter
             _hasLastHeardPosition = true;
             _lastHeardTime = Time.time;
 
-            // If patrolling, investigate the sound
-            if (_stateMachine.CurrentStateType == HunterState.Patrol)
+            // React to sound based on current state
+            HunterState currentState = _stateMachine.CurrentStateType;
+
+            if (currentState == HunterState.Patrol || currentState == HunterState.Investigate)
             {
+                // Patrol or Investigate — go investigate the new sound source
                 TransitionToInvestigate(position);
             }
+            // In Chase — already pursuing, sound position updates silently
         }
 
         /// <summary>

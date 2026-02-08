@@ -31,6 +31,10 @@ namespace TheOrder
         public static event Action<bool> OnFlashlightToggled;
         public static void FlashlightToggled(bool isOn) => OnFlashlightToggled?.Invoke(isOn);
 
+        /// <summary>Fired every frame with the player's facing direction. Used for flashlight cone detection.</summary>
+        public static event Action<Vector3> OnPlayerFacingChanged;
+        public static void PlayerFacingChanged(Vector3 forward) => OnPlayerFacingChanged?.Invoke(forward);
+
         #endregion
 
         #region Interaction

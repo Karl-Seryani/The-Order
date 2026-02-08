@@ -18,11 +18,12 @@ namespace TheOrder
 
         [Header("Detection — Sight")]
         [SerializeField] private float _sightAngle = 110f;
-        [SerializeField] private float _sightRange = 15f;
-        [SerializeField] private float _flashlightSightMultiplier = 2f;
+        [SerializeField] private float _sightRange = 3f;
+        [SerializeField] private float _flashlightSightMultiplier = 8f;
+        [SerializeField] private float _flashlightConeAngle = 60f;
 
         [Header("Detection — Hearing")]
-        [SerializeField] private float _sprintHearingRadius = 12f;
+        [SerializeField] private float _sprintHearingRadius = 8f;
         [SerializeField] private float _walkHearingRadius = 2f;
         [SerializeField] private float _doorOpenHearingRadius = 15f;
 
@@ -64,6 +65,7 @@ namespace TheOrder
         public float SightAngle => _sightAngle;
         public float SightRange => _sightRange;
         public float FlashlightSightMultiplier => _flashlightSightMultiplier;
+        public float FlashlightConeAngle => _flashlightConeAngle;
 
         // Hearing
         public float SprintHearingRadius => _sprintHearingRadius;
