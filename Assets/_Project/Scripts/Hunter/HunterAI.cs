@@ -413,6 +413,10 @@ namespace TheOrder.Hunter
                 Doors.DoorController door = hit.collider.GetComponentInParent<Doors.DoorController>();
                 if (door != null && !door.IsOpen && !door.IsAnimating)
                 {
+                    // Hunter cannot open locked doors
+                    var lockedDoor = door.GetComponent<Doors.LockedDoor>();
+                    if (lockedDoor != null && !lockedDoor.IsUnlocked) return;
+
                     door.OpenDoor();
                     StartCoroutine(DelayedDoorClose(door));
                 }

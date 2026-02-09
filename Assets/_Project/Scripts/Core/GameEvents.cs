@@ -89,6 +89,22 @@ namespace TheOrder
 
         #endregion
 
+        #region Keys
+
+        /// <summary>Fired when the player picks up a key.</summary>
+        public static event Action<Doors.KeyData> OnKeyCollected;
+        public static void KeyCollected(Doors.KeyData key) => OnKeyCollected?.Invoke(key);
+
+        /// <summary>Fired when a locked door is unlocked. Passes key used and door position.</summary>
+        public static event Action<Doors.KeyData, Vector3> OnDoorUnlocked;
+        public static void DoorUnlocked(Doors.KeyData key, Vector3 position) => OnDoorUnlocked?.Invoke(key, position);
+
+        /// <summary>Fired when the player tries a locked door without the key. For UI feedback.</summary>
+        public static event Action<Doors.KeyData> OnLockedDoorAttempt;
+        public static void LockedDoorAttempt(Doors.KeyData requiredKey) => OnLockedDoorAttempt?.Invoke(requiredKey);
+
+        #endregion
+
         #region Environment
 
         /// <summary>Fired when a door is opened. Passes door world position for sound propagation.</summary>

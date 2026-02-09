@@ -100,6 +100,8 @@ namespace TheOrder.UI
             GameEvents.OnClueCollected += HandleClueCollected;
             GameEvents.OnObjectiveChanged += HandleObjectiveChanged;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
+            GameEvents.OnKeyCollected += HandleKeyCollected;
+            GameEvents.OnLockedDoorAttempt += HandleLockedDoorAttempt;
         }
 
         private void OnDisable()
@@ -108,6 +110,8 @@ namespace TheOrder.UI
             GameEvents.OnClueCollected -= HandleClueCollected;
             GameEvents.OnObjectiveChanged -= HandleObjectiveChanged;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
+            GameEvents.OnKeyCollected -= HandleKeyCollected;
+            GameEvents.OnLockedDoorAttempt -= HandleLockedDoorAttempt;
         }
 
         private void Update()
@@ -347,6 +351,26 @@ namespace TheOrder.UI
             bool visible = newState == GameState.Playing;
             if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(visible);
             if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(visible);
+        }
+
+        private void HandleKeyCollected(Doors.KeyData key)
+        {
+            if (key != null)
+            {
+                ShowClueNotification($"{key.DisplayName} acquired");
+            }
+        }
+
+        private void HandleLockedDoorAttempt(Doors.KeyData requiredKey)
+        {
+            if (requiredKey != null)
+            {
+                ShowClueNotification($"Locked — requires {requiredKey.DisplayName}");
+            }
+            else
+            {
+                ShowClueNotification("This door is locked");
+            }
         }
 
         #endregion

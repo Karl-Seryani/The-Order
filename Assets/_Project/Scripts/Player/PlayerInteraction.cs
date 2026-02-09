@@ -79,9 +79,25 @@ namespace TheOrder.Player
 
             if (Physics.Raycast(ray, out RaycastHit hit, _interactionRange, _interactionMask))
             {
+                // Prefer LockedDoor over DoorController when both exist on a door
+                var lockedDoor = hit.collider.GetComponentInParent<Doors.LockedDoor>();
+                if (lockedDoor != null)
+                {
+                    _currentTarget = lockedDoor;
+                    return;
+                }
+
+                // Check hit object first, then parents
                 if (hit.collider.TryGetComponent(out IInteractable interactable))
                 {
                     _currentTarget = interactable;
+                    return;
+                }
+
+                var parentInteractable = hit.collider.GetComponentInParent<IInteractable>();
+                if (parentInteractable != null)
+                {
+                    _currentTarget = parentInteractable;
                     return;
                 }
             }
