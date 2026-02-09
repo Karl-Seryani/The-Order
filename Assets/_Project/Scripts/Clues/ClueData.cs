@@ -4,14 +4,13 @@ namespace TheOrder
 {
     /// <summary>
     /// ScriptableObject defining a single clue's data.
-    /// 18 instances total across 2 categories: Truth (11), Mike (7).
+    /// 18 note pickups scattered across the facility.
     /// </summary>
     [CreateAssetMenu(fileName = "NewClue", menuName = "The Order/Clue Data")]
     public class ClueData : ScriptableObject
     {
         [Header("Identity")]
         [SerializeField] private string _id;
-        [SerializeField] private ClueCategory _category;
         [SerializeField] private string _title;
 
         [Header("Content")]
@@ -24,9 +23,6 @@ namespace TheOrder
 
         /// <summary>Unique identifier for this clue.</summary>
         public string Id => _id;
-
-        /// <summary>Which category this clue belongs to (Truth, Mike).</summary>
-        public ClueCategory Category => _category;
 
         /// <summary>Display title shown in journal and pickup notification.</summary>
         public string Title => _title;
@@ -41,7 +37,7 @@ namespace TheOrder
         public AudioClip AudioClip => _audioClip;
 
         /// <summary>
-        /// Sanity impact on collection. Negative = drain (disturbing clues), positive = recovery (Mike clues).
+        /// Sanity impact on collection. Negative = drain (disturbing clues), positive = recovery (hopeful clues).
         /// </summary>
         public float SanityImpact => _sanityImpact;
     }

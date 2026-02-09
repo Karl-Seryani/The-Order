@@ -207,19 +207,20 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - Must go through `GameManager.SetState()` (never fire `GameStateChanged` directly) to keep state in sync for scene reload.
 
 ### ClueSystem
-- 18 total clues across 2 categories:
-  - **Truth clues (11)** — what really happened in the bunker.
-  - **Mike clues (7)** — information about Mike and his role (includes Mike_07 Medical Report documenting tongue removal).
-- Each category has a knowledge level based on clues found: `None`, `Low`, `Medium`, `High`.
-- Clues are `ClueData` ScriptableObjects with text, category, and optional audio/image.
+- 18 total clues in a single pool (no categories). Named `Clue_01` through `Clue_18`.
+- Setting: **Blackwell Psychiatric Facility** — killer is Patient #12, a deranged former patient with surgically removed vocal cords.
+- Three narrative themes: Location (clues 1-4), Killer (5-9), Event/Escape (10-18).
+- Knowledge level based on total clues found: `None` (0), `Low` (<half), `Medium` (≥half), `High` (all 18).
+- Clues are `ClueData` ScriptableObjects with ID, title, and content text. No category field.
 - Two-state pickup: first E reads the clue (shows reading panel), second E collects it.
-- HUD shows per-category counter: `Truth: 0/11` / `Mike: 0/7`.
+- HUD shows single counter: `Clues: 0/18`.
+- `ClueManager` resets on `SceneManager.sceneLoaded` (handles death/reload without stale counts).
 - Publishes `OnClueViewed(ClueData)` and `OnClueCollected(ClueData)` events.
 - No journal — objective displayed via fade in/out at top-center (Tab key or auto on change).
 
 ### EndingSystem
-- Endings derived from: 2 knowledge categories (Truth, Mike) x knowledge levels x final choices.
-- Knowledge level per category determined by clues collected at the point of the final choice.
+- Endings derived from: total knowledge level x final choices.
+- Knowledge level determined by total clues collected at the point of the final choice.
 - Ending data stored in `EndingData` ScriptableObjects.
 - `EndingEvaluator` calculates the ending based on current clue state + player choice.
 - **Status: not yet implemented.**
@@ -286,7 +287,7 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - [x] `GameEvents.cs` — full event bus (incl. `OnPlayerCaught`, `OnClueViewed`, `OnObjectiveChanged`)
 - [x] `GameManager.cs` — singleton, state FSM, scene management
 - [x] `IInteractable.cs` — interaction interface
-- [x] `Enums.cs` — all game enums (ClueCategory: Truth, Mike)
+- [x] `Enums.cs` — all game enums (GameState, HunterState, KnowledgeLevel)
 - [x] `ClueData.cs`, `EndingData.cs`, `HunterConfig.cs` — ScriptableObject data
 - [x] ~~`PrologueManager.cs`~~ — removed (wake-up uses `WakeUpStarted`/`WakeUpCompleted` events, not a separate state)
 - [x] `InputSystem_Actions.inputactions` — input bindings (WASD, mouse, gamepad)
@@ -301,13 +302,13 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - [x] `BunkerSceneBootstrap.cs` — sets GameState.Playing
 - [x] Bunker scene (Asylum prefab, dark lighting, URP volume, player hierarchy, 18 clue pickups)
 - [ ] ~~`PlayerStaminaTests.cs`~~ — removed
-- [x] `ClueManager.cs` — tracks collected clues, knowledge levels per category
+- [x] `ClueManager.cs` — tracks collected clues, single knowledge level, resets on scene load
 - [x] `CluePickup.cs` — two-state interaction (read → collect)
-- [x] `HUDManager.cs` — interaction prompt, clue notification, clue reading panel, objective fade, per-category counter
+- [x] `HUDManager.cs` — interaction prompt, clue notification, clue reading panel, objective fade, single clue counter
 - [x] `ObjectiveManager.cs` — objective text management, fade in/out on Tab
 - [x] `DoorController.cs` — doors toggle open/close with E (coroutine animation), Hunter-navigable
 - [x] `UILayoutSetup.cs` — editor utility for HUD layout
-- [x] 18 ClueData ScriptableObjects (11 Truth + 7 Mike, includes Mike_07 Medical Report)
+- [x] 18 ClueData ScriptableObjects (single pool, Blackwell Psychiatric Facility story)
 - [x] Hunter AI — FSM (Patrol/Investigate/Chase), NavMesh pathfinding, door opening + auto-close
 - [x] Hunter vision detection — RaycastAll on all layers, EyePoint at Y=1.2, flashlight doubles range
 - [x] Hunter sound detection — sprint <12m, walk <2m, door <15m, ignores self-opened <3m
@@ -345,10 +346,13 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - [x] `InteractableNoise` event + Hunter AI noise detection
 - [x] `AmbientAudioManager` interaction audio (door creak, furniture slide)
 - [x] 167 furniture pieces set up (SheetRackCase, Cupboard_Door, MirrorShelf_Door, MedRackDoor, Case_Door)
+- [x] Audio stinger system — wake-up, chase music, 2nd key, random ambient (shared 2D AudioSource)
+- [x] `GameState.Prologue` removed — replaced with `WakeUpStarted`/`WakeUpCompleted` events
+- [x] Clue system refactor — removed categories, single pool of 18, renamed to `Clue_01_*` format
+- [x] Clue content rewrite — Blackwell Psychiatric Facility / Patient #12 story
 
 ### Upcoming
 - [ ] SanityManager (deferred — non-functional/optional)
-- [ ] EndingSystem + evaluator (knowledge levels x final choices)
+- [ ] EndingSystem + evaluator (knowledge level x final choices)
 - [ ] Pause menu UI
-- [ ] Place CluePickup for Mike_07 Medical Report in scene
 - [ ] Audio polish (ambient sounds, more footstep variety)

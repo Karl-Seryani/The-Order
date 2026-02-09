@@ -15,12 +15,6 @@ namespace TheOrder
         Chase
     }
 
-    public enum ClueCategory
-    {
-        Truth,
-        Mike
-    }
-
     public enum EndingType
     {
         BlindViolence,

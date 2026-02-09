@@ -187,11 +187,6 @@ namespace TheOrder.UI
                 _clueReadingTitle.text = clue.Title;
             }
 
-            if (_clueReadingCategory != null)
-            {
-                _clueReadingCategory.text = $"({clue.Category})";
-            }
-
             if (_clueReadingContent != null)
             {
                 _clueReadingContent.text = clue.ContentText;
@@ -300,15 +295,11 @@ namespace TheOrder.UI
             var cm = Clues.ClueManager.Instance;
             if (cm != null)
             {
-                int truth = cm.GetCategoryCount(ClueCategory.Truth);
-                int truthTotal = cm.GetCategoryTotal(ClueCategory.Truth);
-                int mike = cm.GetCategoryCount(ClueCategory.Mike);
-                int mikeTotal = cm.GetCategoryTotal(ClueCategory.Mike);
-                _clueCounterText.text = $"Truth: {truth}/{truthTotal}\nMike: {mike}/{mikeTotal}";
+                _clueCounterText.text = $"Clues: {cm.CollectedCount}/{cm.TotalClues}";
             }
             else
             {
-                _clueCounterText.text = "Truth: 0/11\nMike: 0/7";
+                _clueCounterText.text = "Clues: 0/18";
             }
         }
 

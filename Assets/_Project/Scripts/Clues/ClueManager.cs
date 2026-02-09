@@ -1,12 +1,11 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace TheOrder.Clues
 {
     /// <summary>
-    /// Singleton manager that tracks collected clues and calculates knowledge levels.
+    /// Singleton manager that tracks collected clues.
     /// Subscribes to GameEvents.OnClueCollected. Persists across scenes.
     /// </summary>
     public class ClueManager : MonoBehaviour
@@ -19,9 +18,8 @@ namespace TheOrder.Clues
 
         #region Serialized Fields
 
-        [Header("Clue Totals Per Category")]
-        [SerializeField] private int _totalTruthClues = 11;
-        [SerializeField] private int _totalMikeClues = 7;
+        [Header("Clue Totals")]
+        [SerializeField] private int _totalClues = 18;
 
         #endregion
 
@@ -38,16 +36,10 @@ namespace TheOrder.Clues
         public int CollectedCount => _collectedClueIds.Count;
 
         /// <summary>Total number of clues in the game.</summary>
-        public int TotalClues => _totalTruthClues + _totalMikeClues;
+        public int TotalClues => _totalClues;
 
         /// <summary>Returns all collected clues in order of collection.</summary>
         public IReadOnlyList<ClueData> GetCollectedClues() => _collectedClues;
-
-        /// <summary>Returns collected clues filtered by category.</summary>
-        public List<ClueData> GetCollectedCluesByCategory(ClueCategory category)
-        {
-            return _collectedClues.Where(c => c.Category == category).ToList();
-        }
 
         /// <summary>Returns true if the specified clue has been collected.</summary>
         public bool IsClueCollected(string clueId)
@@ -55,35 +47,16 @@ namespace TheOrder.Clues
             return _collectedClueIds.Contains(clueId);
         }
 
-        /// <summary>Returns how many clues have been collected in the given category.</summary>
-        public int GetCategoryCount(ClueCategory category)
-        {
-            return _collectedClues.Count(c => c.Category == category);
-        }
-
-        /// <summary>Returns the total number of clues in the given category.</summary>
-        public int GetCategoryTotal(ClueCategory category)
-        {
-            switch (category)
-            {
-                case ClueCategory.Truth: return _totalTruthClues;
-                case ClueCategory.Mike: return _totalMikeClues;
-                default: return 0;
-            }
-        }
-
         /// <summary>
-        /// Calculates knowledge level for a category based on clues collected.
+        /// Calculates knowledge level based on total clues collected.
         /// None = 0, Low = less than half, Medium = half or more, High = all.
         /// </summary>
-        public KnowledgeLevel GetKnowledgeLevel(ClueCategory category)
+        public KnowledgeLevel GetKnowledgeLevel()
         {
-            int count = GetCategoryCount(category);
-            int total = GetCategoryTotal(category);
-
+            int count = CollectedCount;
             if (count == 0) return KnowledgeLevel.None;
-            if (count >= total) return KnowledgeLevel.High;
-            if (count * 2 >= total) return KnowledgeLevel.Medium;
+            if (count >= _totalClues) return KnowledgeLevel.High;
+            if (count * 2 >= _totalClues) return KnowledgeLevel.Medium;
             return KnowledgeLevel.Low;
         }
 
