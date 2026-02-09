@@ -14,6 +14,7 @@ namespace TheOrder.Audio
         [SerializeField] private AudioConfig _config;
         [SerializeField] private AudioSource _ambientSource;
         [SerializeField] private AudioSource _sfxSource;
+        [SerializeField] private AudioSource _interactionSource;
 
         #endregion
 
@@ -22,6 +23,7 @@ namespace TheOrder.Audio
         private float _footstepTimer;
         private float _lastMoveTime;
         private bool _isMoving;
+        private float _lastNoiseTime;
 
         #endregion
 
@@ -47,6 +49,7 @@ namespace TheOrder.Audio
             GameEvents.OnDoorClosed += HandleDoorClosed;
             GameEvents.OnPlayerMoved += HandlePlayerMoved;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
+            GameEvents.OnInteractableNoise += HandleInteractableNoise;
         }
 
         private void OnDisable()
@@ -55,6 +58,7 @@ namespace TheOrder.Audio
             GameEvents.OnDoorClosed -= HandleDoorClosed;
             GameEvents.OnPlayerMoved -= HandlePlayerMoved;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
+            GameEvents.OnInteractableNoise -= HandleInteractableNoise;
         }
 
         private void Update()
@@ -64,6 +68,13 @@ namespace TheOrder.Audio
             {
                 _isMoving = false;
                 _footstepTimer = 0f;
+            }
+
+            // Fade out interaction sound if no noise received recently
+            if (_interactionSource != null && _interactionSource.isPlaying
+                && Time.time - _lastNoiseTime > 0.2f)
+            {
+                _interactionSource.Stop();
             }
         }
 
@@ -112,6 +123,29 @@ namespace TheOrder.Audio
                 _footstepTimer = 0f;
                 PlayRandomFootstep();
             }
+        }
+
+        private void HandleInteractableNoise(Vector3 position, float loudness)
+        {
+            if (_config == null || _interactionSource == null) return;
+
+            _lastNoiseTime = Time.time;
+
+            // Pick clip — use door creak as default, furniture slide if available
+            AudioClip clip = _config.DoorCreakClip;
+            if (clip == null) clip = _config.FurnitureSlideClip;
+            if (clip == null) return;
+
+            if (!_interactionSource.isPlaying || _interactionSource.clip != clip)
+            {
+                _interactionSource.clip = clip;
+                _interactionSource.loop = true;
+                _interactionSource.Play();
+            }
+
+            // Scale volume with loudness
+            _interactionSource.volume = loudness * _config.InteractionMaxVolume;
+            _interactionSource.transform.position = position;
         }
 
         private void HandleGameStateChanged(GameState newState)

@@ -4,7 +4,7 @@ namespace TheOrder.Doors
 {
     /// <summary>
     /// A door that requires a specific key to unlock.
-    /// Delegates to DoorController for open/close animation once unlocked.
+    /// Delegates to DoorController for open/close once unlocked.
     /// Hunter cannot open locked doors.
     /// </summary>
     [RequireComponent(typeof(DoorController))]
@@ -54,9 +54,7 @@ namespace TheOrder.Doors
 
         #region IInteractable
 
-        /// <summary>
-        /// If locked, checks inventory for key. If unlocked, delegates to DoorController.
-        /// </summary>
+        /// <summary>Checks key, then delegates to DoorController.</summary>
         public void Interact(GameObject interactor)
         {
             if (!_isUnlocked)
@@ -66,13 +64,12 @@ namespace TheOrder.Doors
                 {
                     _isUnlocked = true;
                     GameEvents.DoorUnlocked(_requiredKey, transform.position);
-                    _doorController.Interact(interactor);
                 }
                 else
                 {
                     GameEvents.LockedDoorAttempt(_requiredKey);
+                    return;
                 }
-                return;
             }
 
             _doorController.Interact(interactor);

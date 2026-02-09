@@ -4,9 +4,8 @@ using UnityEngine;
 namespace TheOrder.Doors
 {
     /// <summary>
-    /// Interactive door that toggles between open and closed states.
-    /// Implements IInteractable for player use (E key).
-    /// Provides OpenDoor() for Hunter AI to force-open.
+    /// Interactive door toggled by pressing E. Smoothly animates open/close.
+    /// Retains OpenDoor()/CloseDoor() for Hunter AI instant control.
     /// </summary>
     public class DoorController : MonoBehaviour, IInteractable
     {
@@ -14,28 +13,35 @@ namespace TheOrder.Doors
 
         [Header("Door Settings")]
         [SerializeField] private float _rotationAngle = 90f;
-        [SerializeField] private float _rotationDuration = 0.5f;
+        [SerializeField] private float _openSpeed = 120f;
         [SerializeField] private Transform _hingePoint;
 
         #endregion
 
         #region Private Fields
 
+        private float _currentAngle;
         private bool _isOpen;
         private bool _isAnimating;
-        private Quaternion _closedRotation;
-        private Quaternion _openRotation;
         private Transform _doorTransform;
+        private Quaternion _closedRotation;
+        private Coroutine _animationCoroutine;
 
         #endregion
 
         #region Public API
 
-        /// <summary>True if the door is currently open.</summary>
+        /// <summary>True if the door is more than half open.</summary>
         public bool IsOpen => _isOpen;
 
-        /// <summary>True if the door is currently animating.</summary>
+        /// <summary>True if currently animating.</summary>
         public bool IsAnimating => _isAnimating;
+
+        /// <summary>Current open fraction from 0 (closed) to 1 (fully open).</summary>
+        public float OpenFraction => _rotationAngle > 0f ? Mathf.Clamp01(_currentAngle / _rotationAngle) : 0f;
+
+        /// <summary>Current angle of the door.</summary>
+        public float CurrentAngle => _currentAngle;
 
         #endregion
 
@@ -45,78 +51,103 @@ namespace TheOrder.Doors
         {
             _doorTransform = _hingePoint != null ? _hingePoint : transform;
             _closedRotation = _doorTransform.localRotation;
-            _openRotation = _closedRotation * Quaternion.Euler(0f, _rotationAngle, 0f);
         }
 
         #endregion
 
         #region IInteractable
 
-        /// <summary>Toggle the door open/closed when the player interacts.</summary>
+        /// <summary>Toggle the door open/close on E press.</summary>
         public void Interact(GameObject interactor)
         {
-            if (_isAnimating) return;
+            float targetAngle = _isOpen ? 0f : _rotationAngle;
 
-            if (_isOpen)
-                CloseDoor();
-            else
-                OpenDoor();
+            if (_animationCoroutine != null)
+                StopCoroutine(_animationCoroutine);
+
+            _animationCoroutine = StartCoroutine(AnimateDoor(targetAngle));
         }
 
         /// <summary>Returns context-appropriate prompt text.</summary>
         public string GetPromptText()
         {
-            if (_isAnimating) return string.Empty;
-            return _isOpen ? "Close Door" : "Open Door";
+            return _isOpen ? "Close" : "Open";
         }
 
         #endregion
 
-        #region Door Control
+        #region Hunter AI — Instant Control
 
-        /// <summary>
-        /// Open the door. Can be called by player interaction or Hunter AI.
-        /// </summary>
+        /// <summary>Instantly open the door. Used by Hunter AI.</summary>
         public void OpenDoor()
         {
-            if (_isOpen || _isAnimating) return;
-            StartCoroutine(AnimateDoor(true));
+            if (_isOpen && _currentAngle >= _rotationAngle) return;
+
+            if (_animationCoroutine != null)
+                StopCoroutine(_animationCoroutine);
+
+            _currentAngle = _rotationAngle;
+            _isOpen = true;
+            _isAnimating = false;
+            ApplyRotation();
+            GameEvents.DoorOpened(transform.position);
         }
 
-        /// <summary>
-        /// Close the door.
-        /// </summary>
+        /// <summary>Instantly close the door. Used by Hunter AI.</summary>
         public void CloseDoor()
         {
-            if (!_isOpen || _isAnimating) return;
-            StartCoroutine(AnimateDoor(false));
+            if (!_isOpen && _currentAngle <= 0f) return;
+
+            if (_animationCoroutine != null)
+                StopCoroutine(_animationCoroutine);
+
+            _currentAngle = 0f;
+            _isOpen = false;
+            _isAnimating = false;
+            ApplyRotation();
+            GameEvents.DoorClosed(transform.position);
         }
 
-        private IEnumerator AnimateDoor(bool opening)
+        #endregion
+
+        #region Animation
+
+        private IEnumerator AnimateDoor(float targetAngle)
         {
             _isAnimating = true;
+            float direction = targetAngle > _currentAngle ? 1f : -1f;
 
-            Quaternion startRotation = _doorTransform.localRotation;
-            Quaternion targetRotation = opening ? _openRotation : _closedRotation;
-            float elapsed = 0f;
-
-            while (elapsed < _rotationDuration)
+            while (Mathf.Abs(_currentAngle - targetAngle) > 0.5f)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.SmoothStep(0f, 1f, elapsed / _rotationDuration);
-                _doorTransform.localRotation = Quaternion.Lerp(startRotation, targetRotation, t);
+                _currentAngle += _openSpeed * direction * Time.deltaTime;
+                _currentAngle = direction > 0f
+                    ? Mathf.Min(_currentAngle, targetAngle)
+                    : Mathf.Max(_currentAngle, targetAngle);
+                ApplyRotation();
                 yield return null;
             }
 
-            _doorTransform.localRotation = targetRotation;
-            _isOpen = opening;
+            _currentAngle = targetAngle;
+            ApplyRotation();
             _isAnimating = false;
 
-            // Fire appropriate event for audio and Hunter detection
-            if (opening)
+            bool wasOpen = _isOpen;
+            _isOpen = _currentAngle > _rotationAngle * 0.5f;
+
+            if (_isOpen && !wasOpen)
                 GameEvents.DoorOpened(transform.position);
-            else
+            else if (!_isOpen && wasOpen)
                 GameEvents.DoorClosed(transform.position);
+        }
+
+        #endregion
+
+        #region Rotation
+
+        private void ApplyRotation()
+        {
+            if (_doorTransform == null) return;
+            _doorTransform.localRotation = _closedRotation * Quaternion.Euler(0f, _currentAngle, 0f);
         }
 
         #endregion

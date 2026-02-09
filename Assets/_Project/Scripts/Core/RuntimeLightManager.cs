@@ -27,6 +27,10 @@ namespace TheOrder
                 if (light.type == LightType.Spot && IsPlayerFlashlight(light.transform))
                     continue;
 
+                // Skip flickering lights — they manage themselves
+                if (light.GetComponent<FlickeringLight>() != null)
+                    continue;
+
                 light.enabled = false;
                 count++;
             }

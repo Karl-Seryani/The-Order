@@ -4,7 +4,7 @@ namespace TheOrder.Player
 {
     /// <summary>
     /// Raycasts from the camera center to detect IInteractable objects.
-    /// Shows prompt text and triggers interaction on E press.
+    /// Press E to interact with the targeted object.
     /// </summary>
     public class PlayerInteraction : MonoBehaviour
     {

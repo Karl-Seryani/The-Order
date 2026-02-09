@@ -105,6 +105,14 @@ namespace TheOrder
 
         #endregion
 
+        #region Interaction Noise
+
+        /// <summary>Fired during hold-interactions. Loudness 0-1 scales with interaction speed.</summary>
+        public static event Action<Vector3, float> OnInteractableNoise;
+        public static void InteractableNoise(Vector3 position, float loudness) => OnInteractableNoise?.Invoke(position, loudness);
+
+        #endregion
+
         #region Environment
 
         /// <summary>Fired when a door is opened. Passes door world position for sound propagation.</summary>

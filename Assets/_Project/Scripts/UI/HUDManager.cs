@@ -161,7 +161,7 @@ namespace TheOrder.UI
 
             if (hasTarget && _interactionPromptText != null)
             {
-                _interactionPromptText.text = $"Press E to {_playerInteraction.PromptText}";
+                _interactionPromptText.text = $"E — {_playerInteraction.PromptText}";
             }
         }
 

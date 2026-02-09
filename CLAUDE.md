@@ -265,10 +265,31 @@ Assets/
 
 ### InteractionSystem
 - Raycasts from camera center with configurable range.
-- Checks for `IInteractable` on hit colliders.
-- Displays interaction prompt UI when hovering over interactable.
-- Calls `IInteractable.Interact(PlayerController)` on input.
-- Supports contextual prompts (e.g., "Read", "Open/Close", "Interact").
+- Checks for `IInteractable` on hit colliders, then `GetComponentInParent<IInteractable>()`.
+- Prefers `LockedDoor` over `DoorController` when both exist on a door.
+- Displays interaction prompt UI when hovering over interactable (`"E — Open"`, `"E — Slide"`, etc.).
+- Calls `IInteractable.Interact(GameObject)` on E press.
+- Supports contextual prompts (e.g., "Open/Close", "Slide", "Read").
+
+### SlidableFurniture
+- `SlidableFurniture.cs` — toggle-E slide for drawers, cabinet doors, shelves.
+- Coroutine-based smooth slide along configurable local axis (`_slideDirection`, default `Vector3.back`).
+- `_slideDistance = 0.35f`, `_slideSpeed = 1.5f`.
+- Objects must NOT be marked Static (static batching prevents transform-driven animation).
+- Clue pickups inside furniture must be parented to the sliding part so they move with it.
+- Editor gizmo (cyan ray) shows slide direction when selected in Scene view.
+- `SetupInteractiveFurniture.cs` — editor tool to batch-add components + uncheck Static by name pattern.
+- Supported name patterns: `SheetRackCase_*`, `Cupboard_Door_*`, `MirrorShelf_Door*`, `MedRackDoor_*`, `Case_Door_*`.
+
+### FlickeringLight
+- `FlickeringLight.cs` — random burst flicker pattern for atmosphere.
+- 2–8s steady on, then 1–4 rapid flickers with intensity drops.
+- `RuntimeLightManager` skips lights with this component (doesn't disable them).
+
+### InteractableNoise
+- `GameEvents.InteractableNoise(Vector3 position, float loudness)` — event for noise from interactions.
+- Hunter AI subscribes: ignores loudness < 0.5, scales hearing range with loudness × `DoorOpenHearingRadius`.
+- `AmbientAudioManager` plays interaction audio (door creak, furniture slide) scaled by loudness.
 
 ---
 
@@ -298,7 +319,7 @@ Assets/
 - [x] `CluePickup.cs` — two-state interaction (read → collect)
 - [x] `HUDManager.cs` — interaction prompt, clue notification, clue reading panel, objective fade, per-category counter
 - [x] `ObjectiveManager.cs` — objective text management, fade in/out on Tab
-- [x] `DoorController.cs` — doors open/close with E, Hunter-navigable
+- [x] `DoorController.cs` — doors toggle open/close with E (coroutine animation), Hunter-navigable
 - [x] `UILayoutSetup.cs` — editor utility for HUD layout
 - [x] 18 ClueData ScriptableObjects (11 Truth + 7 Mike, includes Mike_07 Medical Report)
 - [x] Hunter AI — FSM (Patrol/Investigate/Chase), NavMesh pathfinding, door opening + auto-close
@@ -332,6 +353,12 @@ Assets/
 - [x] MainMenu scene with full UI (created via `SetupMainMenuScene.cs` editor utility)
 - [x] WakeUpCanvas + WakeUpSequence in Bunker scene (created via `SetupWakeUpSequence.cs`)
 - [x] Build settings: MainMenu=0, Prologue=1, Bunker=2
+- [x] `SlidableFurniture.cs` — toggle-E slide for drawers/cabinet doors (coroutine animation)
+- [x] `FlickeringLight.cs` — random burst flicker for atmosphere lights
+- [x] `SetupInteractiveFurniture.cs` — editor tool for batch furniture setup
+- [x] `InteractableNoise` event + Hunter AI noise detection
+- [x] `AmbientAudioManager` interaction audio (door creak, furniture slide)
+- [x] 167 furniture pieces set up (SheetRackCase, Cupboard_Door, MirrorShelf_Door, MedRackDoor, Case_Door)
 
 ### Upcoming
 - [ ] SanityManager (deferred — non-functional/optional)

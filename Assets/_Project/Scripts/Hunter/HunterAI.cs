@@ -140,6 +140,7 @@ namespace TheOrder.Hunter
             GameEvents.OnPlayerFacingChanged += HandlePlayerFacingChanged;
             GameEvents.OnFlashlightToggled += HandleFlashlightToggled;
             GameEvents.OnDoorOpened += HandleDoorOpened;
+            GameEvents.OnInteractableNoise += HandleInteractableNoise;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
             Debug.Log($"[HunterAI] OnEnable — subscribed to events, isPaused={_isPaused}");
         }
@@ -150,6 +151,7 @@ namespace TheOrder.Hunter
             GameEvents.OnPlayerFacingChanged -= HandlePlayerFacingChanged;
             GameEvents.OnFlashlightToggled -= HandleFlashlightToggled;
             GameEvents.OnDoorOpened -= HandleDoorOpened;
+            GameEvents.OnInteractableNoise -= HandleInteractableNoise;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
         }
 
@@ -550,6 +552,19 @@ namespace TheOrder.Hunter
             if (distance < 3f) return;
 
             if (distance <= _config.DoorOpenHearingRadius)
+            {
+                RegisterSound(position);
+            }
+        }
+
+        private void HandleInteractableNoise(Vector3 position, float loudness)
+        {
+            if (loudness < 0.5f) return;
+
+            float distance = Vector3.Distance(transform.position, position);
+            // Scale hearing range with loudness (quiet = short range, loud = full door range)
+            float hearingRange = _config.DoorOpenHearingRadius * loudness;
+            if (distance <= hearingRange)
             {
                 RegisterSound(position);
             }

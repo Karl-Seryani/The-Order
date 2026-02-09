@@ -41,6 +41,24 @@ namespace TheOrder.Audio
 
         #endregion
 
+        #region Interaction
+
+        [Header("Interaction")]
+        [SerializeField] private AudioClip _doorCreakClip;
+        [SerializeField] private AudioClip _furnitureSlideClip;
+        [SerializeField] [Range(0f, 1f)] private float _interactionMaxVolume = 0.6f;
+
+        /// <summary>Looping creak clip for doors being held open/closed.</summary>
+        public AudioClip DoorCreakClip => _doorCreakClip;
+
+        /// <summary>Looping slide clip for furniture being held open/closed.</summary>
+        public AudioClip FurnitureSlideClip => _furnitureSlideClip;
+
+        /// <summary>Max volume for interaction sounds (scales with loudness).</summary>
+        public float InteractionMaxVolume => _interactionMaxVolume;
+
+        #endregion
+
         #region Footsteps
 
         [Header("Footsteps")]
