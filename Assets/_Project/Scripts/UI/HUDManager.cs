@@ -297,7 +297,7 @@ namespace TheOrder.UI
             }
             else
             {
-                _clueCounterText.text = "Truth: 0/11\nMike: 0/6";
+                _clueCounterText.text = "Truth: 0/11\nMike: 0/7";
             }
         }
 

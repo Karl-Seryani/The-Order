@@ -4,7 +4,7 @@ namespace TheOrder
 {
     /// <summary>
     /// ScriptableObject defining a single clue's data.
-    /// 17 instances total across 2 categories: Truth (11), Mike (6).
+    /// 18 instances total across 2 categories: Truth (11), Mike (7).
     /// </summary>
     [CreateAssetMenu(fileName = "NewClue", menuName = "The Order/Clue Data")]
     public class ClueData : ScriptableObject

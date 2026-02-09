@@ -487,8 +487,8 @@ namespace TheOrder.Hunter
             // Sound detection
             float distanceToPlayer = Vector3.Distance(transform.position, position);
 
-            // Sprint footsteps heard within 6m
-            if (speed > 4.0f)
+            // Sprint footsteps heard within configured radius
+            if (speed > _config.SprintSpeedThreshold)
             {
                 if (distanceToPlayer <= _config.SprintHearingRadius)
                 {

@@ -33,7 +33,6 @@ namespace TheOrder.Player
         private float _idleTimer;
         private float _postChaseTimer;
         private BreathState _state = BreathState.Moving;
-        private bool _inChase;
         private float _currentSpeed;
         private bool _hasMovedOnce;
 
@@ -68,7 +67,6 @@ namespace TheOrder.Player
         private void OnEnable()
         {
             GameEvents.OnPlayerMoved += HandlePlayerMoved;
-            GameEvents.OnHunterStateChanged += HandleHunterStateChanged;
             GameEvents.OnPlayerDetected += HandlePlayerDetected;
             GameEvents.OnPlayerLost += HandlePlayerLost;
         }
@@ -76,7 +74,6 @@ namespace TheOrder.Player
         private void OnDisable()
         {
             GameEvents.OnPlayerMoved -= HandlePlayerMoved;
-            GameEvents.OnHunterStateChanged -= HandleHunterStateChanged;
             GameEvents.OnPlayerDetected -= HandlePlayerDetected;
             GameEvents.OnPlayerLost -= HandlePlayerLost;
         }
@@ -239,11 +236,6 @@ namespace TheOrder.Player
             {
                 _hasMovedOnce = true;
             }
-        }
-
-        private void HandleHunterStateChanged(HunterState newState)
-        {
-            _inChase = newState == HunterState.Chase;
         }
 
         private void HandlePlayerDetected()

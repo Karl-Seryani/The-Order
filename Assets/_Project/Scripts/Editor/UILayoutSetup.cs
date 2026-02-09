@@ -74,7 +74,7 @@ namespace TheOrder.Editor
                     text.color = new Color(0.6f, 0.6f, 0.6f, 1f);
                     text.alignment = TextAnchor.UpperLeft;
                     text.lineSpacing = 1.1f;
-                    text.text = "Truth: 0/11\nMike: 0/6";
+                    text.text = "Truth: 0/11\nMike: 0/7";
                 }
             }
 

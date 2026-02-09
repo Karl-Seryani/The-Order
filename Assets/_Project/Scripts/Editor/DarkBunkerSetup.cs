@@ -81,7 +81,15 @@ namespace TheOrder.Editor
                 }
             }
 
-            Debug.Log($"[DarkBunker] Re-enabled {enabledCount} lights.");
+            // Restore ambient lighting for editor visibility
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.4f, 0.4f, 0.45f, 1f);
+            RenderSettings.reflectionIntensity = 1f;
+
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+                UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+
+            Debug.Log($"[DarkBunker] Re-enabled {enabledCount} lights. Ambient restored for editor.");
         }
     }
 }

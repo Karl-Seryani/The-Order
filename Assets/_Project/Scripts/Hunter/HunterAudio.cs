@@ -11,6 +11,9 @@ namespace TheOrder.Hunter
     {
         #region Serialized Fields
 
+        [Header("Configuration")]
+        [SerializeField] private HunterConfig _config;
+
         [Header("Footstep Clips")]
         [SerializeField] private AudioClip[] _walkFootsteps;
         [SerializeField] private AudioClip[] _runFootsteps;
@@ -71,15 +74,16 @@ namespace TheOrder.Hunter
                 return;
             }
 
-            // Determine interval based on speed
-            float interval = speed >= 4f ? _runStepInterval : _walkStepInterval;
+            // Determine interval based on speed — threshold from config
+            float sprintThreshold = _config != null ? _config.SprintSpeedThreshold : 4f;
+            float interval = speed >= sprintThreshold ? _runStepInterval : _walkStepInterval;
 
             _footstepTimer += Time.deltaTime;
 
             if (_footstepTimer >= interval)
             {
                 _footstepTimer = 0f;
-                PlayFootstep(speed >= 4f);
+                PlayFootstep(speed >= sprintThreshold);
             }
         }
 

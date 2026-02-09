@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TheOrder.Core
+namespace TheOrder
 {
     /// <summary>
     /// Bootstrap script for the Bunker scene.

@@ -14,6 +14,16 @@ The player (John) is trapped in an underground bunker, hunted by his brother Mik
 
 ---
 
+## Working Style
+
+Do NOT write or scaffold code unless explicitly asked. Default to planning, discussing, and explaining first. Wait for an explicit go-ahead before generating any implementation.
+
+When fixing bugs: STOP after 2 failed fix attempts and re-analyze the root cause from scratch instead of iterating on symptoms. Ask what is actually being observed in the editor before trying another code-level fix. Prefer simple, minimal changes over refactors. Change only ONE thing at a time.
+
+When teaching or learning (crypto, Django, PortSwigger labs, etc.): guide through concepts and let the user write the code. Do not implement solutions. Ask what the next step should be before showing it.
+
+---
+
 ## Architecture Rules
 
 1. **Event Bus Communication** — ALL system-to-system communication goes through `GameEvents.cs`. No system may hold a direct reference to another system. Systems subscribe to events and publish events. This is non-negotiable.

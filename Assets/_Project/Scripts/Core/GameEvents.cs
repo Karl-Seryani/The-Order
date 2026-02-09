@@ -99,18 +99,6 @@ namespace TheOrder
         public static event Action<Vector3> OnDoorClosed;
         public static void DoorClosed(Vector3 position) => OnDoorClosed?.Invoke(position);
 
-        /// <summary>Fired when the player enters a hiding spot.</summary>
-        public static event Action OnPlayerHid;
-        public static void PlayerHid() => OnPlayerHid?.Invoke();
-
-        /// <summary>Fired when the player exits a hiding spot.</summary>
-        public static event Action OnPlayerExitedHiding;
-        public static void PlayerExitedHiding() => OnPlayerExitedHiding?.Invoke();
-
-        /// <summary>Fired when the player fails the breath-hold QTE while hiding.</summary>
-        public static event Action OnBreathHoldFailed;
-        public static void BreathHoldFailed() => OnBreathHoldFailed?.Invoke();
-
         #endregion
 
         #region UI

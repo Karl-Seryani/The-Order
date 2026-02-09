@@ -13,8 +13,7 @@ namespace TheOrder
     {
         Patrol,
         Investigate,
-        Chase,
-        Search
+        Chase
     }
 
     public enum ClueCategory
