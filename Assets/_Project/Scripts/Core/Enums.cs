@@ -60,10 +60,4 @@ namespace TheOrder
         SafeRoom
     }
 
-    public enum FloorLevel
-    {
-        Ground,
-        Upper,
-        Basement
-    }
 }

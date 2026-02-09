@@ -24,9 +24,6 @@ namespace TheOrder.Player
         /// <summary>True on the frame the interact button is pressed.</summary>
         public bool InteractPressed { get; private set; }
 
-        /// <summary>True while the interact button is held down.</summary>
-        public bool InteractHeld { get; private set; }
-
         /// <summary>True on the frame the flashlight button is pressed.</summary>
         public bool FlashlightPressed { get; private set; }
 
@@ -87,7 +84,6 @@ namespace TheOrder.Player
             LookInput = _lookAction.ReadValue<Vector2>();
             SprintHeld = _sprintAction.IsPressed();
             InteractPressed = _interactAction.WasPressedThisFrame();
-            InteractHeld = _interactAction.IsPressed();
             FlashlightPressed = _flashlightAction.WasPressedThisFrame();
             PausePressed = _pauseAction.WasPressedThisFrame();
             JournalPressed = _journalAction.WasPressedThisFrame();

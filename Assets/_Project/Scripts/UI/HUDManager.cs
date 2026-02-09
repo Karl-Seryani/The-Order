@@ -45,6 +45,7 @@ namespace TheOrder.UI
         private Coroutine _notificationCoroutine;
         private Coroutine _objectiveCoroutine;
         private string _currentObjective = "Explore the bunker for clues or exit";
+        private bool _hasSearchedForReferences;
 
         #endregion
 
@@ -118,10 +119,11 @@ namespace TheOrder.UI
         {
             UpdateInteractionPrompt();
 
-            // Tab or Escape toggles pause
-            if (_input == null)
+            // Search for input handler once if not found in Start()
+            if (_input == null && !_hasSearchedForReferences)
             {
                 _input = FindFirstObjectByType<Player.PlayerInputHandler>();
+                _hasSearchedForReferences = true;
             }
 
             if (_input != null && (_input.JournalPressed || _input.PausePressed))
@@ -148,6 +150,7 @@ namespace TheOrder.UI
 
             if (_playerInteraction == null)
             {
+                if (_hasSearchedForReferences) return;
                 _playerInteraction = FindFirstObjectByType<Player.PlayerInteraction>();
                 if (_playerInteraction == null) return;
             }

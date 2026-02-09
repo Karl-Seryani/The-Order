@@ -77,6 +77,7 @@ namespace TheOrder.Hunter
 
         public void Exit()
         {
+            _ai.SetLooking(false);
             // Save where we were patrolling so we can return after investigate/chase
             _ai.SavePatrolPosition(_currentWaypointIndex);
         }

@@ -26,9 +26,6 @@ namespace TheOrder
         [SerializeField] private float _doorOpenHearingRadius = 15f;
         [SerializeField] private float _sprintSpeedThreshold = 4.0f;
 
-        [Header("Detection — Proximity")]
-        [SerializeField] private float _proximityDetectionRange = 2f;
-
         [Header("Patrol")]
         [SerializeField] private float _waypointIdleMin = 2f;
         [SerializeField] private float _waypointIdleMax = 5f;
@@ -58,9 +55,6 @@ namespace TheOrder
         public float WalkHearingRadius => _walkHearingRadius;
         public float DoorOpenHearingRadius => _doorOpenHearingRadius;
         public float SprintSpeedThreshold => _sprintSpeedThreshold;
-
-        // Proximity
-        public float ProximityDetectionRange => _proximityDetectionRange;
 
         // Patrol
         public float WaypointIdleMin => _waypointIdleMin;

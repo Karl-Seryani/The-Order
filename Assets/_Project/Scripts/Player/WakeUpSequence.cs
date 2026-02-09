@@ -6,7 +6,7 @@ namespace TheOrder.Player
     /// <summary>
     /// First-person wake-up cinematic. Camera starts tilted sideways (lying on bed),
     /// blinks open three times while rising to upright, then grants player control.
-    /// Follows the same coroutine pattern as PrologueManager.
+    /// Uses coroutine-based camera animation sequence.
     /// </summary>
     public class WakeUpSequence : MonoBehaviour
     {

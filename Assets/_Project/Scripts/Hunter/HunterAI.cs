@@ -56,8 +56,9 @@ namespace TheOrder.Hunter
         private Vector3 _lastPatrolPosition;
         private int _lastPatrolWaypointIndex;
 
-        // Debug
+#if UNITY_EDITOR
         private float _debugTimer;
+#endif
 
         // Paused state
         private bool _isPaused;
@@ -160,14 +161,14 @@ namespace TheOrder.Hunter
             if (_config == null)
             {
                 Debug.LogError("[HunterAI] No HunterConfig assigned!", this);
-                enabled = false;
+                _isPaused = true;
                 return;
             }
 
             if (_patrolWaypoints == null || _patrolWaypoints.Length == 0)
             {
                 Debug.LogError("[HunterAI] No patrol waypoints assigned!", this);
-                enabled = false;
+                _isPaused = true;
                 return;
             }
 
@@ -188,6 +189,7 @@ namespace TheOrder.Hunter
             _stateMachine.Update();
             UpdateAnimator();
 
+#if UNITY_EDITOR
             // Debug: periodic state info
             _debugTimer -= Time.deltaTime;
             if (_debugTimer <= 0f)
@@ -199,6 +201,7 @@ namespace TheOrder.Hunter
                           $"onNavMesh={_agent.isOnNavMesh}, " +
                           $"canSee={(_hasPlayerPosition ? CanSeePlayer().ToString() : "no_pos")}");
             }
+#endif
         }
 
         #endregion

@@ -4,7 +4,7 @@ namespace TheOrder
 {
     /// <summary>
     /// Interface for all interactable objects in the game.
-    /// Implemented by: CluePickup, DoorController, HidingSpot, CameraTerminal.
+    /// Implemented by: CluePickup, DoorController, LockedDoor, SlidableFurniture, KeyPickup.
     /// </summary>
     public interface IInteractable
     {

@@ -93,14 +93,11 @@ Assets/
       Audio/           # AudioConfig, AmbientAudioManager
       Doors/           # DoorController, LockedDoor, KeySystem
       Camera/          # CameraController, HeadBob, CameraShake
-      Prologue/        # PrologueManager, PrologueSequence
       Core/            # GameManager, GameEvents, GameState, IInteractable
       Editor/          # Setup utilities, DarkBunkerSetup, FixAnimationImport
     Scenes/
       MainMenu/
-      Prologue/
       Bunker/
-      Ending/
     Prefabs/
       Player/
       Hunter/
@@ -115,25 +112,13 @@ Assets/
     Audio/
     Materials/
     Animations/
-    Tests/
-      EditMode/
-      PlayMode/
 ```
 
 ---
 
 ## Testing
 
-### Philosophy
-
-- Test every logic system: sanity math, ending determination, detection math, stamina drain, clue collection logic.
-- **EditMode tests** for pure logic that does not require a running scene (math calculations, state transitions, data validation).
-- **PlayMode tests** for integration scenarios that need MonoBehaviour lifecycle (interaction raycasts, scene loading, event bus integration).
-
-### Assembly Definitions
-
-- `TheOrder.Tests.EditMode` — references the main assembly, runs in Edit Mode.
-- `TheOrder.Tests.PlayMode` — references the main assembly, runs in Play Mode.
+Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTests, detection tests, state machine tests) but have been removed from the project. If tests are re-added in the future, follow these conventions:
 
 ### Test Naming
 
@@ -241,7 +226,7 @@ Assets/
 
 ### MainMenuUI
 - `MainMenuUI.cs` — sets `GameState.MainMenu` in `Start()`.
-- Play button → `GameManager.Instance.LoadScene("Prologue")`.
+- Play button → `GameManager.Instance.LoadScene("Bunker")`.
 - Tutorial button → shows `TutorialUI` panel (3-section tabbed: Controls, Survival Tips, Clues & Endings).
 - Quit button → `Application.Quit()`.
 - Public `ShowMainMenu()` for tutorial back button.
@@ -302,9 +287,9 @@ Assets/
 - [x] `IInteractable.cs` — interaction interface
 - [x] `Enums.cs` — all game enums (ClueCategory: Truth, Mike)
 - [x] `ClueData.cs`, `EndingData.cs`, `HunterConfig.cs` — ScriptableObject data
-- [x] `PrologueManager.cs` — prologue system
+- [x] ~~`PrologueManager.cs`~~ — removed (Prologue is now a GameState during wake-up, not a separate scene)
 - [x] `InputSystem_Actions.inputactions` — input bindings (WASD, mouse, gamepad)
-- [x] Test infrastructure (EditMode + PlayMode asmdefs)
+- [ ] ~~Test infrastructure (EditMode + PlayMode asmdefs)~~ — removed
 - [x] `PlayerInputHandler.cs` — input caching, pause disable
 - [x] `PlayerStamina.cs` — drain/regen math, sprint gating
 - [x] `PlayerController.cs` — CharacterController movement, walk + sprint only, always fires PlayerMoved
@@ -314,7 +299,7 @@ Assets/
 - [x] `FirstPersonCamera.cs` — manual mouse look (pitch/yaw)
 - [x] `BunkerSceneBootstrap.cs` — sets GameState.Playing
 - [x] Bunker scene (Asylum prefab, dark lighting, URP volume, player hierarchy, 18 clue pickups)
-- [x] `PlayerStaminaTests.cs` — EditMode tests for stamina math
+- [ ] ~~`PlayerStaminaTests.cs`~~ — removed
 - [x] `ClueManager.cs` — tracks collected clues, knowledge levels per category
 - [x] `CluePickup.cs` — two-state interaction (read → collect)
 - [x] `HUDManager.cs` — interaction prompt, clue notification, clue reading panel, objective fade, per-category counter
@@ -337,7 +322,7 @@ Assets/
 - [x] Dark bunker (80 lights disabled, ambient near-black, flashlight only)
 - [x] `DarkBunkerSetup.cs` — editor tool for light management
 - [x] Mixamo FBX clips reimported as Humanoid, stripped keepOriginalPositionY
-- [x] 57 EditMode tests passing (21 detection + 8 state machine + 28 existing)
+- [ ] ~~57 EditMode tests~~ — removed
 - [x] Flashlight cone detection — `IsFlashlightHittingTarget()` with 60° cone, 8x range multiplier
 - [x] PlayerController reports intended speed (not CharacterController.velocity) for reliable detection
 - [x] Sound registration works in Patrol AND Investigate states
@@ -352,7 +337,7 @@ Assets/
 - [x] `HUDManager.cs` — suppresses objective display during wake-up
 - [x] MainMenu scene with full UI (created via `SetupMainMenuScene.cs` editor utility)
 - [x] WakeUpCanvas + WakeUpSequence in Bunker scene (created via `SetupWakeUpSequence.cs`)
-- [x] Build settings: MainMenu=0, Prologue=1, Bunker=2
+- [x] Build settings: MainMenu=0, Bunker=1
 - [x] `SlidableFurniture.cs` — toggle-E slide for drawers/cabinet doors (coroutine animation)
 - [x] `FlickeringLight.cs` — random burst flicker for atmosphere lights
 - [x] `SetupInteractiveFurniture.cs` — editor tool for batch furniture setup

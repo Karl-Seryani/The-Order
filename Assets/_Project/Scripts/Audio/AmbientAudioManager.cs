@@ -22,7 +22,7 @@ namespace TheOrder.Audio
 
         private float _footstepTimer;
         private float _lastMoveTime;
-        private bool _isMoving;
+
         private float _lastNoiseTime;
 
         #endregion
@@ -66,7 +66,6 @@ namespace TheOrder.Audio
             // Reset movement tracking if no move event received recently
             if (Time.time - _lastMoveTime > 0.2f)
             {
-                _isMoving = false;
                 _footstepTimer = 0f;
             }
 
@@ -103,12 +102,10 @@ namespace TheOrder.Audio
             // No footsteps when stationary
             if (speed < 0.1f)
             {
-                _isMoving = false;
                 _footstepTimer = 0f;
                 return;
             }
 
-            _isMoving = true;
             _lastMoveTime = Time.time;
 
             // Determine footstep interval based on speed

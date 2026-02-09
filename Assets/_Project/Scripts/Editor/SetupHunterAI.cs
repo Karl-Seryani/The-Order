@@ -6,7 +6,7 @@ namespace TheOrder.Editor
 {
     public static class SetupHunterAI
     {
-        [MenuItem("Tools/Setup Hunter AI References")]
+        [MenuItem("Tools/The Order/Setup Hunter AI References")]
         public static void Setup()
         {
             GameObject hunter = GameObject.Find("Hunter");

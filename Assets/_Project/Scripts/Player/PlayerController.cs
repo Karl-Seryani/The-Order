@@ -26,7 +26,6 @@ namespace TheOrder.Player
         private PlayerInputHandler _input;
         private PlayerStamina _stamina;
         private Vector3 _velocity;
-        private bool _wasSprinting;
 
         #endregion
 
@@ -95,12 +94,6 @@ namespace TheOrder.Player
             GameEvents.PlayerMoved(transform.position, reportedSpeed);
             GameEvents.PlayerFacingChanged(transform.forward);
 
-            // Sprint started event
-            if (_stamina.IsSprinting && !_wasSprinting)
-            {
-                GameEvents.PlayerSprinted();
-            }
-            _wasSprinting = _stamina.IsSprinting;
         }
 
         #endregion

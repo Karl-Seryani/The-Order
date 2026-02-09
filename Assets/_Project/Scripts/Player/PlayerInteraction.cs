@@ -63,7 +63,6 @@ namespace TheOrder.Player
             if (_input.InteractPressed && _currentTarget != null)
             {
                 _currentTarget.Interact(gameObject);
-                GameEvents.Interaction(_currentTarget);
             }
         }
 

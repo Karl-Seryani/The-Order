@@ -41,8 +41,9 @@ namespace TheOrder.Editor
                     }
                 }
 
-                // Disable this light
-                Undo.RecordObject(light.gameObject, "Disable Scene Light");
+                // Disable shadows and light
+                Undo.RecordObject(light, "Disable Scene Light");
+                light.shadows = LightShadows.None;
                 light.enabled = false;
                 disabledCount++;
                 Debug.Log($"[DarkBunker] Disabled: {light.gameObject.name} ({light.type})");
@@ -63,6 +64,29 @@ namespace TheOrder.Editor
 
             Debug.Log($"[DarkBunker] Setup complete. Disabled {disabledCount} lights. Ambient set to near-black.");
             Debug.Log("[DarkBunker] Remember to boost the player flashlight intensity if needed.");
+        }
+
+        [MenuItem("Tools/The Order/Disable All Light Shadows")]
+        public static void DisableAllShadows()
+        {
+            Light[] allLights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+            int count = 0;
+
+            foreach (Light light in allLights)
+            {
+                if (light.shadows != LightShadows.None)
+                {
+                    Undo.RecordObject(light, "Disable Shadow");
+                    light.shadows = LightShadows.None;
+                    EditorUtility.SetDirty(light);
+                    count++;
+                }
+            }
+
+            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+                UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+
+            Debug.Log($"[DarkBunker] Disabled shadows on {count} lights.");
         }
 
         [MenuItem("Tools/The Order/Re-enable All Scene Lights")]

@@ -31,6 +31,7 @@ namespace TheOrder
                 if (light.GetComponent<FlickeringLight>() != null)
                     continue;
 
+                light.shadows = LightShadows.None;
                 light.enabled = false;
                 count++;
             }
