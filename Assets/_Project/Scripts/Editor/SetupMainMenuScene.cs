@@ -307,11 +307,10 @@ namespace TheOrder.Editor
             var scenes = new List<EditorBuildSettingsScene>
             {
                 new EditorBuildSettingsScene("Assets/_Project/Scenes/MainMenu/MainMenu.unity", true),
-                new EditorBuildSettingsScene("Assets/_Project/Scenes/Prologue/Prologue.unity", true),
                 new EditorBuildSettingsScene("Assets/_Project/Scenes/Bunker/Bunker.unity", true)
             };
             EditorBuildSettings.scenes = scenes.ToArray();
-            Debug.Log("[SetupMainMenu] Build settings: MainMenu=0, Prologue=1, Bunker=2");
+            Debug.Log("[SetupMainMenu] Build settings: MainMenu=0, Bunker=1");
         }
 
         #endregion

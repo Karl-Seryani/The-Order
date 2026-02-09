@@ -21,7 +21,7 @@ namespace TheOrder.UI
         [SerializeField] private Button _quitButton;
 
         [Header("Scene")]
-        [SerializeField] private string _prologueSceneName = "Prologue";
+        [SerializeField] private string _gameSceneName = "Bunker";
 
         #endregion
 
@@ -68,7 +68,7 @@ namespace TheOrder.UI
         private void OnPlayClicked()
         {
             if (GameManager.Instance != null)
-                GameManager.Instance.LoadScene(_prologueSceneName);
+                GameManager.Instance.LoadScene(_gameSceneName);
         }
 
         private void OnTutorialClicked()
