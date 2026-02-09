@@ -59,6 +59,52 @@ namespace TheOrder.Audio
 
         #endregion
 
+        #region Stingers
+
+        [Header("Wake-Up Stinger")]
+        [SerializeField] private AudioClip _wakeUpStingerClip;
+        [SerializeField] [Range(0f, 1f)] private float _wakeUpStingerVolume = 0.5f;
+        [SerializeField] private float _wakeUpStingerDuration = 10f;
+
+        [Header("Chase Music")]
+        [SerializeField] private AudioClip _chaseMusicClip;
+        [SerializeField] [Range(0f, 1f)] private float _chaseMusicVolume = 0.4f;
+
+        [Header("Second Key Stinger")]
+        [SerializeField] private AudioClip _secondKeyStingerClip;
+        [SerializeField] [Range(0f, 1f)] private float _secondKeyStingerVolume = 0.5f;
+        [SerializeField] private float _secondKeyStingerDuration = 10f;
+
+        [Header("Random Stinger")]
+        [SerializeField] private AudioClip _randomStingerClip;
+        [SerializeField] [Range(0f, 1f)] private float _randomStingerVolume = 0.4f;
+        [SerializeField] private float _randomStingerDuration = 5f;
+        [SerializeField] private float _randomStingerMinInterval = 60f;
+        [SerializeField] private float _randomStingerMaxInterval = 60f;
+
+        /// <summary>Clip played during wake-up sequence.</summary>
+        public AudioClip WakeUpStingerClip => _wakeUpStingerClip;
+        public float WakeUpStingerVolume => _wakeUpStingerVolume;
+        public float WakeUpStingerDuration => _wakeUpStingerDuration;
+
+        /// <summary>Music that loops during Hunter chase.</summary>
+        public AudioClip ChaseMusicClip => _chaseMusicClip;
+        public float ChaseMusicVolume => _chaseMusicVolume;
+
+        /// <summary>Clip played when the second key is collected.</summary>
+        public AudioClip SecondKeyStingerClip => _secondKeyStingerClip;
+        public float SecondKeyStingerVolume => _secondKeyStingerVolume;
+        public float SecondKeyStingerDuration => _secondKeyStingerDuration;
+
+        /// <summary>Clip played at random intervals.</summary>
+        public AudioClip RandomStingerClip => _randomStingerClip;
+        public float RandomStingerVolume => _randomStingerVolume;
+        public float RandomStingerDuration => _randomStingerDuration;
+        public float RandomStingerMinInterval => _randomStingerMinInterval;
+        public float RandomStingerMaxInterval => _randomStingerMaxInterval;
+
+        #endregion
+
         #region Footsteps
 
         [Header("Footsteps")]

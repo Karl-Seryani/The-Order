@@ -33,6 +33,18 @@ namespace TheOrder
 
         #endregion
 
+        #region Wake-Up
+
+        /// <summary>Fired when the wake-up blink sequence starts. Systems should disable input/HUD/Hunter.</summary>
+        public static event Action OnWakeUpStarted;
+        public static void WakeUpStarted() => OnWakeUpStarted?.Invoke();
+
+        /// <summary>Fired when the wake-up blink sequence completes. Systems should re-enable.</summary>
+        public static event Action OnWakeUpCompleted;
+        public static void WakeUpCompleted() => OnWakeUpCompleted?.Invoke();
+
+        #endregion
+
         #region Hunter
 
         /// <summary>Fired when Mike's FSM transitions to a new state.</summary>

@@ -103,6 +103,8 @@ namespace TheOrder.UI
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
             GameEvents.OnKeyCollected += HandleKeyCollected;
             GameEvents.OnLockedDoorAttempt += HandleLockedDoorAttempt;
+            GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
+            GameEvents.OnWakeUpCompleted += HandleWakeUpCompleted;
         }
 
         private void OnDisable()
@@ -113,6 +115,8 @@ namespace TheOrder.UI
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
             GameEvents.OnKeyCollected -= HandleKeyCollected;
             GameEvents.OnLockedDoorAttempt -= HandleLockedDoorAttempt;
+            GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
+            GameEvents.OnWakeUpCompleted -= HandleWakeUpCompleted;
         }
 
         private void Update()
@@ -354,6 +358,11 @@ namespace TheOrder.UI
             bool visible = newState == GameState.Playing;
             if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(visible);
             if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(visible);
+
+            if (newState == GameState.Playing)
+            {
+                UpdateClueCounter();
+            }
         }
 
         private void HandleKeyCollected(Doors.KeyData key)
@@ -362,6 +371,19 @@ namespace TheOrder.UI
             {
                 ShowClueNotification($"{key.DisplayName} acquired");
             }
+        }
+
+        private void HandleWakeUpStarted()
+        {
+            if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(false);
+            if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
+        }
+
+        private void HandleWakeUpCompleted()
+        {
+            if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(true);
+            if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
+            UpdateClueCounter();
         }
 
         private void HandleLockedDoorAttempt(Doors.KeyData requiredKey)

@@ -67,6 +67,8 @@ namespace TheOrder.Player
         private void OnEnable()
         {
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
+            GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
+            GameEvents.OnWakeUpCompleted += HandleWakeUpCompleted;
             if (GameManager.Instance != null)
             {
                 HandleGameStateChanged(GameManager.Instance.CurrentState);
@@ -76,6 +78,8 @@ namespace TheOrder.Player
         private void OnDisable()
         {
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
+            GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
+            GameEvents.OnWakeUpCompleted -= HandleWakeUpCompleted;
         }
 
         private void Update()
@@ -106,12 +110,21 @@ namespace TheOrder.Player
                     _pauseAction.Enable();
                     _journalAction.Enable();
                     break;
-                case GameState.Prologue:
                 case GameState.MainMenu:
                 case GameState.Ending:
                     _playerInput.actions.FindActionMap("Player").Disable();
                     break;
             }
+        }
+
+        private void HandleWakeUpStarted()
+        {
+            _playerInput.actions.FindActionMap("Player").Disable();
+        }
+
+        private void HandleWakeUpCompleted()
+        {
+            _playerInput.actions.FindActionMap("Player").Enable();
         }
 
         #endregion

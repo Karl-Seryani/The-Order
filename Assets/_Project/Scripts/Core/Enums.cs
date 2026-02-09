@@ -3,7 +3,6 @@ namespace TheOrder
     public enum GameState
     {
         MainMenu,
-        Prologue,
         Playing,
         Paused,
         Ending

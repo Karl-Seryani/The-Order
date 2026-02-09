@@ -49,6 +49,7 @@ namespace TheOrder.Player
             if (_playerCamera != null)
                 _firstPersonCamera = _playerCamera.GetComponent<PlayerCamera.FirstPersonCamera>();
 
+            GameEvents.WakeUpStarted();
             StartCoroutine(PlayWakeUpSequence());
         }
 
@@ -109,10 +110,9 @@ namespace TheOrder.Player
             if (_firstPersonCamera != null)
                 _firstPersonCamera.IsEnabled = true;
 
-            // Transition to gameplay
+            // Signal wake-up complete — Playing state already set by BunkerSceneBootstrap
             _sequenceComplete = true;
-            if (GameManager.Instance != null)
-                GameManager.Instance.SetState(GameState.Playing);
+            GameEvents.WakeUpCompleted();
         }
 
         #endregion

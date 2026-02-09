@@ -146,7 +146,7 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 
 ### GameManager
 - Singleton pattern (manual, not base class).
-- Manages game state FSM: `MainMenu`, `Prologue`, `Playing`, `Paused`, `Ending`.
+- Manages game state FSM: `MainMenu`, `Playing`, `Paused`, `Ending`.
 - Handles scene loading/unloading transitions.
 - Persists across scenes via `DontDestroyOnLoad`.
 - `SetState()` has a same-state guard — always go through GameManager, never fire `GameEvents.GameStateChanged` directly.
@@ -244,9 +244,10 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - 3 blinks: Z-roll lerps 90°→60°→30°→0° with overlay fades simulating eye blinks.
 - Final rise uses smoothstep easing for natural motion.
 - Disables `FirstPersonCamera.IsEnabled` during sequence to prevent mouse look overriding Z-roll.
-- `BunkerSceneBootstrap` sets `GameState.Prologue` first, then calls `WakeUpSequence.Begin()`.
-- On completion: sets `GameState.Playing` → input enables, HUD appears, Hunter starts patrol.
-- Replays on death + scene reload (wake-up is part of scene lifecycle).
+- `BunkerSceneBootstrap` sets `GameState.Playing`, then calls `WakeUpSequence.Begin()`.
+- `WakeUpSequence.Begin()` fires `GameEvents.WakeUpStarted()` → input/HUD/Hunter disabled.
+- On completion: fires `GameEvents.WakeUpCompleted()` → input enables, HUD appears, Hunter starts patrol.
+- Skipped on respawn (death reload) via `SkipWakeUpSequence` flag.
 
 ### InteractionSystem
 - Raycasts from camera center with configurable range.
@@ -287,7 +288,7 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - [x] `IInteractable.cs` — interaction interface
 - [x] `Enums.cs` — all game enums (ClueCategory: Truth, Mike)
 - [x] `ClueData.cs`, `EndingData.cs`, `HunterConfig.cs` — ScriptableObject data
-- [x] ~~`PrologueManager.cs`~~ — removed (Prologue is now a GameState during wake-up, not a separate scene)
+- [x] ~~`PrologueManager.cs`~~ — removed (wake-up uses `WakeUpStarted`/`WakeUpCompleted` events, not a separate state)
 - [x] `InputSystem_Actions.inputactions` — input bindings (WASD, mouse, gamepad)
 - [ ] ~~Test infrastructure (EditMode + PlayMode asmdefs)~~ — removed
 - [x] `PlayerInputHandler.cs` — input caching, pause disable
@@ -332,7 +333,7 @@ Tests were previously implemented (EditMode + PlayMode asmdefs, PlayerStaminaTes
 - [x] `TutorialUI.cs` — 3-section tabbed tutorial (Controls, Survival Tips, Clues & Endings)
 - [x] `WakeUpSequence.cs` — first-person wake-up with camera blink + rise from bed
 - [x] `FirstPersonCamera.cs` — `IsEnabled` property for cutscene camera control
-- [x] `PlayerInputHandler.cs` — handles Prologue/MainMenu/Ending states (disables input)
+- [x] `PlayerInputHandler.cs` — handles MainMenu/Ending states + WakeUp events (disables input)
 - [x] `BunkerSceneBootstrap.cs` — triggers wake-up sequence before gameplay
 - [x] `HUDManager.cs` — suppresses objective display during wake-up
 - [x] MainMenu scene with full UI (created via `SetupMainMenuScene.cs` editor utility)

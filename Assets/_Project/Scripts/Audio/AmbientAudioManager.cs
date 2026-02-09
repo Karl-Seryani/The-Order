@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace TheOrder.Audio
@@ -15,6 +16,7 @@ namespace TheOrder.Audio
         [SerializeField] private AudioSource _ambientSource;
         [SerializeField] private AudioSource _sfxSource;
         [SerializeField] private AudioSource _interactionSource;
+        [SerializeField] private AudioSource _stingerSource;
 
         #endregion
 
@@ -24,6 +26,10 @@ namespace TheOrder.Audio
         private float _lastMoveTime;
 
         private float _lastNoiseTime;
+
+        private float _randomStingerTimer;
+        private bool _isPlaying;
+        private Coroutine _activeStingerCoroutine;
 
         #endregion
 
@@ -50,6 +56,9 @@ namespace TheOrder.Audio
             GameEvents.OnPlayerMoved += HandlePlayerMoved;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
             GameEvents.OnInteractableNoise += HandleInteractableNoise;
+            GameEvents.OnHunterStateChanged += HandleHunterStateChanged;
+            GameEvents.OnKeyCollected += HandleKeyCollected;
+            GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
         }
 
         private void OnDisable()
@@ -59,6 +68,9 @@ namespace TheOrder.Audio
             GameEvents.OnPlayerMoved -= HandlePlayerMoved;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
             GameEvents.OnInteractableNoise -= HandleInteractableNoise;
+            GameEvents.OnHunterStateChanged -= HandleHunterStateChanged;
+            GameEvents.OnKeyCollected -= HandleKeyCollected;
+            GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
         }
 
         private void Update()
@@ -74,6 +86,18 @@ namespace TheOrder.Audio
                 && Time.time - _lastNoiseTime > 0.2f)
             {
                 _interactionSource.Stop();
+            }
+
+            // Random stinger timer
+            if (_isPlaying && _config != null && _config.RandomStingerClip != null)
+            {
+                _randomStingerTimer -= Time.deltaTime;
+                if (_randomStingerTimer <= 0f)
+                {
+                    PlayTimedStinger(_config.RandomStingerClip, _config.RandomStingerVolume,
+                        _config.RandomStingerDuration);
+                    ResetRandomStingerTimer();
+                }
             }
         }
 
@@ -153,10 +177,60 @@ namespace TheOrder.Audio
             {
                 case GameState.Playing:
                     _ambientSource.UnPause();
+                    _isPlaying = true;
+                    ResetRandomStingerTimer();
                     break;
                 case GameState.Paused:
                     _ambientSource.Pause();
+                    _isPlaying = false;
                     break;
+            }
+        }
+
+        private void HandleWakeUpStarted()
+        {
+            if (_config != null && _config.WakeUpStingerClip != null)
+            {
+                PlayTimedStinger(_config.WakeUpStingerClip, _config.WakeUpStingerVolume,
+                    _config.WakeUpStingerDuration);
+            }
+        }
+
+        private void HandleHunterStateChanged(HunterState newState)
+        {
+            if (_config == null || _stingerSource == null || _config.ChaseMusicClip == null) return;
+
+            if (newState == HunterState.Chase)
+            {
+                // Stop any one-shot stinger so chase music takes over
+                StopActiveStinger();
+                _stingerSource.clip = _config.ChaseMusicClip;
+                _stingerSource.volume = _config.ChaseMusicVolume;
+                _stingerSource.loop = true;
+                _stingerSource.Play();
+            }
+            else
+            {
+                // Stop chase music when leaving Chase state
+                if (_stingerSource.isPlaying && _stingerSource.clip == _config.ChaseMusicClip)
+                {
+                    _stingerSource.Stop();
+                    _stingerSource.loop = false;
+                }
+            }
+        }
+
+        private void HandleKeyCollected(Doors.KeyData key)
+        {
+            if (_config == null || _config.SecondKeyStingerClip == null) return;
+
+            // Play stinger when the second key is collected
+            // Check == 1 because this handler fires before PlayerInventory increments
+            if (Player.PlayerInventory.Instance != null
+                && Player.PlayerInventory.Instance.KeyCount == 1)
+            {
+                PlayTimedStinger(_config.SecondKeyStingerClip, _config.SecondKeyStingerVolume,
+                    _config.SecondKeyStingerDuration);
             }
         }
 
@@ -180,6 +254,68 @@ namespace TheOrder.Audio
         {
             if (clip == null) return;
             AudioSource.PlayClipAtPoint(clip, position, volume);
+        }
+
+        #endregion
+
+        #region Stinger Playback
+
+        private void PlayTimedStinger(AudioClip clip, float volume, float duration)
+        {
+            if (_stingerSource == null || clip == null) return;
+
+            // Don't interrupt chase music
+            if (_stingerSource.isPlaying && _stingerSource.loop) return;
+
+            StopActiveStinger();
+            _stingerSource.clip = clip;
+            _stingerSource.volume = volume;
+            _stingerSource.loop = false;
+            _stingerSource.Play();
+            _activeStingerCoroutine = StartCoroutine(StopAfterDuration(duration));
+        }
+
+        private IEnumerator StopAfterDuration(float duration)
+        {
+            float fadeDuration = 0.5f;
+            yield return new WaitForSeconds(duration - fadeDuration);
+
+            // Fade out to avoid hard cut
+            if (_stingerSource != null && _stingerSource.isPlaying && !_stingerSource.loop)
+            {
+                float startVolume = _stingerSource.volume;
+                float elapsed = 0f;
+                while (elapsed < fadeDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    _stingerSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / fadeDuration);
+                    yield return null;
+                }
+                _stingerSource.Stop();
+                _stingerSource.volume = startVolume;
+            }
+            _activeStingerCoroutine = null;
+        }
+
+        private void StopActiveStinger()
+        {
+            if (_activeStingerCoroutine != null)
+            {
+                StopCoroutine(_activeStingerCoroutine);
+                _activeStingerCoroutine = null;
+            }
+            if (_stingerSource != null && _stingerSource.isPlaying)
+            {
+                _stingerSource.Stop();
+                _stingerSource.loop = false;
+            }
+        }
+
+        private void ResetRandomStingerTimer()
+        {
+            if (_config == null) return;
+            _randomStingerTimer = Random.Range(_config.RandomStingerMinInterval,
+                _config.RandomStingerMaxInterval);
         }
 
         #endregion

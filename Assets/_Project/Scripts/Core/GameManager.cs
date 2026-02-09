@@ -66,11 +66,6 @@ namespace TheOrder
                     SetCursorLock(false);
                     break;
 
-                case GameState.Prologue:
-                    Time.timeScale = 1f;
-                    SetCursorLock(true);
-                    break;
-
                 case GameState.Playing:
                     Time.timeScale = 1f;
                     SetCursorLock(true);

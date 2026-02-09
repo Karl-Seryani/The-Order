@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TheOrder.Clues
 {
@@ -117,20 +118,26 @@ namespace TheOrder.Clues
         private void OnEnable()
         {
             GameEvents.OnClueCollected += HandleClueCollected;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
         private void OnDisable()
         {
             GameEvents.OnClueCollected -= HandleClueCollected;
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
         #endregion
 
         #region Event Handlers
 
-        /// <summary>
-        /// Process a collected clue. Called by event handler and available for testing.
-        /// </summary>
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // Reset collected clues on scene reload so counter matches fresh scene objects
+            _collectedClueIds.Clear();
+            _collectedClues.Clear();
+        }
+
         internal void HandleClueCollected(ClueData clue)
         {
             if (clue == null) return;
