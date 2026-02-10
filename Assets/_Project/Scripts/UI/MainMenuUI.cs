@@ -4,7 +4,8 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Main menu controller. Handles Play, Tutorial, and Quit buttons.
+    /// Main menu controller. Handles Play, Tutorial, Settings, and Quit buttons.
+    /// Plays looping background music and button click SFX.
     /// Sets GameState.MainMenu on scene load.
     /// </summary>
     public class MainMenuUI : MonoBehaviour
@@ -18,10 +19,27 @@ namespace TheOrder.UI
         [Header("Buttons")]
         [SerializeField] private Button _playButton;
         [SerializeField] private Button _tutorialButton;
+        [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _quitButton;
+
+        [Header("Settings")]
+        [SerializeField] private GameObject _settingsPanel;
+
+        [Header("Audio")]
+        [SerializeField] private AudioClip _bgMusic;
+        [SerializeField] private AudioClip _buttonClickSfx;
+        [SerializeField] [Range(0f, 1f)] private float _musicVolume = 0.4f;
+        [SerializeField] [Range(0f, 1f)] private float _sfxVolume = 0.7f;
 
         [Header("Scene")]
         [SerializeField] private string _gameSceneName = "Bunker";
+
+        #endregion
+
+        #region Private Fields
+
+        private AudioSource _musicSource;
+        private AudioSource _sfxSource;
 
         #endregion
 
@@ -29,8 +47,21 @@ namespace TheOrder.UI
 
         private void Awake()
         {
+            // Music AudioSource — looping, plays on awake
+            _musicSource = gameObject.AddComponent<AudioSource>();
+            _musicSource.loop = true;
+            _musicSource.playOnAwake = false;
+            _musicSource.volume = _musicVolume;
+
+            // SFX AudioSource — one-shot, no loop
+            _sfxSource = gameObject.AddComponent<AudioSource>();
+            _sfxSource.loop = false;
+            _sfxSource.playOnAwake = false;
+            _sfxSource.volume = _sfxVolume;
+
             if (_playButton != null) _playButton.onClick.AddListener(OnPlayClicked);
             if (_tutorialButton != null) _tutorialButton.onClick.AddListener(OnTutorialClicked);
+            if (_settingsButton != null) _settingsButton.onClick.AddListener(OnSettingsClicked);
             if (_quitButton != null) _quitButton.onClick.AddListener(OnQuitClicked);
         }
 
@@ -41,12 +72,21 @@ namespace TheOrder.UI
 
             if (_menuPanel != null) _menuPanel.SetActive(true);
             if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
+            if (_settingsPanel != null) _settingsPanel.SetActive(false);
+
+            // Start background music
+            if (_bgMusic != null)
+            {
+                _musicSource.clip = _bgMusic;
+                _musicSource.Play();
+            }
         }
 
         private void OnDestroy()
         {
             if (_playButton != null) _playButton.onClick.RemoveListener(OnPlayClicked);
             if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
+            if (_settingsButton != null) _settingsButton.onClick.RemoveListener(OnSettingsClicked);
             if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
         }
 
@@ -54,10 +94,12 @@ namespace TheOrder.UI
 
         #region Public API
 
-        /// <summary>Show the main menu panel, hide the tutorial panel.</summary>
+        /// <summary>Show the main menu panel, hide other panels.</summary>
         public void ShowMainMenu()
         {
+            PlayClickSfx();
             if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
+            if (_settingsPanel != null) _settingsPanel.SetActive(false);
             if (_menuPanel != null) _menuPanel.SetActive(true);
         }
 
@@ -67,23 +109,50 @@ namespace TheOrder.UI
 
         private void OnPlayClicked()
         {
+            PlayClickSfx();
             if (GameManager.Instance != null)
                 GameManager.Instance.LoadScene(_gameSceneName);
         }
 
         private void OnTutorialClicked()
         {
+            PlayClickSfx();
             if (_menuPanel != null) _menuPanel.SetActive(false);
             if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
         }
 
+        private void OnSettingsClicked()
+        {
+            PlayClickSfx();
+            if (_settingsPanel != null)
+            {
+                if (_menuPanel != null) _menuPanel.SetActive(false);
+                _settingsPanel.SetActive(true);
+            }
+            else
+            {
+                Debug.Log("[MainMenu] Settings panel not yet assigned.");
+            }
+        }
+
         private void OnQuitClicked()
         {
+            PlayClickSfx();
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
             Application.Quit();
 #endif
+        }
+
+        #endregion
+
+        #region Audio
+
+        private void PlayClickSfx()
+        {
+            if (_buttonClickSfx != null && _sfxSource != null)
+                _sfxSource.PlayOneShot(_buttonClickSfx, _sfxVolume);
         }
 
         #endregion

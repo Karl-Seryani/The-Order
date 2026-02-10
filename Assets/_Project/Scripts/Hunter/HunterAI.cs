@@ -482,6 +482,8 @@ namespace TheOrder.Hunter
 
         private void HandlePlayerMoved(Vector3 position, float speed)
         {
+            if (_config == null || _isPaused) return;
+
             // Clamp to sane max — CharacterController.velocity can spike on first grounded frame
             speed = Mathf.Min(speed, 10f);
 
