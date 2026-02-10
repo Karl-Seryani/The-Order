@@ -38,7 +38,7 @@ namespace TheOrder.Doors
         public bool IsAnimating => _isAnimating;
 
         /// <summary>Current open fraction from 0 (closed) to 1 (fully open).</summary>
-        public float OpenFraction => _rotationAngle > 0f ? Mathf.Clamp01(_currentAngle / _rotationAngle) : 0f;
+        public float OpenFraction => Mathf.Abs(_rotationAngle) > 0.01f ? Mathf.Clamp01(Mathf.Abs(_currentAngle) / Mathf.Abs(_rotationAngle)) : 0f;
 
         /// <summary>Current angle of the door.</summary>
         public float CurrentAngle => _currentAngle;
@@ -81,7 +81,7 @@ namespace TheOrder.Doors
         /// <summary>Instantly open the door. Used by Hunter AI.</summary>
         public void OpenDoor()
         {
-            if (_isOpen && _currentAngle >= _rotationAngle) return;
+            if (_isOpen && Mathf.Abs(_currentAngle - _rotationAngle) < 0.5f) return;
 
             if (_animationCoroutine != null)
                 StopCoroutine(_animationCoroutine);
@@ -96,7 +96,7 @@ namespace TheOrder.Doors
         /// <summary>Instantly close the door. Used by Hunter AI.</summary>
         public void CloseDoor()
         {
-            if (!_isOpen && _currentAngle <= 0f) return;
+            if (!_isOpen && Mathf.Abs(_currentAngle) < 0.5f) return;
 
             if (_animationCoroutine != null)
                 StopCoroutine(_animationCoroutine);
@@ -132,7 +132,7 @@ namespace TheOrder.Doors
             _isAnimating = false;
 
             bool wasOpen = _isOpen;
-            _isOpen = _currentAngle > _rotationAngle * 0.5f;
+            _isOpen = Mathf.Abs(_currentAngle) > Mathf.Abs(_rotationAngle) * 0.5f;
 
             if (_isOpen && !wasOpen)
                 GameEvents.DoorOpened(transform.position);
