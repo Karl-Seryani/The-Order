@@ -18,9 +18,6 @@ namespace TheOrder
         [SerializeField] private Sprite _sprite;
         [SerializeField] private AudioClip _audioClip;
 
-        [Header("Gameplay")]
-        [SerializeField] private float _sanityImpact;
-
         /// <summary>Unique identifier for this clue.</summary>
         public string Id => _id;
 
@@ -36,9 +33,5 @@ namespace TheOrder
         /// <summary>Optional audio clip for audio log clues. Null if not an audio clue.</summary>
         public AudioClip AudioClip => _audioClip;
 
-        /// <summary>
-        /// Sanity impact on collection. Negative = drain (disturbing clues), positive = recovery (hopeful clues).
-        /// </summary>
-        public float SanityImpact => _sanityImpact;
     }
 }

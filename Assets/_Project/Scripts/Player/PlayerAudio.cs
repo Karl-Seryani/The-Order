@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TheOrder.Player
 {
     /// <summary>
-    /// Manages player (John) breathing audio based on game state.
+    /// Manages player breathing audio based on game state.
     /// Idle breathing when stationary, shocked gasp on chase detection,
     /// and relief breathing after escaping a chase.
     /// Communicates via GameEvents only.

@@ -553,7 +553,7 @@ namespace TheOrder.Hunter
         private void HandleDoorOpened(Vector3 position)
         {
             float distance = Vector3.Distance(transform.position, position);
-            // Ignore doors Mike opened himself (within 3m)
+            // Ignore doors the Hunter opened himself (within 3m)
             if (distance < 3f) return;
 
             if (distance <= _config.DoorOpenHearingRadius)

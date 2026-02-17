@@ -47,33 +47,21 @@ namespace TheOrder
 
         #region Hunter
 
-        /// <summary>Fired when Mike's FSM transitions to a new state.</summary>
+        /// <summary>Fired when the Hunter's FSM transitions to a new state.</summary>
         public static event Action<HunterState> OnHunterStateChanged;
         public static void HunterStateChanged(HunterState newState) => OnHunterStateChanged?.Invoke(newState);
 
-        /// <summary>Fired when Mike detects the player (detection meter full).</summary>
+        /// <summary>Fired when the Hunter detects the player (enters chase).</summary>
         public static event Action OnPlayerDetected;
         public static void PlayerDetected() => OnPlayerDetected?.Invoke();
 
-        /// <summary>Fired when Mike loses track of the player.</summary>
+        /// <summary>Fired when the Hunter loses track of the player.</summary>
         public static event Action OnPlayerLost;
         public static void PlayerLost() => OnPlayerLost?.Invoke();
 
-        /// <summary>Fired when Mike catches the player. Triggers death screen.</summary>
+        /// <summary>Fired when the Hunter catches the player. Triggers death screen.</summary>
         public static event Action OnPlayerCaught;
         public static void PlayerCaught() => OnPlayerCaught?.Invoke();
-
-        #endregion
-
-        #region Sanity
-
-        /// <summary>Fired when sanity value changes. Args: current, max.</summary>
-        public static event Action<float, float> OnSanityChanged;
-        public static void SanityChanged(float current, float max) => OnSanityChanged?.Invoke(current, max);
-
-        /// <summary>Fired when sanity hits zero — triggers teleport and disorientation.</summary>
-        public static event Action OnSanityBreak;
-        public static void SanityBreak() => OnSanityBreak?.Invoke();
 
         #endregion
 

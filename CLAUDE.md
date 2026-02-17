@@ -29,7 +29,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 6. **NavMesh Validation** — `NavMesh.SamplePosition()` before every `SetDestination()`.
 7. **URP Volume Overrides** — no legacy post-processing.
 8. **PlayerMoved Always Fires** — every frame (even speed 0) for Hunter vision detection.
-9. **Hunter Is Silent** — footsteps only. No breathing, voice, or chase stinger.
+9. **Hunter Is Silent** — footsteps only. No breathing or voice. Chase music is allowed as ambient atmosphere (not from the Hunter).
 10. **`_isPaused` Flag** — never toggle `enabled` on event-driven MonoBehaviours (triggers OnDisable).
 11. **Static Batching** — uncheck Static on any object that moves at runtime (SlidableFurniture, etc.).
 

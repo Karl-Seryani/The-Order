@@ -24,7 +24,6 @@ namespace TheOrder.UI
         [Header("Clue Reading")]
         [SerializeField] private GameObject _clueReadingPanel;
         [SerializeField] private Text _clueReadingTitle;
-        [SerializeField] private Text _clueReadingCategory;
         [SerializeField] private Text _clueReadingContent;
 
         [Header("Objective")]

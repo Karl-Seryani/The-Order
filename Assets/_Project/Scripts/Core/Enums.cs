@@ -39,18 +39,8 @@ namespace TheOrder
     public enum EndingChoice
     {
         UseWeapon,
-        ConfrontMike,
+        ConfrontHunter,
         Flee
-    }
-
-    public enum SanityEvent
-    {
-        PassiveDrain,
-        SeeingHunter,
-        Darkness,
-        DisturbingClue,
-        ClueRecovery,
-        SafeRoom
     }
 
 }

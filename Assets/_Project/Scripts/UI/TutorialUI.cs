@@ -35,7 +35,7 @@ namespace TheOrder.UI
         {
             "Controls",
             "Survival Tips",
-            "Clues & Endings"
+            "Clues & Escape"
         };
 
         private static readonly string[][] SECTION_PAGES =
@@ -57,8 +57,8 @@ namespace TheOrder.UI
             // Survival Tips
             new[]
             {
-                "There are no hiding spots. Your only chance is to outrun\n" +
-                "the Hunter and break line of sight around corners.\n\n" +
+                "Hide in lockers to avoid the Hunter. Otherwise,\n" +
+                "outrun him and break line of sight around corners.\n\n" +
                 "Your flashlight reveals the world but also attracts\n" +
                 "attention. In darkness, the Hunter can barely see —\n" +
                 "use that to your advantage.\n\n" +
@@ -72,17 +72,17 @@ namespace TheOrder.UI
             // Clues & Endings
             new[]
             {
-                "You will find clues scattered throughout the bunker.\n" +
-                "They fall into two categories:\n\n" +
-                "  TRUTH  —  What really happened here\n" +
-                "  MIKE   —  Who is the Hunter, and what was done to him\n\n" +
-                "Press E to read a clue, then E again to collect it.\n" +
-                "The more you discover, the deeper your understanding.\n\n" +
-                "Your knowledge level in each category — None, Low,\n" +
-                "Medium, or High — shapes the ending you receive.\n\n" +
-                "When the moment comes to make your final choice,\n" +
-                "what you know will determine what you can do.\n" +
-                "Choose wisely."
+                "Scattered throughout the bunker are 18 clue documents\n" +
+                "that reveal the truth about this place.\n\n" +
+                "  COLLECTING CLUES\n" +
+                "  Approach a document and press E to read it.\n" +
+                "  Press E again to collect it.\n\n" +
+                "  YOUR GOAL\n" +
+                "  Find keys, unlock new areas, and locate the exit.\n" +
+                "  The more clues you find, the more you understand\n" +
+                "  what happened here — and what the Hunter really is.\n\n" +
+                "  Explore carefully. Every room could hold a vital clue\n" +
+                "  or the Hunter himself."
             }
         };
 

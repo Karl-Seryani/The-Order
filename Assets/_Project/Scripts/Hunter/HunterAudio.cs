@@ -5,7 +5,7 @@ namespace TheOrder.Hunter
     /// <summary>
     /// Manages Hunter footstep audio with 3D spatial sound.
     /// Footstep interval scales with movement speed.
-    /// Mike cannot vocalize — his tongue was surgically removed.
+    /// The Hunter is silent — footsteps only.
     /// </summary>
     public class HunterAudio : MonoBehaviour
     {
