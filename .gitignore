@@ -45,5 +45,10 @@ crashlytics-build.properties
 *.unitypackage
 *.app
 
+# Large asset packs (local only)
+Assets/Furniture Mega Pack/
+Assets/ADG_Textures/
+Assets/Forst/
+
 # Sandbox
 /private/
