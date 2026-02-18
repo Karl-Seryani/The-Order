@@ -77,19 +77,15 @@ namespace TheOrder
 
         #endregion
 
-        #region Keys
+        #region Doors
 
-        /// <summary>Fired when the player picks up a key.</summary>
-        public static event Action<Doors.KeyData> OnKeyCollected;
-        public static void KeyCollected(Doors.KeyData key) => OnKeyCollected?.Invoke(key);
+        /// <summary>Fired when a locked door is unlocked. Passes item used and door position.</summary>
+        public static event Action<Items.ItemData, Vector3> OnDoorUnlocked;
+        public static void DoorUnlocked(Items.ItemData item, Vector3 position) => OnDoorUnlocked?.Invoke(item, position);
 
-        /// <summary>Fired when a locked door is unlocked. Passes key used and door position.</summary>
-        public static event Action<Doors.KeyData, Vector3> OnDoorUnlocked;
-        public static void DoorUnlocked(Doors.KeyData key, Vector3 position) => OnDoorUnlocked?.Invoke(key, position);
-
-        /// <summary>Fired when the player tries a locked door without the key. For UI feedback.</summary>
-        public static event Action<Doors.KeyData> OnLockedDoorAttempt;
-        public static void LockedDoorAttempt(Doors.KeyData requiredKey) => OnLockedDoorAttempt?.Invoke(requiredKey);
+        /// <summary>Fired when the player tries a locked door without the correct item. For UI feedback.</summary>
+        public static event Action<Items.ItemData> OnLockedDoorAttempt;
+        public static void LockedDoorAttempt(Items.ItemData requiredItem) => OnLockedDoorAttempt?.Invoke(requiredItem);
 
         #endregion
 
@@ -118,6 +114,22 @@ namespace TheOrder
         /// <summary>Fired when the current objective text changes.</summary>
         public static event Action<string> OnObjectiveChanged;
         public static void ObjectiveChanged(string objectiveText) => OnObjectiveChanged?.Invoke(objectiveText);
+
+        #endregion
+
+        #region Items
+
+        /// <summary>Fired when the player picks up an item into their hand.</summary>
+        public static event Action<Items.ItemData> OnItemPickedUp;
+        public static void ItemPickedUp(Items.ItemData item) => OnItemPickedUp?.Invoke(item);
+
+        /// <summary>Fired when the player drops a held item. Passes item data and world position.</summary>
+        public static event Action<Items.ItemData, Vector3> OnItemDropped;
+        public static void ItemDropped(Items.ItemData item, Vector3 position) => OnItemDropped?.Invoke(item, position);
+
+        /// <summary>Fired when a held item is used on a receiver (ToolReceiver or LockedDoor).</summary>
+        public static event Action<Items.ItemData> OnItemUsed;
+        public static void ItemUsed(Items.ItemData item) => OnItemUsed?.Invoke(item);
 
         #endregion
 

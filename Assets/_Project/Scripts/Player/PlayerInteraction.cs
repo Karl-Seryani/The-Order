@@ -23,6 +23,7 @@ namespace TheOrder.Player
 
         private PlayerInputHandler _input;
         private IInteractable _currentTarget;
+        private Items.HeldItemController _heldItemController;
 
         #endregion
 
@@ -44,6 +45,7 @@ namespace TheOrder.Player
         private void Awake()
         {
             _input = GetComponent<PlayerInputHandler>();
+            _heldItemController = GetComponent<Items.HeldItemController>();
 
             if (_playerCamera == null)
             {
@@ -63,6 +65,11 @@ namespace TheOrder.Player
             if (_input.InteractPressed && _currentTarget != null)
             {
                 _currentTarget.Interact(gameObject);
+            }
+
+            if (_input.DropPressed && _heldItemController != null && _heldItemController.HasItem)
+            {
+                _heldItemController.Drop();
             }
         }
 

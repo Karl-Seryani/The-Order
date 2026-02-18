@@ -5,8 +5,8 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Manages the minimal dark HUD: interaction prompt, clue notification,
-    /// clue reading panel, objective display (fade in/out), and clue counter.
+    /// Manages the minimal dark HUD: interaction prompt, item notifications,
+    /// clue reading panel, and objective display (fade in/out).
     /// No health bar, no stamina bar, no journal.
     /// </summary>
     public class HUDManager : MonoBehaviour
@@ -32,8 +32,8 @@ namespace TheOrder.UI
         [SerializeField] private float _objectiveDisplayDuration = 3f;
         [SerializeField] private float _objectiveFadeDuration = 0.8f;
 
-        [Header("Clue Counter")]
-        [SerializeField] private Text _clueCounterText;
+        [Header("Drop Hint")]
+        [SerializeField] private Text _dropHintText;
 
         #endregion
 
@@ -43,7 +43,7 @@ namespace TheOrder.UI
         private Player.PlayerInputHandler _input;
         private Coroutine _notificationCoroutine;
         private Coroutine _objectiveCoroutine;
-        private string _currentObjective = "Explore the bunker for clues or exit";
+        private string _currentObjective = "Find a way to escape";
         private bool _hasSearchedForReferences;
 
         #endregion
@@ -85,7 +85,11 @@ namespace TheOrder.UI
                 _objectiveText.text = _currentObjective;
             }
 
-            UpdateClueCounter();
+            // Hide drop hint initially
+            if (_dropHintText != null)
+            {
+                _dropHintText.gameObject.SetActive(false);
+            }
 
             // Show objective on start — only if already Playing (not during wake-up)
             if (GameManager.Instance == null || GameManager.Instance.CurrentState == GameState.Playing)
@@ -100,7 +104,9 @@ namespace TheOrder.UI
             GameEvents.OnClueCollected += HandleClueCollected;
             GameEvents.OnObjectiveChanged += HandleObjectiveChanged;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
-            GameEvents.OnKeyCollected += HandleKeyCollected;
+            GameEvents.OnItemPickedUp += HandleItemPickedUp;
+            GameEvents.OnItemDropped += HandleItemDropped;
+            GameEvents.OnItemUsed += HandleItemUsed;
             GameEvents.OnLockedDoorAttempt += HandleLockedDoorAttempt;
             GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
             GameEvents.OnWakeUpCompleted += HandleWakeUpCompleted;
@@ -112,7 +118,9 @@ namespace TheOrder.UI
             GameEvents.OnClueCollected -= HandleClueCollected;
             GameEvents.OnObjectiveChanged -= HandleObjectiveChanged;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
-            GameEvents.OnKeyCollected -= HandleKeyCollected;
+            GameEvents.OnItemPickedUp -= HandleItemPickedUp;
+            GameEvents.OnItemDropped -= HandleItemDropped;
+            GameEvents.OnItemUsed -= HandleItemUsed;
             GameEvents.OnLockedDoorAttempt -= HandleLockedDoorAttempt;
             GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
             GameEvents.OnWakeUpCompleted -= HandleWakeUpCompleted;
@@ -168,6 +176,22 @@ namespace TheOrder.UI
             if (hasTarget && _interactionPromptText != null)
             {
                 _interactionPromptText.text = $"E — {_playerInteraction.PromptText}";
+            }
+
+            // Show/hide drop hint based on held item
+            UpdateDropHint();
+        }
+
+        private void UpdateDropHint()
+        {
+            if (_dropHintText == null) return;
+
+            var heldItem = Items.HeldItemController.Instance;
+            bool holding = heldItem != null && heldItem.HasItem;
+            _dropHintText.gameObject.SetActive(holding);
+            if (holding)
+            {
+                _dropHintText.text = "Q — Drop";
             }
         }
 
@@ -285,25 +309,6 @@ namespace TheOrder.UI
 
         #endregion
 
-        #region Clue Counter
-
-        private void UpdateClueCounter()
-        {
-            if (_clueCounterText == null) return;
-
-            var cm = Clues.ClueManager.Instance;
-            if (cm != null)
-            {
-                _clueCounterText.text = $"Clues: {cm.CollectedCount}/{cm.TotalClues}";
-            }
-            else
-            {
-                _clueCounterText.text = "Clues: 0/18";
-            }
-        }
-
-        #endregion
-
         #region Event Handlers
 
         private void HandleClueViewed(ClueData clue)
@@ -314,20 +319,6 @@ namespace TheOrder.UI
         private void HandleClueCollected(ClueData clue)
         {
             HideClueReading();
-
-            if (clue != null)
-            {
-                ShowClueNotification(clue.Title);
-            }
-
-            // Delay counter update by one frame so ClueManager processes the clue first
-            StartCoroutine(UpdateClueCounterNextFrame());
-        }
-
-        private IEnumerator UpdateClueCounterNextFrame()
-        {
-            yield return null;
-            UpdateClueCounter();
         }
 
         private void HandleObjectiveChanged(string objectiveText)
@@ -346,41 +337,49 @@ namespace TheOrder.UI
         private void HandleGameStateChanged(GameState newState)
         {
             bool visible = newState == GameState.Playing;
-            if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(visible);
             if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(visible);
+        }
 
-            if (newState == GameState.Playing)
+        private void HandleItemPickedUp(Items.ItemData item)
+        {
+            if (item != null)
             {
-                UpdateClueCounter();
+                ShowClueNotification($"{item.DisplayName} picked up");
             }
         }
 
-        private void HandleKeyCollected(Doors.KeyData key)
+        private void HandleItemDropped(Items.ItemData item, Vector3 position)
         {
-            if (key != null)
+            if (item != null)
             {
-                ShowClueNotification($"{key.DisplayName} acquired");
+                ShowClueNotification($"{item.DisplayName} dropped");
+            }
+        }
+
+        private void HandleItemUsed(Items.ItemData item)
+        {
+            if (item != null)
+            {
+                ShowClueNotification($"{item.DisplayName} used");
             }
         }
 
         private void HandleWakeUpStarted()
         {
-            if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(false);
             if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
+            if (_dropHintText != null) _dropHintText.gameObject.SetActive(false);
         }
 
         private void HandleWakeUpCompleted()
         {
-            if (_clueCounterText != null) _clueCounterText.gameObject.SetActive(true);
             if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
-            UpdateClueCounter();
         }
 
-        private void HandleLockedDoorAttempt(Doors.KeyData requiredKey)
+        private void HandleLockedDoorAttempt(Items.ItemData requiredItem)
         {
-            if (requiredKey != null)
+            if (requiredItem != null)
             {
-                ShowClueNotification($"Locked — requires {requiredKey.DisplayName}");
+                ShowClueNotification($"Locked — requires {requiredItem.DisplayName}");
             }
             else
             {

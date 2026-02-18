@@ -57,7 +57,7 @@ namespace TheOrder.Audio
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
             GameEvents.OnInteractableNoise += HandleInteractableNoise;
             GameEvents.OnHunterStateChanged += HandleHunterStateChanged;
-            GameEvents.OnKeyCollected += HandleKeyCollected;
+            GameEvents.OnItemPickedUp += HandleItemPickedUp;
             GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
         }
 
@@ -69,7 +69,7 @@ namespace TheOrder.Audio
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
             GameEvents.OnInteractableNoise -= HandleInteractableNoise;
             GameEvents.OnHunterStateChanged -= HandleHunterStateChanged;
-            GameEvents.OnKeyCollected -= HandleKeyCollected;
+            GameEvents.OnItemPickedUp -= HandleItemPickedUp;
             GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
         }
 
@@ -220,14 +220,17 @@ namespace TheOrder.Audio
             }
         }
 
-        private void HandleKeyCollected(Doors.KeyData key)
+        private int _keyPickupCount;
+
+        private void HandleItemPickedUp(Items.ItemData item)
         {
             if (_config == null || _config.SecondKeyStingerClip == null) return;
+            if (item == null || item.Type != ItemType.Key) return;
 
-            // Play stinger when the second key is collected
-            // Check == 1 because this handler fires before PlayerInventory increments
-            if (Player.PlayerInventory.Instance != null
-                && Player.PlayerInventory.Instance.KeyCount == 1)
+            _keyPickupCount++;
+
+            // Play stinger on the second key pickup
+            if (_keyPickupCount == 2)
             {
                 PlayTimedStinger(_config.SecondKeyStingerClip, _config.SecondKeyStingerVolume,
                     _config.SecondKeyStingerDuration);

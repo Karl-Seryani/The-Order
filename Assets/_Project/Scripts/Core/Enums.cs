@@ -43,4 +43,9 @@ namespace TheOrder
         Flee
     }
 
+    public enum ItemType
+    {
+        Tool,
+        Key
+    }
 }

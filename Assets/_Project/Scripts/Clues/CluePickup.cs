@@ -3,9 +3,9 @@ using UnityEngine;
 namespace TheOrder.Clues
 {
     /// <summary>
-    /// World-space interactable clue object. Two-state interaction:
-    /// first press shows clue content, second press collects and destroys.
-    /// All clues share the same visual type (torn documents/notes).
+    /// World-space interactable clue/note object. Two-state interaction:
+    /// first press shows content, second press collects (clue) or dismisses (note).
+    /// Notes stay in the world and can be re-read.
     /// </summary>
     public class CluePickup : MonoBehaviour, IInteractable
     {
@@ -13,6 +13,10 @@ namespace TheOrder.Clues
 
         [Header("Clue Data")]
         [SerializeField] private ClueData _clueData;
+
+        [Header("Note Mode")]
+        [Tooltip("If true, this is a re-readable note that is never collected or destroyed.")]
+        [SerializeField] private bool _isNote;
 
         #endregion
 
@@ -25,7 +29,8 @@ namespace TheOrder.Clues
         #region IInteractable
 
         /// <summary>
-        /// First interaction: show clue on screen. Second: collect and destroy.
+        /// First interaction: show content on screen.
+        /// Second: collect and destroy (clue) or dismiss reading panel (note).
         /// </summary>
         public void Interact(GameObject interactor)
         {
@@ -37,31 +42,40 @@ namespace TheOrder.Clues
 
             if (!_isReading)
             {
-                // First press — show clue content on screen
+                // First press — show content on screen
                 _isReading = true;
                 GameEvents.ClueViewed(_clueData);
             }
             else
             {
-                // Second press — collect and destroy
-                if (string.IsNullOrEmpty(_clueData.Id))
+                if (_isNote)
                 {
-                    Debug.LogWarning($"[CluePickup] Clue '{_clueData.Title}' has no ID — not collecting.", this);
+                    // Note mode — dismiss reading panel, stay in world
                     _isReading = false;
-                    return;
+                    GameEvents.ClueCollected(_clueData);
                 }
-                GameEvents.ClueCollected(_clueData);
-                Destroy(gameObject);
+                else
+                {
+                    // Clue mode — collect and destroy
+                    if (string.IsNullOrEmpty(_clueData.Id))
+                    {
+                        Debug.LogWarning($"[CluePickup] Clue '{_clueData.Title}' has no ID — not collecting.", this);
+                        _isReading = false;
+                        return;
+                    }
+                    GameEvents.ClueCollected(_clueData);
+                    Destroy(gameObject);
+                }
             }
         }
 
         /// <summary>Returns contextual prompt based on reading state.</summary>
         public string GetPromptText()
         {
-            if (_clueData == null) return "Pick up clue";
+            if (_clueData == null) return "Read note";
 
             if (_isReading)
-                return $"Collect {_clueData.Title}";
+                return _isNote ? "Close" : $"Collect {_clueData.Title}";
 
             return $"Read {_clueData.Title}";
         }

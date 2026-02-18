@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TheOrder.Doors
 {
     /// <summary>
-    /// A door that requires a specific key to unlock.
+    /// A door that requires a specific held item to unlock.
     /// Delegates to DoorController for open/close once unlocked.
     /// Hunter cannot open locked doors.
     /// </summary>
@@ -13,7 +13,7 @@ namespace TheOrder.Doors
         #region Serialized Fields
 
         [Header("Lock Settings")]
-        [SerializeField] private KeyData _requiredKey;
+        [SerializeField] private Items.ItemData _requiredItem;
         [SerializeField] private string _lockedPrompt = "Locked";
 
         #endregion
@@ -30,11 +30,11 @@ namespace TheOrder.Doors
         /// <summary>True if this door has been unlocked.</summary>
         public bool IsUnlocked => _isUnlocked;
 
-        /// <summary>The key required to unlock this door.</summary>
-        public KeyData RequiredKey => _requiredKey;
+        /// <summary>The item required to unlock this door.</summary>
+        public Items.ItemData RequiredItem => _requiredItem;
 
         /// <summary>
-        /// Unlock this door without a key. Used for external unlock triggers.
+        /// Unlock this door without an item. Used for external unlock triggers.
         /// </summary>
         public void ForceUnlock()
         {
@@ -54,20 +54,22 @@ namespace TheOrder.Doors
 
         #region IInteractable
 
-        /// <summary>Checks key, then delegates to DoorController.</summary>
+        /// <summary>Checks held item, then delegates to DoorController.</summary>
         public void Interact(GameObject interactor)
         {
             if (!_isUnlocked)
             {
-                if (_requiredKey != null && Player.PlayerInventory.Instance != null
-                    && Player.PlayerInventory.Instance.HasKey(_requiredKey))
+                var heldItem = interactor.GetComponent<Items.HeldItemController>();
+
+                if (heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem)
                 {
                     _isUnlocked = true;
-                    GameEvents.DoorUnlocked(_requiredKey, transform.position);
+                    GameEvents.DoorUnlocked(_requiredItem, transform.position);
+                    GameEvents.ItemUsed(_requiredItem);
                 }
                 else
                 {
-                    GameEvents.LockedDoorAttempt(_requiredKey);
+                    GameEvents.LockedDoorAttempt(_requiredItem);
                     return;
                 }
             }
@@ -75,13 +77,19 @@ namespace TheOrder.Doors
             _doorController.Interact(interactor);
         }
 
-        /// <summary>Returns locked prompt or delegates to DoorController.</summary>
+        /// <summary>Returns context-aware prompt text.</summary>
         public string GetPromptText()
         {
             if (!_isUnlocked)
             {
-                if (_requiredKey != null)
-                    return $"{_lockedPrompt} — requires {_requiredKey.DisplayName}";
+                var heldItem = Items.HeldItemController.Instance;
+
+                if (heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem)
+                    return $"Use {heldItem.CurrentItem.DisplayName}";
+
+                if (_requiredItem != null)
+                    return $"{_lockedPrompt} — requires {_requiredItem.DisplayName}";
+
                 return _lockedPrompt;
             }
 

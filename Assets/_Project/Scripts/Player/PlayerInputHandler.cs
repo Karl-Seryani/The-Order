@@ -33,6 +33,9 @@ namespace TheOrder.Player
         /// <summary>True on the frame the journal button is pressed.</summary>
         public bool JournalPressed { get; private set; }
 
+        /// <summary>True on the frame the drop button is pressed.</summary>
+        public bool DropPressed { get; private set; }
+
         #endregion
 
         #region Private Fields
@@ -45,6 +48,7 @@ namespace TheOrder.Player
         private InputAction _flashlightAction;
         private InputAction _pauseAction;
         private InputAction _journalAction;
+        private InputAction _dropAction;
 
         #endregion
 
@@ -62,6 +66,7 @@ namespace TheOrder.Player
             _flashlightAction = playerMap.FindAction("Flashlight");
             _pauseAction = playerMap.FindAction("Pause");
             _journalAction = playerMap.FindAction("Journal");
+            _dropAction = playerMap.FindAction("Drop");
         }
 
         private void OnEnable()
@@ -91,6 +96,7 @@ namespace TheOrder.Player
             FlashlightPressed = _flashlightAction.WasPressedThisFrame();
             PausePressed = _pauseAction.WasPressedThisFrame();
             JournalPressed = _journalAction.WasPressedThisFrame();
+            DropPressed = _dropAction != null && _dropAction.WasPressedThisFrame();
         }
 
         #endregion

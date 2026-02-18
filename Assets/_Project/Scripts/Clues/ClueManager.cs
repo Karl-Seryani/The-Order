@@ -19,7 +19,7 @@ namespace TheOrder.Clues
         #region Serialized Fields
 
         [Header("Clue Totals")]
-        [SerializeField] private int _totalClues = 18;
+        [SerializeField] private int _totalClues = 2;
 
         #endregion
 
