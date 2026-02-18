@@ -15,7 +15,11 @@ namespace TheOrder.Doors
         [Header("Slide Settings")]
         [SerializeField] private Vector3 _slideDirection = Vector3.back;
         [SerializeField] private float _slideDistance = 0.35f;
-        [SerializeField] private float _slideSpeed = 1.5f;
+        [SerializeField] private float _slideDuration = 0.5f;
+
+        [Header("Lock")]
+        [SerializeField] private bool _isLocked;
+        [SerializeField] private string _lockedPrompt = "Locked";
 
         [Header("Prompt")]
         [SerializeField] private string _promptText = "Slide";
@@ -41,6 +45,9 @@ namespace TheOrder.Doors
         /// <summary>True if more than half open.</summary>
         public bool IsOpen => _isOpen;
 
+        /// <summary>Lock or unlock this furniture from external scripts.</summary>
+        public bool IsLocked { get => _isLocked; set => _isLocked = value; }
+
         #endregion
 
         #region Unity Lifecycle
@@ -64,7 +71,7 @@ namespace TheOrder.Doors
         /// <summary>Toggle slide open/close on E press.</summary>
         public void Interact(GameObject interactor)
         {
-            if (_isAnimating) return;
+            if (_isLocked || _isAnimating) return;
 
             float targetOffset = _isOpen ? 0f : _slideDistance;
 
@@ -77,6 +84,7 @@ namespace TheOrder.Doors
         /// <summary>Returns prompt text.</summary>
         public string GetPromptText()
         {
+            if (_isLocked) return _lockedPrompt;
             return _promptText;
         }
 
@@ -87,14 +95,17 @@ namespace TheOrder.Doors
         private IEnumerator AnimateSlide(float targetOffset)
         {
             _isAnimating = true;
-            float direction = targetOffset > _currentOffset ? 1f : -1f;
+            float startOffset = _currentOffset;
+            float elapsed = 0f;
+            float duration = Mathf.Max(_slideDuration, 0.01f);
 
-            while (Mathf.Abs(_currentOffset - targetOffset) > 0.005f)
+            while (elapsed < duration)
             {
-                _currentOffset += _slideSpeed * direction * Time.deltaTime;
-                _currentOffset = direction > 0f
-                    ? Mathf.Min(_currentOffset, targetOffset)
-                    : Mathf.Max(_currentOffset, targetOffset);
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                // Smooth ease-out curve
+                t = 1f - (1f - t) * (1f - t);
+                _currentOffset = Mathf.Lerp(startOffset, targetOffset, t);
                 ApplyPosition();
                 yield return null;
             }

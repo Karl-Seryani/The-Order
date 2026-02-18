@@ -175,6 +175,17 @@ namespace TheOrder.Items
                 }
             }
 
+            // Add physics so the item falls with gravity
+            var rb = pickupGo.GetComponent<Rigidbody>();
+            if (rb == null)
+                rb = pickupGo.AddComponent<Rigidbody>();
+            rb.mass = 0.5f;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+            // Ensure MeshColliders are convex (required for non-kinematic Rigidbody)
+            foreach (var mc in pickupGo.GetComponentsInChildren<MeshCollider>())
+                mc.convex = true;
+
             // Add or configure ItemPickup component
             var pickup = pickupGo.GetComponent<ItemPickup>();
             if (pickup == null)

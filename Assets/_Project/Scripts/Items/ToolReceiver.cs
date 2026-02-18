@@ -22,6 +22,10 @@ namespace TheOrder.Items
         [SerializeField] private GameObject _closedVisual;
         [SerializeField] private GameObject _openVisual;
 
+        [Header("Activation")]
+        [SerializeField] private GameObject _objectToDeactivate;
+        [SerializeField] private GameObject _objectToEnable;
+
         [Header("Audio")]
         [SerializeField] private AudioClip _useSound;
 
@@ -84,6 +88,12 @@ namespace TheOrder.Items
             {
                 _audioSource.PlayOneShot(_useSound);
             }
+
+            // Activate / deactivate linked objects
+            if (_objectToDeactivate != null)
+                _objectToDeactivate.SetActive(false);
+            if (_objectToEnable != null)
+                _objectToEnable.SetActive(true);
 
             // Spawn reward item
             if (_rewardItem != null)

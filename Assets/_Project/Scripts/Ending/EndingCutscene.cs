@@ -66,11 +66,9 @@ namespace TheOrder.Ending
 
         private void HandleDoorUnlocked(Items.ItemData item, Vector3 position)
         {
-            if (_isPlaying) return;
-            if (item == null || _triggerItem == null) return;
-            if (item != _triggerItem) return;
-
-            StartCoroutine(PlayEndingSequence());
+            // Disabled — MainDoor now just opens normally.
+            // Will be re-enabled for the car escape ending.
+            return;
         }
 
         #endregion

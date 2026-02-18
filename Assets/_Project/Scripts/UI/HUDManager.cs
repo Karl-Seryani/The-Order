@@ -35,6 +35,10 @@ namespace TheOrder.UI
         [Header("Drop Hint")]
         [SerializeField] private Text _dropHintText;
 
+        [Header("Crosshair")]
+        [SerializeField] private float _crosshairSize = 4f;
+        [SerializeField] private Color _crosshairColor = new Color(1f, 1f, 1f, 0.7f);
+
         #endregion
 
         #region Private Fields
@@ -45,6 +49,7 @@ namespace TheOrder.UI
         private Coroutine _objectiveCoroutine;
         private string _currentObjective = "Find a way to escape";
         private bool _hasSearchedForReferences;
+        private Image _crosshairDot;
 
         #endregion
 
@@ -90,6 +95,9 @@ namespace TheOrder.UI
             {
                 _dropHintText.gameObject.SetActive(false);
             }
+
+            // Create crosshair dot at screen center
+            CreateCrosshair();
 
             // Show objective on start — only if already Playing (not during wake-up)
             if (GameManager.Instance == null || GameManager.Instance.CurrentState == GameState.Playing)
@@ -144,6 +152,31 @@ namespace TheOrder.UI
                     GameManager.Instance.TogglePause();
                 }
             }
+        }
+
+        #endregion
+
+        #region Crosshair
+
+        private void CreateCrosshair()
+        {
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas == null) canvas = GetComponent<Canvas>();
+            if (canvas == null) return;
+
+            var dotGo = new GameObject("CrosshairDot");
+            dotGo.transform.SetParent(canvas.transform, false);
+
+            _crosshairDot = dotGo.AddComponent<Image>();
+            _crosshairDot.color = _crosshairColor;
+            _crosshairDot.raycastTarget = false;
+
+            var rt = _crosshairDot.rectTransform;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(_crosshairSize, _crosshairSize);
         }
 
         #endregion

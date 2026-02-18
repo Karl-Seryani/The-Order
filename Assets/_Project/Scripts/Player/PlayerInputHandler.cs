@@ -36,6 +36,9 @@ namespace TheOrder.Player
         /// <summary>True on the frame the drop button is pressed.</summary>
         public bool DropPressed { get; private set; }
 
+        /// <summary>True on the frame the crouch button is pressed (toggle).</summary>
+        public bool CrouchPressed { get; private set; }
+
         #endregion
 
         #region Private Fields
@@ -49,6 +52,7 @@ namespace TheOrder.Player
         private InputAction _pauseAction;
         private InputAction _journalAction;
         private InputAction _dropAction;
+        private InputAction _crouchAction;
 
         #endregion
 
@@ -67,6 +71,7 @@ namespace TheOrder.Player
             _pauseAction = playerMap.FindAction("Pause");
             _journalAction = playerMap.FindAction("Journal");
             _dropAction = playerMap.FindAction("Drop");
+            _crouchAction = playerMap.FindAction("Crouch");
         }
 
         private void OnEnable()
@@ -97,6 +102,7 @@ namespace TheOrder.Player
             PausePressed = _pauseAction.WasPressedThisFrame();
             JournalPressed = _journalAction.WasPressedThisFrame();
             DropPressed = _dropAction != null && _dropAction.WasPressedThisFrame();
+            CrouchPressed = _crouchAction != null && _crouchAction.WasPressedThisFrame();
         }
 
         #endregion

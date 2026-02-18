@@ -18,6 +18,11 @@ namespace TheOrder.Player
         [SerializeField] private float _sprintSpeed = 5.5f;
         [SerializeField] private float _gravity = -15f;
 
+        [Header("Crouch")]
+        [SerializeField] private float _crouchSpeed = 1.5f;
+        [SerializeField] private float _crouchHeight = 1.0f;
+        [SerializeField] private float _crouchTransitionSpeed = 8f;
+
         #endregion
 
         #region Private Fields
@@ -25,7 +30,11 @@ namespace TheOrder.Player
         private CharacterController _controller;
         private PlayerInputHandler _input;
         private PlayerStamina _stamina;
+        private Transform _cameraTransform;
         private Vector3 _velocity;
+        private float _standHeight;
+        private float _standCameraY;
+        private float _targetHeight;
 
         #endregion
 
@@ -33,6 +42,9 @@ namespace TheOrder.Player
 
         /// <summary>True if the player is currently sprinting.</summary>
         public bool IsSprinting => _stamina.IsSprinting;
+
+        /// <summary>True if the player is currently crouching.</summary>
+        public bool IsCrouching { get; private set; }
 
         /// <summary>Current movement speed.</summary>
         public float CurrentSpeed { get; private set; }
@@ -46,12 +58,47 @@ namespace TheOrder.Player
             _controller = GetComponent<CharacterController>();
             _input = GetComponent<PlayerInputHandler>();
             _stamina = GetComponent<PlayerStamina>();
+            _cameraTransform = GetComponentInChildren<UnityEngine.Camera>()?.transform;
+
+            _standHeight = _controller.height;
+            _standCameraY = _cameraTransform != null ? _cameraTransform.localPosition.y : 0f;
+            _targetHeight = _standHeight;
         }
 
         private void Update()
         {
+            HandleCrouch();
             HandleGravity();
             HandleMovement();
+        }
+
+        #endregion
+
+        #region Crouch
+
+        private void HandleCrouch()
+        {
+            if (_input.CrouchPressed)
+                IsCrouching = !IsCrouching;
+
+            _targetHeight = IsCrouching ? _crouchHeight : _standHeight;
+
+            float currentHeight = _controller.height;
+            if (!Mathf.Approximately(currentHeight, _targetHeight))
+            {
+                float newHeight = Mathf.MoveTowards(currentHeight, _targetHeight, _crouchTransitionSpeed * Time.deltaTime);
+                _controller.height = newHeight;
+                _controller.center = new Vector3(0f, _controller.height / 2f, 0f);
+
+                // Adjust camera position to match
+                if (_cameraTransform != null)
+                {
+                    float ratio = newHeight / _standHeight;
+                    Vector3 camPos = _cameraTransform.localPosition;
+                    camPos.y = _standCameraY * ratio;
+                    _cameraTransform.localPosition = camPos;
+                }
+            }
         }
 
         #endregion
@@ -73,11 +120,14 @@ namespace TheOrder.Player
             Vector2 moveInput = _input.MoveInput;
             bool wantsSprint = _input.SprintHeld && moveInput.y > 0f;
 
-            // Update stamina sprint state
-            _stamina.SetSprinting(wantsSprint && _stamina.CanSprint);
+            // Can't sprint while crouching
+            _stamina.SetSprinting(wantsSprint && _stamina.CanSprint && !IsCrouching);
 
             // Determine speed
-            CurrentSpeed = _stamina.IsSprinting ? _sprintSpeed : _walkSpeed;
+            if (IsCrouching)
+                CurrentSpeed = _crouchSpeed;
+            else
+                CurrentSpeed = _stamina.IsSprinting ? _sprintSpeed : _walkSpeed;
 
             // Calculate movement direction relative to player facing
             Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
