@@ -48,11 +48,8 @@ namespace TheOrder.Items
         {
             if (item == null) return;
 
-            // Drop current item first if holding one
-            if (HasItem)
-            {
-                Drop();
-            }
+            // Keep behavior aligned with interaction prompts: no implicit swap on pickup.
+            if (HasItem) return;
 
             _currentItem = item;
 

@@ -94,24 +94,29 @@ namespace TheOrder.Player
                     return;
                 }
 
-                // Check for screws and item pickups behind overlapping furniture colliders
+                // Check for screws behind overlapping furniture colliders.
+                // Do NOT do this for ItemPickup, otherwise closed furniture/doors can be bypassed
+                // and items inside can be grabbed through blockers.
                 int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, hit.distance + 0.15f, _interactionMask);
+                Items.ScrewInteractable closestScrew = null;
+                float closestScrewDistance = float.MaxValue;
                 for (int i = 0; i < hitCount; i++)
                 {
                     if (_hitBuffer[i].collider.TryGetComponent(out Items.ScrewInteractable screw))
                     {
-                        _currentTarget = screw;
-                        return;
+                        float screwDistance = _hitBuffer[i].distance;
+                        if (screwDistance < closestScrewDistance)
+                        {
+                            closestScrewDistance = screwDistance;
+                            closestScrew = screw;
+                        }
                     }
                 }
-                for (int i = 0; i < hitCount; i++)
+
+                if (closestScrew != null)
                 {
-                    var pickup = _hitBuffer[i].collider.GetComponentInParent<Items.ItemPickup>();
-                    if (pickup != null)
-                    {
-                        _currentTarget = pickup;
-                        return;
-                    }
+                    _currentTarget = closestScrew;
+                    return;
                 }
 
                 // Check hit object first, then parents

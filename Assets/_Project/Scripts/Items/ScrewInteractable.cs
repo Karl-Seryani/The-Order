@@ -59,7 +59,10 @@ namespace TheOrder.Items
             if (heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem)
                 return "Unscrew";
 
-            return "Requires Screwdriver";
+            if (_requiredItem != null)
+                return $"Requires {_requiredItem.DisplayName}";
+
+            return "Requires tool";
         }
 
         #endregion

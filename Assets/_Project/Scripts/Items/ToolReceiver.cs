@@ -44,13 +44,6 @@ namespace TheOrder.Items
 
         #endregion
 
-        #region Public API
-
-        /// <summary>True if this receiver has already been used.</summary>
-        public bool IsUsed => _isUsed;
-
-        #endregion
-
         #region Unity Lifecycle
 
         private void Awake()
