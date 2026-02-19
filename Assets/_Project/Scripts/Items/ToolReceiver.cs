@@ -82,6 +82,7 @@ namespace TheOrder.Items
             // Correct item — activate
             _isUsed = true;
             GameEvents.ItemUsed(heldItem.CurrentItem);
+            heldItem.ClearHeldItem();
 
             // Swap visuals
             if (_closedVisual != null)
@@ -144,47 +145,7 @@ namespace TheOrder.Items
                 ? _rewardSpawnPoint.position
                 : transform.position + Vector3.up * 0.5f;
 
-            GameObject rewardGo;
-
-            if (_rewardItem.MeshPrefab != null)
-            {
-                rewardGo = Instantiate(_rewardItem.MeshPrefab, spawnPos, Quaternion.identity);
-            }
-            else
-            {
-                rewardGo = new GameObject($"Reward_{_rewardItem.DisplayName}");
-                rewardGo.transform.position = spawnPos;
-            }
-
-            rewardGo.transform.localScale = _rewardItem.MeshScale;
-
-            // Disable and destroy existing colliders, add a mesh-fitted BoxCollider
-            foreach (var c in rewardGo.GetComponentsInChildren<Collider>())
-            {
-                c.enabled = false;
-                Destroy(c);
-            }
-
-            var box = rewardGo.AddComponent<BoxCollider>();
-            FitBoxColliderToMesh(rewardGo, box);
-
-            // Add physics so reward falls to ground
-            var rb = rewardGo.GetComponent<Rigidbody>();
-            if (rb == null)
-                rb = rewardGo.AddComponent<Rigidbody>();
-            rb.isKinematic = false;
-            rb.useGravity = true;
-            rb.mass = 0.5f;
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-
-            var pickup = rewardGo.GetComponent<ItemPickup>();
-            if (pickup == null)
-            {
-                pickup = rewardGo.AddComponent<ItemPickup>();
-            }
-            pickup.Initialize(_rewardItem);
-
-            rewardGo.name = $"Reward_{_rewardItem.DisplayName}";
+            ItemSpawner.SpawnPickup(_rewardItem, spawnPos);
         }
 
         private IEnumerator BreakAndFall(GameObject target)
@@ -212,30 +173,8 @@ namespace TheOrder.Items
 
             yield return new WaitForSeconds(_breakFallDelay);
 
-            target.SetActive(false);
-        }
-
-        private static void FitBoxColliderToMesh(GameObject go, BoxCollider box)
-        {
-            var renderers = go.GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0)
-            {
-                box.size = Vector3.one * 0.1f;
-                return;
-            }
-
-            var bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++)
-                bounds.Encapsulate(renderers[i].bounds);
-
-            box.center = go.transform.InverseTransformPoint(bounds.center);
-            var localSize = bounds.size;
-            var scale = go.transform.lossyScale;
-            box.size = new Vector3(
-                scale.x != 0f ? localSize.x / scale.x : localSize.x,
-                scale.y != 0f ? localSize.y / scale.y : localSize.y,
-                scale.z != 0f ? localSize.z / scale.z : localSize.z
-            );
+            if (target != null)
+                target.SetActive(false);
         }
 
         #endregion

@@ -24,9 +24,6 @@ namespace TheOrder.Items
         [SerializeField] private float _dropDistance = 1.5f;
         [SerializeField] private float _dropHeightOffset = 0.3f;
 
-        [Header("Item Pickup Prefab")]
-        [SerializeField] private GameObject _itemPickupPrefab;
-
         #endregion
 
         #region Private Fields
@@ -83,7 +80,7 @@ namespace TheOrder.Items
             if (!HasItem) return;
 
             var dropPosition = CalculateDropPosition();
-            SpawnDroppedPickup(_currentItem, dropPosition);
+            ItemSpawner.SpawnPickup(_currentItem, dropPosition);
             GameEvents.ItemDropped(_currentItem, dropPosition);
 
             ClearHeldItem();
@@ -131,13 +128,16 @@ namespace TheOrder.Items
 
         #region Private Methods
 
+        private UnityEngine.Camera _cachedCamera;
+
         private Vector3 CalculateDropPosition()
         {
-            var cam = GetComponentInChildren<UnityEngine.Camera>();
-            if (cam != null)
+            if (_cachedCamera == null)
+                _cachedCamera = GetComponentInChildren<UnityEngine.Camera>();
+
+            if (_cachedCamera != null)
             {
-                // Drop in front of the player, on the ground
-                var forward = cam.transform.forward;
+                var forward = _cachedCamera.transform.forward;
                 forward.y = 0;
                 forward.Normalize();
                 var dropPos = transform.position + forward * _dropDistance;
@@ -145,85 +145,7 @@ namespace TheOrder.Items
                 return dropPos;
             }
 
-            return transform.position + Vector3.forward * _dropDistance;
-        }
-
-        private void SpawnDroppedPickup(ItemData item, Vector3 position)
-        {
-            GameObject pickupGo;
-
-            if (_itemPickupPrefab != null)
-            {
-                pickupGo = Instantiate(_itemPickupPrefab, position, Quaternion.identity);
-            }
-            else
-            {
-                if (item.MeshPrefab != null)
-                {
-                    pickupGo = Instantiate(item.MeshPrefab, position, Quaternion.identity);
-                }
-                else
-                {
-                    pickupGo = new GameObject($"Dropped_{item.DisplayName}");
-                    pickupGo.transform.position = position;
-                }
-            }
-
-            pickupGo.transform.localScale = item.MeshScale;
-
-            // Disable and destroy existing colliders, add a mesh-fitted BoxCollider
-            foreach (var c in pickupGo.GetComponentsInChildren<Collider>())
-            {
-                c.enabled = false;
-                Object.Destroy(c);
-            }
-
-            var box = pickupGo.AddComponent<BoxCollider>();
-            FitBoxColliderToMesh(pickupGo, box);
-
-            // Add physics — explicit gravity, non-kinematic
-            var rb = pickupGo.GetComponent<Rigidbody>();
-            if (rb == null)
-                rb = pickupGo.AddComponent<Rigidbody>();
-            rb.isKinematic = false;
-            rb.useGravity = true;
-            rb.mass = 0.5f;
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-
-            // Add or configure ItemPickup component
-            var pickup = pickupGo.GetComponent<ItemPickup>();
-            if (pickup == null)
-            {
-                pickup = pickupGo.AddComponent<ItemPickup>();
-            }
-            pickup.Initialize(item);
-
-            pickupGo.name = $"Dropped_{item.DisplayName}";
-        }
-
-        /// <summary>Fit a BoxCollider to the combined mesh bounds of all renderers.</summary>
-        private static void FitBoxColliderToMesh(GameObject go, BoxCollider box)
-        {
-            var renderers = go.GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0)
-            {
-                box.size = Vector3.one * 0.1f;
-                return;
-            }
-
-            var bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++)
-                bounds.Encapsulate(renderers[i].bounds);
-
-            // Convert world bounds to local space
-            box.center = go.transform.InverseTransformPoint(bounds.center);
-            var localSize = bounds.size;
-            var scale = go.transform.lossyScale;
-            box.size = new Vector3(
-                scale.x != 0f ? localSize.x / scale.x : localSize.x,
-                scale.y != 0f ? localSize.y / scale.y : localSize.y,
-                scale.z != 0f ? localSize.z / scale.z : localSize.z
-            );
+            return transform.position + transform.forward * _dropDistance;
         }
 
         #endregion

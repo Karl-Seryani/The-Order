@@ -96,6 +96,7 @@ namespace TheOrder.Doors
         /// <summary>Instantly open the door. Used by Hunter AI.</summary>
         public void OpenDoor()
         {
+            if (IsBarricaded) return;
             if (_isOpen && Mathf.Abs(_currentAngle - _rotationAngle) < 0.5f) return;
 
             if (_animationCoroutine != null)

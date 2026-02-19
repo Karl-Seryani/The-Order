@@ -24,6 +24,7 @@ namespace TheOrder.Player
         private PlayerInputHandler _input;
         private IInteractable _currentTarget;
         private Items.HeldItemController _heldItemController;
+        private readonly RaycastHit[] _hitBuffer = new RaycastHit[16];
 
         #endregion
 
@@ -94,18 +95,18 @@ namespace TheOrder.Player
                 }
 
                 // Check for screws and item pickups behind overlapping furniture colliders
-                var allHits = Physics.RaycastAll(ray, hit.distance + 0.5f, _interactionMask);
-                foreach (var h in allHits)
+                int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, hit.distance + 0.15f, _interactionMask);
+                for (int i = 0; i < hitCount; i++)
                 {
-                    if (h.collider.TryGetComponent(out Items.ScrewInteractable screw))
+                    if (_hitBuffer[i].collider.TryGetComponent(out Items.ScrewInteractable screw))
                     {
                         _currentTarget = screw;
                         return;
                     }
                 }
-                foreach (var h in allHits)
+                for (int i = 0; i < hitCount; i++)
                 {
-                    var pickup = h.collider.GetComponentInParent<Items.ItemPickup>();
+                    var pickup = _hitBuffer[i].collider.GetComponentInParent<Items.ItemPickup>();
                     if (pickup != null)
                     {
                         _currentTarget = pickup;
