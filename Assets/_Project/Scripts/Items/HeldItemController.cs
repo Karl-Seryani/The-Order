@@ -21,8 +21,9 @@ namespace TheOrder.Items
         [SerializeField] private Transform _handPoint;
 
         [Header("Drop Settings")]
-        [SerializeField] private float _dropDistance = 1.5f;
+        [SerializeField] private float _dropDistance = 2.0f;
         [SerializeField] private float _dropHeightOffset = 0.3f;
+        [SerializeField] private LayerMask _dropRaycastMask = ~0;
 
         #endregion
 
@@ -30,6 +31,8 @@ namespace TheOrder.Items
 
         private ItemData _currentItem;
         private GameObject _heldMeshInstance;
+        private CharacterController _characterController;
+        private Player.PlayerController _playerController;
 
         #endregion
 
@@ -70,16 +73,45 @@ namespace TheOrder.Items
 
         /// <summary>
         /// Drop the currently held item at the player's feet.
-        /// Spawns a new ItemPickup in the world.
+        /// Spawns a new ItemPickup in the world with inherited player velocity.
+        /// If crouched and looking down, places gently instead of dropping.
         /// </summary>
         public void Drop()
         {
             if (!HasItem) return;
 
             var dropPosition = CalculateDropPosition();
-            ItemSpawner.SpawnPickup(_currentItem, dropPosition);
+            var droppedItem = ItemSpawner.SpawnPickup(_currentItem, dropPosition);
+            
+            // Check if we should place gently (crouched + looking down)
+            bool shouldPlaceGently = IsPlacingGently();
+            
+            var rb = droppedItem.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                if (shouldPlaceGently)
+                {
+                    // Gentle placement - no velocity, item just sits there
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                }
+                else if (_characterController != null)
+                {
+                    // Normal drop - inherit player velocity with upward arc
+                    Vector3 inheritedVelocity = _characterController.velocity;
+                    inheritedVelocity.y = 1.0f;
+                    rb.linearVelocity = inheritedVelocity;
+                    
+                    // Small random spin for variety
+                    rb.angularVelocity = new Vector3(
+                        Random.Range(-1f, 1f),
+                        Random.Range(-2f, 2f),
+                        Random.Range(-1f, 1f)
+                    );
+                }
+            }
+            
             GameEvents.ItemDropped(_currentItem, dropPosition);
-
             ClearHeldItem();
         }
 
@@ -110,6 +142,9 @@ namespace TheOrder.Items
             }
             Instance = this;
 
+            _characterController = GetComponent<CharacterController>();
+            _playerController = GetComponent<Player.PlayerController>();
+
             if (_handPoint == null)
             {
                 Debug.LogWarning("[HeldItemController] No hand point assigned. Items won't be visible in hand.", this);
@@ -127,6 +162,23 @@ namespace TheOrder.Items
 
         private UnityEngine.Camera _cachedCamera;
 
+        private bool IsPlacingGently()
+        {
+            // Check if player is crouched
+            if (_playerController == null || !_playerController.IsCrouching)
+                return false;
+
+            if (_cachedCamera == null)
+                _cachedCamera = GetComponentInChildren<UnityEngine.Camera>();
+
+            if (_cachedCamera == null)
+                return false;
+
+            // Check if looking down (camera forward y component is negative and steep)
+            float lookDownAngle = _cachedCamera.transform.forward.y;
+            return lookDownAngle < -0.7f; // Looking down at ~45 degrees or more
+        }
+
         private Vector3 CalculateDropPosition()
         {
             if (_cachedCamera == null)
@@ -134,14 +186,20 @@ namespace TheOrder.Items
 
             if (_cachedCamera != null)
             {
-                var forward = _cachedCamera.transform.forward;
-                forward.y = 0;
-                forward.Normalize();
-                var dropPos = transform.position + forward * _dropDistance;
-                dropPos.y = transform.position.y + _dropHeightOffset;
-                return dropPos;
+                // Raycast from camera (crosshair) to find drop point
+                Ray ray = new Ray(_cachedCamera.transform.position, _cachedCamera.transform.forward);
+                
+                if (Physics.Raycast(ray, out RaycastHit hit, _dropDistance, _dropRaycastMask, QueryTriggerInteraction.Ignore))
+                {
+                    // Drop at the surface we're looking at, slightly above it
+                    return hit.point + Vector3.up * _dropHeightOffset;
+                }
+                
+                // No surface hit - drop at max distance in front of camera
+                return _cachedCamera.transform.position + _cachedCamera.transform.forward * _dropDistance;
             }
 
+            // Fallback to old method if no camera
             return transform.position + transform.forward * _dropDistance;
         }
 

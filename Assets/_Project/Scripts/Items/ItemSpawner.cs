@@ -38,14 +38,24 @@ namespace TheOrder.Items
             var box = pickupGo.AddComponent<BoxCollider>();
             FitBoxColliderToMesh(pickupGo, box);
 
+            // Load physics material from Resources
+            var physicsMat = Resources.Load<PhysicsMaterial>("ItemPhysics");
+            if (physicsMat != null)
+            {
+                box.material = physicsMat;
+            }
+
             // Add physics
             var rb = pickupGo.GetComponent<Rigidbody>();
             if (rb == null)
                 rb = pickupGo.AddComponent<Rigidbody>();
             rb.isKinematic = false;
             rb.useGravity = true;
-            rb.mass = 0.5f;
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            rb.mass = 1.5f;
+            rb.linearDamping = 0.8f;
+            rb.angularDamping = 1.0f;
+            rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
 
             // Add ItemPickup component
             var pickup = pickupGo.GetComponent<ItemPickup>();
@@ -63,7 +73,8 @@ namespace TheOrder.Items
             var renderers = go.GetComponentsInChildren<Renderer>();
             if (renderers.Length == 0)
             {
-                box.size = Vector3.one * 0.1f;
+                box.size = Vector3.one * 0.15f;
+                box.center = Vector3.zero;
                 return;
             }
 
@@ -74,11 +85,21 @@ namespace TheOrder.Items
             box.center = go.transform.InverseTransformPoint(bounds.center);
             var localSize = bounds.size;
             var scale = go.transform.lossyScale;
+            
+            // Prevent zero or near-zero divisions
+            float safeScaleX = Mathf.Abs(scale.x) > 0.001f ? scale.x : 1f;
+            float safeScaleY = Mathf.Abs(scale.y) > 0.001f ? scale.y : 1f;
+            float safeScaleZ = Mathf.Abs(scale.z) > 0.001f ? scale.z : 1f;
+            
             box.size = new Vector3(
-                scale.x != 0f ? localSize.x / scale.x : localSize.x,
-                scale.y != 0f ? localSize.y / scale.y : localSize.y,
-                scale.z != 0f ? localSize.z / scale.z : localSize.z
+                localSize.x / safeScaleX,
+                localSize.y / safeScaleY,
+                localSize.z / safeScaleZ
             );
+
+            // Add slight padding to make pickup easier
+            const float padding = 1.15f;
+            box.size *= padding;
         }
     }
 }

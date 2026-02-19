@@ -75,6 +75,14 @@ namespace TheOrder.Items
 
             heldItem.PickUp(_itemData);
             GameEvents.ItemPickedUp(_itemData);
+            
+            // Wake up rigidbody if this was a pre-placed kinematic item
+            var rb = GetComponent<Rigidbody>();
+            if (rb != null && rb.isKinematic)
+            {
+                rb.isKinematic = false;
+            }
+            
             Destroy(gameObject);
         }
 

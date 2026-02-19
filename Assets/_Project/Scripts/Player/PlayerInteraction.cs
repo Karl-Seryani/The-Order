@@ -11,8 +11,10 @@ namespace TheOrder.Player
         #region Serialized Fields
 
         [Header("Raycast")]
-        [SerializeField] private float _interactionRange = 2.5f;
+        [SerializeField] private float _interactionRange = 3.0f;
         [SerializeField] private LayerMask _interactionMask = ~0;
+        [SerializeField] private float _closePickupRadius = 0.5f;
+        [SerializeField] [Range(-1f, 1f)] private float _closePickupMinDot = -0.2f;
 
         [Header("References")]
         [SerializeField] private UnityEngine.Camera _playerCamera;
@@ -25,6 +27,7 @@ namespace TheOrder.Player
         private IInteractable _currentTarget;
         private Items.HeldItemController _heldItemController;
         private readonly RaycastHit[] _hitBuffer = new RaycastHit[16];
+        private readonly Collider[] _overlapBuffer = new Collider[16];
 
         #endregion
 
@@ -82,9 +85,17 @@ namespace TheOrder.Player
         {
             if (_playerCamera == null) { _currentTarget = null; return; }
 
+            // First check for very close pickups (when standing on top of items)
+            if (TryFindNearbyPickup(out var nearbyPickup))
+            {
+                _currentTarget = nearbyPickup;
+                return;
+            }
+
             Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
 
-            if (Physics.Raycast(ray, out RaycastHit hit, _interactionRange, _interactionMask))
+            // Try regular raycast
+            if (Physics.Raycast(ray, out RaycastHit hit, _interactionRange, _interactionMask, QueryTriggerInteraction.Ignore))
             {
                 // Prefer LockedDoor over DoorController when both exist on a door
                 var lockedDoor = hit.collider.GetComponentInParent<Doors.LockedDoor>();
@@ -119,6 +130,12 @@ namespace TheOrder.Player
                     return;
                 }
 
+                if (TryFindPickupBehindOpenBlocker(ray, hit, out var blockerPickup))
+                {
+                    _currentTarget = blockerPickup;
+                    return;
+                }
+
                 // Check hit object first, then parents
                 if (hit.collider.TryGetComponent(out IInteractable interactable))
                 {
@@ -135,6 +152,131 @@ namespace TheOrder.Player
             }
 
             _currentTarget = null;
+        }
+
+        private bool TryFindNearbyPickup(out Items.ItemPickup pickup)
+        {
+            pickup = null;
+
+            if (_closePickupRadius <= 0f) return false;
+
+            Vector3 eyePos = _playerCamera.transform.position;
+            Vector3 eyeForward = _playerCamera.transform.forward;
+
+            int overlapCount = Physics.OverlapSphereNonAlloc(
+                eyePos,
+                _closePickupRadius,
+                _overlapBuffer,
+                _interactionMask,
+                QueryTriggerInteraction.Collide
+            );
+
+            float bestSqrDistance = float.MaxValue;
+            for (int i = 0; i < overlapCount; i++)
+            {
+                var overlapCollider = _overlapBuffer[i];
+                if (overlapCollider == null) continue;
+
+                var candidatePickup = overlapCollider.GetComponentInParent<Items.ItemPickup>();
+                if (candidatePickup == null) continue;
+
+                Vector3 closestPoint = overlapCollider.ClosestPoint(eyePos);
+                Vector3 toPickup = closestPoint - eyePos;
+                float sqrDistance = toPickup.sqrMagnitude;
+
+                if (sqrDistance > 0.0001f)
+                {
+                    Vector3 direction = toPickup.normalized;
+                    if (Vector3.Dot(eyeForward, direction) < _closePickupMinDot)
+                        continue;
+
+                    float distance = Mathf.Sqrt(sqrDistance);
+                    if (Physics.Raycast(eyePos, direction, out RaycastHit hit, distance + 0.02f, _interactionMask))
+                    {
+                        var visiblePickup = hit.collider.GetComponentInParent<Items.ItemPickup>();
+                        if (visiblePickup != candidatePickup)
+                            continue;
+                    }
+                }
+
+                if (sqrDistance < bestSqrDistance)
+                {
+                    bestSqrDistance = sqrDistance;
+                    pickup = candidatePickup;
+                }
+            }
+
+            return pickup != null;
+        }
+
+        private bool TryFindPickupBehindOpenBlocker(Ray ray, RaycastHit firstHit, out Items.ItemPickup pickup)
+        {
+            pickup = null;
+
+            var openFurniture = firstHit.collider.GetComponentInParent<Doors.SlidableFurniture>();
+            Doors.DoorController openDoor = null;
+
+            if (openFurniture != null)
+            {
+                if (!openFurniture.IsOpen) return false;
+            }
+            else
+            {
+                openDoor = firstHit.collider.GetComponentInParent<Doors.DoorController>();
+                if (openDoor == null || !openDoor.IsOpen) return false;
+            }
+
+            int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, _interactionRange, _interactionMask);
+            float firstDistance = firstHit.distance;
+            float nearestPickupDistance = float.MaxValue;
+            Items.ItemPickup nearestPickup = null;
+            float nearestBlockingDistance = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                var candidateCollider = _hitBuffer[i].collider;
+                if (candidateCollider == null) continue;
+
+                float candidateDistance = _hitBuffer[i].distance;
+                if (candidateDistance <= firstDistance + 0.01f) continue;
+
+                var candidatePickup = candidateCollider.GetComponentInParent<Items.ItemPickup>();
+                if (candidatePickup != null)
+                {
+                    if (candidateDistance < nearestPickupDistance)
+                    {
+                        nearestPickupDistance = candidateDistance;
+                        nearestPickup = candidatePickup;
+                    }
+                    continue;
+                }
+
+                if (BelongsToOpenBlocker(candidateCollider, openFurniture, openDoor))
+                    continue;
+
+                if (candidateDistance < nearestBlockingDistance)
+                    nearestBlockingDistance = candidateDistance;
+            }
+
+            if (nearestPickup == null) return false;
+            if (nearestPickupDistance > nearestBlockingDistance + 0.001f) return false;
+
+            pickup = nearestPickup;
+            return true;
+        }
+
+        private static bool BelongsToOpenBlocker(
+            Collider collider,
+            Doors.SlidableFurniture openFurniture,
+            Doors.DoorController openDoor)
+        {
+            if (openFurniture != null)
+                return collider.GetComponentInParent<Doors.SlidableFurniture>() == openFurniture;
+
+            if (openDoor != null)
+                return collider.GetComponentInParent<Doors.DoorController>() == openDoor;
+
+            return false;
         }
 
         #endregion

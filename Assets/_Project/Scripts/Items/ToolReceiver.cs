@@ -75,7 +75,11 @@ namespace TheOrder.Items
             // Correct item — activate
             _isUsed = true;
             GameEvents.ItemUsed(heldItem.CurrentItem);
-            heldItem.ClearHeldItem();
+            
+            // Don't destroy the tool - player keeps it for reuse
+
+            // Disable this component so it stops being detected as interactable
+            enabled = false;
 
             // Swap visuals
             if (_closedVisual != null)
@@ -92,6 +96,19 @@ namespace TheOrder.Items
             // Unblock barricaded door
             if (_doorToUnblock != null)
                 _doorToUnblock.IsBarricaded = false;
+
+            // Open associated door if present (use Interact for animated opening)
+            var doorController = GetComponent<Doors.DoorController>();
+            if (doorController != null && !doorController.IsOpen)
+            {
+                doorController.Interact(interactor);
+            }
+            
+            var slidableFurniture = GetComponent<Doors.SlidableFurniture>();
+            if (slidableFurniture != null && !slidableFurniture.IsOpen)
+            {
+                slidableFurniture.Interact(interactor);
+            }
 
             // Activate / deactivate linked objects
             if (_objectToDeactivate != null)
@@ -120,7 +137,7 @@ namespace TheOrder.Items
             var heldItem = HeldItemController.Instance;
 
             if (heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem)
-                return $"Use {heldItem.CurrentItem.DisplayName}";
+                return $"Use {_requiredItem.DisplayName}";
 
             if (_requiredItem != null)
                 return $"{_lockedPrompt} — requires {_requiredItem.DisplayName}";
@@ -136,9 +153,25 @@ namespace TheOrder.Items
         {
             var spawnPos = _rewardSpawnPoint != null
                 ? _rewardSpawnPoint.position
-                : transform.position + Vector3.up * 0.5f;
+                : transform.position + Vector3.up * 0.8f;
 
-            ItemSpawner.SpawnPickup(_rewardItem, spawnPos);
+            var rewardObj = ItemSpawner.SpawnPickup(_rewardItem, spawnPos);
+
+            // Add upward and forward velocity so it pops out away from the object
+            var rb = rewardObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                // Pop up and forward
+                Vector3 popDirection = transform.forward * 2.0f + Vector3.up * 2.5f;
+                rb.linearVelocity = popDirection;
+                
+                // Add random rotation for natural feel
+                rb.angularVelocity = new Vector3(
+                    Random.Range(-3f, 3f),
+                    Random.Range(-3f, 3f),
+                    Random.Range(-3f, 3f)
+                );
+            }
         }
 
         private IEnumerator BreakAndFall(GameObject target)
@@ -158,7 +191,9 @@ namespace TheOrder.Items
 
             rb.isKinematic = false;
             rb.mass = 2f;
-            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            rb.linearDamping = 0.5f;
+            rb.angularDamping = 0.8f;
+            rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
 
             // Give a slight outward push so it topples away from the door
             rb.AddForce(target.transform.forward * 1f + Vector3.down * 0.5f, ForceMode.Impulse);
