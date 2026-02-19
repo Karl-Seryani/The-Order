@@ -15,6 +15,8 @@ namespace TheOrder.Doors
         [SerializeField] private float _rotationAngle = 90f;
         [SerializeField] private float _openSpeed = 120f;
         [SerializeField] private Transform _hingePoint;
+        [Tooltip("Axis to rotate around (default Y for normal doors). Use X or Z for cabinets with rotated transforms.")]
+        [SerializeField] private Vector3 _rotationAxis = Vector3.up;
 
         [Tooltip("Local-space offset from mesh center to hinge edge. Use for cabinets without a hinge child.")]
         [SerializeField] private Vector3 _pivotOffset;
@@ -85,6 +87,10 @@ namespace TheOrder.Doors
             }
 
             float targetAngle = _isOpen ? 0f : _rotationAngle;
+
+            // Play open sound immediately, close sound plays at animation end
+            if (!_isOpen)
+                PlaySound(_openSound);
 
             if (_animationCoroutine != null)
                 StopCoroutine(_animationCoroutine);
@@ -163,10 +169,7 @@ namespace TheOrder.Doors
             _isOpen = Mathf.Abs(_currentAngle) > Mathf.Abs(_rotationAngle) * 0.5f;
 
             if (_isOpen && !wasOpen)
-            {
-                PlaySound(_openSound);
                 GameEvents.DoorOpened(transform.position);
-            }
             else if (!_isOpen && wasOpen)
             {
                 PlaySound(_closeSound);
@@ -182,7 +185,7 @@ namespace TheOrder.Doors
         {
             if (_doorTransform == null) return;
 
-            Quaternion targetRot = _closedRotation * Quaternion.Euler(0f, _currentAngle, 0f);
+            Quaternion targetRot = _closedRotation * Quaternion.AngleAxis(_currentAngle, _rotationAxis);
             _doorTransform.localRotation = targetRot;
 
             // Offset position so the door rotates around the hinge edge
