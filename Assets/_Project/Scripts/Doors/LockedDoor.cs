@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TheOrder.Doors
 {
     /// <summary>
-    /// A door that requires a specific held item to unlock.
+    /// A door that requires a specific key in the player's inventory to unlock.
     /// Delegates to DoorController for open/close once unlocked.
     /// Hunter cannot open locked doors.
     /// </summary>
@@ -54,14 +54,14 @@ namespace TheOrder.Doors
 
         #region IInteractable
 
-        /// <summary>Checks held item, then delegates to DoorController.</summary>
+        /// <summary>Checks inventory for key, then delegates to DoorController.</summary>
         public void Interact(GameObject interactor)
         {
             if (!_isUnlocked)
             {
-                var heldItem = interactor.GetComponent<Items.HeldItemController>();
+                var inventory = Player.PlayerInventory.Instance;
 
-                if (heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem)
+                if (inventory != null && inventory.HasKey(_requiredItem))
                 {
                     _isUnlocked = true;
                     GameEvents.DoorUnlocked(_requiredItem, transform.position);
@@ -82,10 +82,10 @@ namespace TheOrder.Doors
         {
             if (!_isUnlocked)
             {
-                var heldItem = Items.HeldItemController.Instance;
+                var inventory = Player.PlayerInventory.Instance;
 
-                if (heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem)
-                    return $"Use {heldItem.CurrentItem.DisplayName}";
+                if (inventory != null && inventory.HasKey(_requiredItem))
+                    return $"Unlock with {_requiredItem.DisplayName}";
 
                 if (_requiredItem != null)
                     return $"{_lockedPrompt} — requires {_requiredItem.DisplayName}";

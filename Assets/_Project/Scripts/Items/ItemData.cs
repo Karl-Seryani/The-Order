@@ -14,6 +14,7 @@ namespace TheOrder.Items
         [SerializeField] [TextArea(2, 4)] private string _description;
         [SerializeField] private Sprite _icon;
         [SerializeField] private GameObject _meshPrefab;
+        [SerializeField] private Vector3 _meshScale = Vector3.one;
         [SerializeField] private ItemType _itemType;
 
         /// <summary>Unique identifier for this item.</summary>
@@ -30,6 +31,9 @@ namespace TheOrder.Items
 
         /// <summary>3D model instantiated in the player's hand when held.</summary>
         public GameObject MeshPrefab => _meshPrefab;
+
+        /// <summary>Scale applied when instantiating the mesh (hand or drop).</summary>
+        public Vector3 MeshScale => _meshScale == Vector3.zero ? Vector3.one : _meshScale;
 
         /// <summary>Whether this is a Tool (reusable) or Key.</summary>
         public ItemType Type => _itemType;

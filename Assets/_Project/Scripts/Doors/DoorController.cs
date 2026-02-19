@@ -16,6 +16,12 @@ namespace TheOrder.Doors
         [SerializeField] private float _openSpeed = 120f;
         [SerializeField] private Transform _hingePoint;
 
+        [Tooltip("Local-space offset from mesh center to hinge edge. Use for cabinets without a hinge child.")]
+        [SerializeField] private Vector3 _pivotOffset;
+
+        [Header("Barricade")]
+        [SerializeField] private bool _startsBarricaded;
+
         #endregion
 
         #region Private Fields
@@ -25,6 +31,7 @@ namespace TheOrder.Doors
         private bool _isAnimating;
         private Transform _doorTransform;
         private Quaternion _closedRotation;
+        private Vector3 _closedPosition;
         private Coroutine _animationCoroutine;
 
         #endregion
@@ -43,6 +50,9 @@ namespace TheOrder.Doors
         /// <summary>Current angle of the door.</summary>
         public float CurrentAngle => _currentAngle;
 
+        /// <summary>When true, door cannot be opened (blocked by barricade).</summary>
+        public bool IsBarricaded { get; set; }
+
         #endregion
 
         #region Unity Lifecycle
@@ -51,6 +61,8 @@ namespace TheOrder.Doors
         {
             _doorTransform = _hingePoint != null ? _hingePoint : transform;
             _closedRotation = _doorTransform.localRotation;
+            _closedPosition = _doorTransform.localPosition;
+            IsBarricaded = _startsBarricaded;
         }
 
         #endregion
@@ -60,6 +72,8 @@ namespace TheOrder.Doors
         /// <summary>Toggle the door open/close on E press.</summary>
         public void Interact(GameObject interactor)
         {
+            if (IsBarricaded) return;
+
             float targetAngle = _isOpen ? 0f : _rotationAngle;
 
             if (_animationCoroutine != null)
@@ -71,6 +85,7 @@ namespace TheOrder.Doors
         /// <summary>Returns context-appropriate prompt text.</summary>
         public string GetPromptText()
         {
+            if (IsBarricaded) return "Barricaded";
             return _isOpen ? "Close" : "Open";
         }
 
@@ -147,7 +162,17 @@ namespace TheOrder.Doors
         private void ApplyRotation()
         {
             if (_doorTransform == null) return;
-            _doorTransform.localRotation = _closedRotation * Quaternion.Euler(0f, _currentAngle, 0f);
+
+            Quaternion targetRot = _closedRotation * Quaternion.Euler(0f, _currentAngle, 0f);
+            _doorTransform.localRotation = targetRot;
+
+            // Offset position so the door rotates around the hinge edge
+            if (_pivotOffset != Vector3.zero)
+            {
+                Vector3 hingeInParent = _closedPosition + _closedRotation * _pivotOffset;
+                Vector3 offsetFromHinge = targetRot * (-_pivotOffset);
+                _doorTransform.localPosition = hingeInParent + offsetFromHinge;
+            }
         }
 
         #endregion

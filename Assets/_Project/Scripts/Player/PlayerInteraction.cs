@@ -93,13 +93,22 @@ namespace TheOrder.Player
                     return;
                 }
 
-                // Check for screws behind overlapping furniture colliders
-                var allHits = Physics.RaycastAll(ray, hit.distance + 0.15f, _interactionMask);
+                // Check for screws and item pickups behind overlapping furniture colliders
+                var allHits = Physics.RaycastAll(ray, hit.distance + 0.5f, _interactionMask);
                 foreach (var h in allHits)
                 {
                     if (h.collider.TryGetComponent(out Items.ScrewInteractable screw))
                     {
                         _currentTarget = screw;
+                        return;
+                    }
+                }
+                foreach (var h in allHits)
+                {
+                    var pickup = h.collider.GetComponentInParent<Items.ItemPickup>();
+                    if (pickup != null)
+                    {
+                        _currentTarget = pickup;
                         return;
                     }
                 }

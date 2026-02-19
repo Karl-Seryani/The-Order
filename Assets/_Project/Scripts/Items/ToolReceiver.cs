@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace TheOrder.Items
@@ -25,6 +26,11 @@ namespace TheOrder.Items
         [Header("Activation")]
         [SerializeField] private GameObject _objectToDeactivate;
         [SerializeField] private GameObject _objectToEnable;
+        [SerializeField] private Doors.DoorController _doorToUnblock;
+
+        [Header("Break Animation")]
+        [SerializeField] private bool _useBreakAnimation;
+        [SerializeField] private float _breakFallDelay = 1.5f;
 
         [Header("Audio")]
         [SerializeField] private AudioClip _useSound;
@@ -89,9 +95,18 @@ namespace TheOrder.Items
                 _audioSource.PlayOneShot(_useSound);
             }
 
+            // Unblock barricaded door
+            if (_doorToUnblock != null)
+                _doorToUnblock.IsBarricaded = false;
+
             // Activate / deactivate linked objects
             if (_objectToDeactivate != null)
-                _objectToDeactivate.SetActive(false);
+            {
+                if (_useBreakAnimation)
+                    StartCoroutine(BreakAndFall(_objectToDeactivate));
+                else
+                    _objectToDeactivate.SetActive(false);
+            }
             if (_objectToEnable != null)
                 _objectToEnable.SetActive(true);
 
@@ -141,11 +156,26 @@ namespace TheOrder.Items
                 rewardGo.transform.position = spawnPos;
             }
 
-            // Ensure collider for raycasting
-            if (rewardGo.GetComponentInChildren<Collider>() == null)
+            rewardGo.transform.localScale = _rewardItem.MeshScale;
+
+            // Disable and destroy existing colliders, add a mesh-fitted BoxCollider
+            foreach (var c in rewardGo.GetComponentsInChildren<Collider>())
             {
-                rewardGo.AddComponent<BoxCollider>();
+                c.enabled = false;
+                Destroy(c);
             }
+
+            var box = rewardGo.AddComponent<BoxCollider>();
+            FitBoxColliderToMesh(rewardGo, box);
+
+            // Add physics so reward falls to ground
+            var rb = rewardGo.GetComponent<Rigidbody>();
+            if (rb == null)
+                rb = rewardGo.AddComponent<Rigidbody>();
+            rb.isKinematic = false;
+            rb.useGravity = true;
+            rb.mass = 0.5f;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
             var pickup = rewardGo.GetComponent<ItemPickup>();
             if (pickup == null)
@@ -155,6 +185,57 @@ namespace TheOrder.Items
             pickup.Initialize(_rewardItem);
 
             rewardGo.name = $"Reward_{_rewardItem.DisplayName}";
+        }
+
+        private IEnumerator BreakAndFall(GameObject target)
+        {
+            // Unparent so it falls freely instead of staying glued to door
+            target.transform.SetParent(null);
+
+            // MeshColliders must be convex for non-kinematic Rigidbody
+            var mc = target.GetComponent<MeshCollider>();
+            if (mc != null)
+                mc.convex = true;
+
+            // Add Rigidbody to let physics drop it
+            var rb = target.GetComponent<Rigidbody>();
+            if (rb == null)
+                rb = target.AddComponent<Rigidbody>();
+
+            rb.isKinematic = false;
+            rb.mass = 2f;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+            // Give a slight outward push so it topples away from the door
+            rb.AddForce(target.transform.forward * 1f + Vector3.down * 0.5f, ForceMode.Impulse);
+            rb.AddTorque(target.transform.right * 3f, ForceMode.Impulse);
+
+            yield return new WaitForSeconds(_breakFallDelay);
+
+            target.SetActive(false);
+        }
+
+        private static void FitBoxColliderToMesh(GameObject go, BoxCollider box)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+            {
+                box.size = Vector3.one * 0.1f;
+                return;
+            }
+
+            var bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+
+            box.center = go.transform.InverseTransformPoint(bounds.center);
+            var localSize = bounds.size;
+            var scale = go.transform.lossyScale;
+            box.size = new Vector3(
+                scale.x != 0f ? localSize.x / scale.x : localSize.x,
+                scale.y != 0f ? localSize.y / scale.y : localSize.y,
+                scale.z != 0f ? localSize.z / scale.z : localSize.z
+            );
         }
 
         #endregion

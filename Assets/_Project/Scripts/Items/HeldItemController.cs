@@ -64,6 +64,7 @@ namespace TheOrder.Items
                 _heldMeshInstance = Instantiate(item.MeshPrefab, _handPoint);
                 _heldMeshInstance.transform.localPosition = Vector3.zero;
                 _heldMeshInstance.transform.localRotation = Quaternion.identity;
+                _heldMeshInstance.transform.localScale = item.MeshScale;
 
                 // Disable colliders on held mesh so it doesn't interfere with raycasts
                 foreach (var col in _heldMeshInstance.GetComponentsInChildren<Collider>())
@@ -157,7 +158,6 @@ namespace TheOrder.Items
             }
             else
             {
-                // Fallback: create a simple pickup from the mesh prefab
                 if (item.MeshPrefab != null)
                 {
                     pickupGo = Instantiate(item.MeshPrefab, position, Quaternion.identity);
@@ -167,24 +167,28 @@ namespace TheOrder.Items
                     pickupGo = new GameObject($"Dropped_{item.DisplayName}");
                     pickupGo.transform.position = position;
                 }
-
-                // Ensure it has a collider for raycasting
-                if (pickupGo.GetComponentInChildren<Collider>() == null)
-                {
-                    pickupGo.AddComponent<BoxCollider>();
-                }
             }
 
-            // Add physics so the item falls with gravity
+            pickupGo.transform.localScale = item.MeshScale;
+
+            // Disable and destroy existing colliders, add a mesh-fitted BoxCollider
+            foreach (var c in pickupGo.GetComponentsInChildren<Collider>())
+            {
+                c.enabled = false;
+                Object.Destroy(c);
+            }
+
+            var box = pickupGo.AddComponent<BoxCollider>();
+            FitBoxColliderToMesh(pickupGo, box);
+
+            // Add physics — explicit gravity, non-kinematic
             var rb = pickupGo.GetComponent<Rigidbody>();
             if (rb == null)
                 rb = pickupGo.AddComponent<Rigidbody>();
+            rb.isKinematic = false;
+            rb.useGravity = true;
             rb.mass = 0.5f;
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-
-            // Ensure MeshColliders are convex (required for non-kinematic Rigidbody)
-            foreach (var mc in pickupGo.GetComponentsInChildren<MeshCollider>())
-                mc.convex = true;
 
             // Add or configure ItemPickup component
             var pickup = pickupGo.GetComponent<ItemPickup>();
@@ -195,6 +199,31 @@ namespace TheOrder.Items
             pickup.Initialize(item);
 
             pickupGo.name = $"Dropped_{item.DisplayName}";
+        }
+
+        /// <summary>Fit a BoxCollider to the combined mesh bounds of all renderers.</summary>
+        private static void FitBoxColliderToMesh(GameObject go, BoxCollider box)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+            {
+                box.size = Vector3.one * 0.1f;
+                return;
+            }
+
+            var bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                bounds.Encapsulate(renderers[i].bounds);
+
+            // Convert world bounds to local space
+            box.center = go.transform.InverseTransformPoint(bounds.center);
+            var localSize = bounds.size;
+            var scale = go.transform.lossyScale;
+            box.size = new Vector3(
+                scale.x != 0f ? localSize.x / scale.x : localSize.x,
+                scale.y != 0f ? localSize.y / scale.y : localSize.y,
+                scale.z != 0f ? localSize.z / scale.z : localSize.z
+            );
         }
 
         #endregion

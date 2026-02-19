@@ -3,8 +3,8 @@ using UnityEngine;
 namespace TheOrder.Items
 {
     /// <summary>
-    /// World-space item pickup. Press E to pick up into the player's hand.
-    /// If the player is already holding an item, shows a "hands full" message.
+    /// World-space item pickup. Press E to pick up.
+    /// Keys go straight to inventory (pocket). Tools go to hand.
     /// </summary>
     public class ItemPickup : MonoBehaviour, IInteractable
     {
@@ -32,7 +32,7 @@ namespace TheOrder.Items
 
         #region IInteractable
 
-        /// <summary>Pick up the item into the player's hand.</summary>
+        /// <summary>Pick up the item — keys to inventory, tools to hand.</summary>
         public void Interact(GameObject interactor)
         {
             if (_itemData == null)
@@ -41,6 +41,26 @@ namespace TheOrder.Items
                 return;
             }
 
+            if (_itemData.Type == ItemType.Key)
+            {
+                var inventory = Player.PlayerInventory.Instance;
+                if (inventory == null)
+                {
+                    inventory = interactor.GetComponent<Player.PlayerInventory>();
+                }
+                if (inventory == null)
+                {
+                    Debug.LogWarning("[ItemPickup] No PlayerInventory found.");
+                    return;
+                }
+
+                inventory.AddKey(_itemData);
+                GameEvents.ItemPickedUp(_itemData);
+                Destroy(gameObject);
+                return;
+            }
+
+            // Tool — goes to hand
             var heldItem = interactor.GetComponent<HeldItemController>();
             if (heldItem == null)
             {
@@ -50,7 +70,6 @@ namespace TheOrder.Items
 
             if (heldItem.HasItem)
             {
-                // Hands full — can't pick up
                 return;
             }
 
@@ -63,6 +82,9 @@ namespace TheOrder.Items
         public string GetPromptText()
         {
             if (_itemData == null) return "Pick up item";
+
+            if (_itemData.Type == ItemType.Key)
+                return $"Pick up {_itemData.DisplayName}";
 
             if (HeldItemController.Instance != null && HeldItemController.Instance.HasItem)
                 return "Hands full — drop current item first (Q)";
