@@ -14,6 +14,10 @@ namespace TheOrder.Player
         [Header("References")]
         [SerializeField] private Light _spotLight;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _clickSound;
+        [SerializeField] [Range(0f, 1f)] private float _clickVolume = 0.5f;
+
         #endregion
 
         #region Private Fields
@@ -54,7 +58,7 @@ namespace TheOrder.Player
 
         private void Update()
         {
-            if (_input.FlashlightPressed)
+            if (_input != null && _input.FlashlightPressed)
             {
                 Toggle();
             }
@@ -72,6 +76,9 @@ namespace TheOrder.Player
             {
                 _spotLight.enabled = _isOn;
             }
+
+            if (_clickSound != null)
+                AudioSource.PlayClipAtPoint(_clickSound, transform.position, _clickVolume);
 
             GameEvents.FlashlightToggled(_isOn);
         }

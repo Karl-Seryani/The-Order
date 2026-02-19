@@ -76,14 +76,18 @@ namespace TheOrder.Hunter
                 }
             }
 
-            // Check for catch
+            // Check for catch (ignore if on different floors)
             if (_ai.HasPlayerPosition)
             {
-                float distanceToPlayer = Vector3.Distance(_ai.transform.position, _ai.PlayerPosition);
-                if (distanceToPlayer <= _ai.Config.CatchDistance)
+                float yDiff = Mathf.Abs(_ai.transform.position.y - _ai.PlayerPosition.y);
+                if (yDiff < 2f)
                 {
-                    _ai.CatchPlayer();
-                    return;
+                    float distanceToPlayer = Vector3.Distance(_ai.transform.position, _ai.PlayerPosition);
+                    if (distanceToPlayer <= _ai.Config.CatchDistance)
+                    {
+                        _ai.CatchPlayer();
+                        return;
+                    }
                 }
             }
 

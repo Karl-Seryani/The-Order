@@ -142,7 +142,8 @@ namespace TheOrder.Audio
             if (_footstepTimer >= interval)
             {
                 _footstepTimer = 0f;
-                PlayRandomFootstep();
+                bool isSprinting = speed >= _config.SprintSpeedThreshold;
+                PlayRandomFootstep(isSprinting);
             }
         }
 
@@ -181,6 +182,7 @@ namespace TheOrder.Audio
                     ResetRandomStingerTimer();
                     break;
                 case GameState.Paused:
+                case GameState.Death:
                     _ambientSource.Pause();
                     _isPlaying = false;
                     break;
@@ -241,12 +243,14 @@ namespace TheOrder.Audio
 
         #region Audio Playback
 
-        private void PlayRandomFootstep()
+        private void PlayRandomFootstep(bool isSprinting)
         {
-            if (_config == null || _config.FootstepClips == null || _config.FootstepClips.Length == 0) return;
-            if (_sfxSource == null) return;
+            if (_config == null || _sfxSource == null) return;
 
-            var clip = _config.FootstepClips[Random.Range(0, _config.FootstepClips.Length)];
+            AudioClip[] clips = isSprinting ? _config.SprintFootstepClips : _config.WalkFootstepClips;
+            if (clips == null || clips.Length == 0) return;
+
+            var clip = clips[Random.Range(0, clips.Length)];
             if (clip != null)
             {
                 _sfxSource.PlayOneShot(clip, _config.FootstepVolume);
@@ -281,7 +285,7 @@ namespace TheOrder.Audio
         private IEnumerator StopAfterDuration(float duration)
         {
             float fadeDuration = 0.5f;
-            yield return new WaitForSeconds(duration - fadeDuration);
+            yield return new WaitForSecondsRealtime(duration - fadeDuration);
 
             // Fade out to avoid hard cut
             if (_stingerSource != null && _stingerSource.isPlaying && !_stingerSource.loop)
@@ -290,7 +294,7 @@ namespace TheOrder.Audio
                 float elapsed = 0f;
                 while (elapsed < fadeDuration)
                 {
-                    elapsed += Time.deltaTime;
+                    elapsed += Time.unscaledDeltaTime;
                     _stingerSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / fadeDuration);
                     yield return null;
                 }

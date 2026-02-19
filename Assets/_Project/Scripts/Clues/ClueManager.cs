@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace TheOrder.Clues
 {
@@ -40,6 +39,13 @@ namespace TheOrder.Clues
 
         /// <summary>Returns all collected clues in order of collection.</summary>
         public IReadOnlyList<ClueData> GetCollectedClues() => _collectedClues;
+
+        /// <summary>Reset all clue progress. Call on new game (not respawn).</summary>
+        public void ClearAll()
+        {
+            _collectedClueIds.Clear();
+            _collectedClues.Clear();
+        }
 
         /// <summary>Returns true if the specified clue has been collected.</summary>
         public bool IsClueCollected(string clueId)
@@ -91,25 +97,16 @@ namespace TheOrder.Clues
         private void OnEnable()
         {
             GameEvents.OnClueCollected += HandleClueCollected;
-            SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
         private void OnDisable()
         {
             GameEvents.OnClueCollected -= HandleClueCollected;
-            SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
         #endregion
 
         #region Event Handlers
-
-        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            // Reset collected clues on scene reload so counter matches fresh scene objects
-            _collectedClueIds.Clear();
-            _collectedClues.Clear();
-        }
 
         internal void HandleClueCollected(ClueData clue)
         {

@@ -48,7 +48,8 @@ namespace TheOrder.UI
         private Coroutine _notificationCoroutine;
         private Coroutine _objectiveCoroutine;
         private string _currentObjective = "Find a way to escape";
-        private bool _hasSearchedForReferences;
+        private bool _hasSearchedForInput;
+        private bool _hasSearchedForInteraction;
         private Image _crosshairDot;
 
         #endregion
@@ -139,10 +140,10 @@ namespace TheOrder.UI
             UpdateInteractionPrompt();
 
             // Search for input handler once if not found in Start()
-            if (_input == null && !_hasSearchedForReferences)
+            if (_input == null && !_hasSearchedForInput)
             {
                 _input = FindFirstObjectByType<Player.PlayerInputHandler>();
-                _hasSearchedForReferences = true;
+                _hasSearchedForInput = true;
             }
 
             if (_input != null && (_input.JournalPressed || _input.PausePressed))
@@ -194,8 +195,9 @@ namespace TheOrder.UI
 
             if (_playerInteraction == null)
             {
-                if (_hasSearchedForReferences) return;
+                if (_hasSearchedForInteraction) return;
                 _playerInteraction = FindFirstObjectByType<Player.PlayerInteraction>();
+                _hasSearchedForInteraction = true;
                 if (_playerInteraction == null) return;
             }
 

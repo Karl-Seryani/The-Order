@@ -19,6 +19,12 @@ namespace TheOrder.Doors
         [Tooltip("Local-space offset from mesh center to hinge edge. Use for cabinets without a hinge child.")]
         [SerializeField] private Vector3 _pivotOffset;
 
+        [Header("Audio Override (leave empty for global door SFX)")]
+        [SerializeField] private AudioClip _openSound;
+        [SerializeField] private AudioClip _closeSound;
+        [SerializeField] private AudioClip _barricadeThudSound;
+        [SerializeField] [Range(0f, 1f)] private float _soundVolume = 0.7f;
+
         [Header("Barricade")]
         [SerializeField] private bool _startsBarricaded;
 
@@ -72,7 +78,11 @@ namespace TheOrder.Doors
         /// <summary>Toggle the door open/close on E press.</summary>
         public void Interact(GameObject interactor)
         {
-            if (IsBarricaded) return;
+            if (IsBarricaded)
+            {
+                PlaySound(_barricadeThudSound);
+                return;
+            }
 
             float targetAngle = _isOpen ? 0f : _rotationAngle;
 
@@ -106,6 +116,7 @@ namespace TheOrder.Doors
             _isOpen = true;
             _isAnimating = false;
             ApplyRotation();
+            PlaySound(_openSound);
             GameEvents.DoorOpened(transform.position);
         }
 
@@ -121,6 +132,7 @@ namespace TheOrder.Doors
             _isOpen = false;
             _isAnimating = false;
             ApplyRotation();
+            PlaySound(_closeSound);
             GameEvents.DoorClosed(transform.position);
         }
 
@@ -151,9 +163,15 @@ namespace TheOrder.Doors
             _isOpen = Mathf.Abs(_currentAngle) > Mathf.Abs(_rotationAngle) * 0.5f;
 
             if (_isOpen && !wasOpen)
+            {
+                PlaySound(_openSound);
                 GameEvents.DoorOpened(transform.position);
+            }
             else if (!_isOpen && wasOpen)
+            {
+                PlaySound(_closeSound);
                 GameEvents.DoorClosed(transform.position);
+            }
         }
 
         #endregion
@@ -174,6 +192,16 @@ namespace TheOrder.Doors
                 Vector3 offsetFromHinge = targetRot * (-_pivotOffset);
                 _doorTransform.localPosition = hingeInParent + offsetFromHinge;
             }
+        }
+
+        #endregion
+
+        #region Audio
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (clip == null) return;
+            AudioSource.PlayClipAtPoint(clip, transform.position, _soundVolume);
         }
 
         #endregion

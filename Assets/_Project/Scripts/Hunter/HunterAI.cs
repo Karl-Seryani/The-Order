@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -62,6 +63,14 @@ namespace TheOrder.Hunter
 
         // Paused state
         private bool _isPaused;
+
+        // Door self-ignore (prevents investigating own door opens)
+        private float _lastDoorOpenTime = -Mathf.Infinity;
+        private Vector3 _lastDoorOpenPosition;
+
+        // Preallocated raycast buffer (avoids GC allocs every frame)
+        private readonly RaycastHit[] _raycastBuffer = new RaycastHit[16];
+        private static readonly HitDistanceComparer _hitDistanceComparer = new();
 
         // Animator hashes
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -231,15 +240,15 @@ namespace TheOrder.Hunter
 
             // Obstruction check — cast on ALL layers, skip self colliders
             Vector3 dir = toPlayer.normalized;
-            RaycastHit[] hits = Physics.RaycastAll(eyePos, dir, distance, ~0, QueryTriggerInteraction.Ignore);
+            int hitCount = Physics.RaycastNonAlloc(eyePos, dir, _raycastBuffer, distance, ~0, QueryTriggerInteraction.Ignore);
 
             // Sort by distance, find first non-self hit
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-            foreach (RaycastHit hit in hits)
+            System.Array.Sort(_raycastBuffer, 0, hitCount, _hitDistanceComparer);
+            for (int i = 0; i < hitCount; i++)
             {
-                if (IsSelfCollider(hit.collider)) continue;
+                if (IsSelfCollider(_raycastBuffer[i].collider)) continue;
                 // First non-self hit — is it the player?
-                return ((1 << hit.collider.gameObject.layer) & _playerLayer) != 0;
+                return ((1 << _raycastBuffer[i].collider.gameObject.layer) & _playerLayer) != 0;
             }
 
             // Nothing hit between eye and player — clear line of sight
@@ -422,6 +431,8 @@ namespace TheOrder.Hunter
                     var lockedDoor = door.GetComponent<Doors.LockedDoor>();
                     if (lockedDoor != null && !lockedDoor.IsUnlocked) return;
 
+                    _lastDoorOpenTime = Time.time;
+                    _lastDoorOpenPosition = door.transform.position;
                     door.OpenDoor();
                     StartCoroutine(DelayedDoorClose(door));
                 }
@@ -552,10 +563,14 @@ namespace TheOrder.Hunter
 
         private void HandleDoorOpened(Vector3 position)
         {
-            float distance = Vector3.Distance(transform.position, position);
-            // Ignore doors the Hunter opened himself (within 3m)
-            if (distance < 3f) return;
+            // Ignore doors the Hunter opened himself (within 1s and 5m of last self-open)
+            if (Time.time - _lastDoorOpenTime < 1f &&
+                Vector3.Distance(_lastDoorOpenPosition, position) < 5f)
+            {
+                return;
+            }
 
+            float distance = Vector3.Distance(transform.position, position);
             if (distance <= _config.DoorOpenHearingRadius)
             {
                 RegisterSound(position);
@@ -577,9 +592,23 @@ namespace TheOrder.Hunter
 
         private void HandleGameStateChanged(GameState newState)
         {
-            // Pause/resume the Hunter based on game state
             _isPaused = newState != GameState.Playing;
-            Debug.Log($"[HunterAI] GameStateChanged → {newState}, isPaused={_isPaused}");
+
+            if (newState == GameState.Playing)
+            {
+                // Reset detection state on respawn so Hunter doesn't chase stale data
+                _hasLastKnownPosition = false;
+                _hasLastHeardPosition = false;
+                _lastSeenTime = -Mathf.Infinity;
+                _lastHeardTime = -Mathf.Infinity;
+
+                // Return to patrol on respawn
+                if (_stateMachine != null && _stateMachine.CurrentStateType != HunterState.Patrol)
+                {
+                    _stateMachine.ChangeState(_patrolState, HunterState.Patrol);
+                }
+            }
+
             if (_agent.isOnNavMesh)
             {
                 _agent.isStopped = _isPaused;
@@ -631,5 +660,11 @@ namespace TheOrder.Hunter
         }
 
         #endregion
+    }
+
+    /// <summary>Comparer for sorting RaycastHit by distance (avoids lambda alloc).</summary>
+    internal class HitDistanceComparer : IComparer<RaycastHit>
+    {
+        public int Compare(RaycastHit a, RaycastHit b) => a.distance.CompareTo(b.distance);
     }
 }

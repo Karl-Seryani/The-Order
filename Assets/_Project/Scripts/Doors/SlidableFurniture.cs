@@ -21,6 +21,11 @@ namespace TheOrder.Doors
         [SerializeField] private bool _isLocked;
         [SerializeField] private string _lockedPrompt = "Locked";
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _slideSound;
+        [SerializeField] [Range(0f, 1f)] private float _soundVolume = 0.6f;
+        [SerializeField] [Range(0f, 1f)] private float _noiseLoudness = 0.6f;
+
         [Header("Prompt")]
         [SerializeField] private string _promptText = "Slide";
 
@@ -79,6 +84,9 @@ namespace TheOrder.Doors
                 StopCoroutine(_animationCoroutine);
 
             _animationCoroutine = StartCoroutine(AnimateSlide(targetOffset));
+            if (_slideSound != null)
+                AudioSource.PlayClipAtPoint(_slideSound, transform.position, _soundVolume);
+            GameEvents.InteractableNoise(transform.position, _noiseLoudness);
         }
 
         /// <summary>Returns prompt text.</summary>

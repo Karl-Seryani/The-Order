@@ -5,6 +5,7 @@ namespace TheOrder
         MainMenu,
         Playing,
         Paused,
+        Death,
         Ending
     }
 

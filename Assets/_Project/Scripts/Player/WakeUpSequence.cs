@@ -25,6 +25,10 @@ namespace TheOrder.Player
         [SerializeField] private float _blink3FadeInDuration = 0.3f;
         [SerializeField] private float _riseUpDuration = 3.0f;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _wakeUpAmbience;
+        [SerializeField] [Range(0f, 1f)] private float _ambienceVolume = 0.5f;
+
         [Header("Camera")]
         [SerializeField] private float _startingZRoll = 90f;
 
@@ -33,6 +37,7 @@ namespace TheOrder.Player
         #region Private Fields
 
         private PlayerCamera.FirstPersonCamera _firstPersonCamera;
+        private AudioSource _audioSource;
         private bool _sequenceComplete;
 
         #endregion
@@ -79,6 +84,18 @@ namespace TheOrder.Player
             if (_firstPersonCamera != null)
                 _firstPersonCamera.IsEnabled = false;
 
+            // Play wake-up ambience
+            if (_wakeUpAmbience != null)
+            {
+                _audioSource = GetComponent<AudioSource>();
+                if (_audioSource == null)
+                    _audioSource = gameObject.AddComponent<AudioSource>();
+                _audioSource.clip = _wakeUpAmbience;
+                _audioSource.volume = _ambienceVolume;
+                _audioSource.loop = false;
+                _audioSource.Play();
+            }
+
             // Start fully black, camera tilted sideways
             if (_blinkOverlay != null)
                 _blinkOverlay.alpha = 1f;
@@ -109,6 +126,10 @@ namespace TheOrder.Player
             // Re-enable camera look
             if (_firstPersonCamera != null)
                 _firstPersonCamera.IsEnabled = true;
+
+            // Fade out wake-up ambience
+            if (_audioSource != null && _audioSource.isPlaying)
+                _audioSource.Stop();
 
             // Signal wake-up complete — Playing state already set by BunkerSceneBootstrap
             _sequenceComplete = true;

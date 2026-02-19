@@ -25,6 +25,10 @@ namespace TheOrder.Items
         [SerializeField] private float _dropHeightOffset = 0.3f;
         [SerializeField] private LayerMask _dropRaycastMask = ~0;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _dropSound;
+        [SerializeField] [Range(0f, 1f)] private float _dropVolume = 0.6f;
+
         #endregion
 
         #region Private Fields
@@ -111,6 +115,12 @@ namespace TheOrder.Items
                 }
             }
             
+            // Play drop sound and alert Hunter (louder if thrown, quieter if placed)
+            float loudness = shouldPlaceGently ? 0.2f : 0.7f;
+            if (_dropSound != null)
+                AudioSource.PlayClipAtPoint(_dropSound, dropPosition, shouldPlaceGently ? _dropVolume * 0.3f : _dropVolume);
+            GameEvents.InteractableNoise(dropPosition, loudness);
+
             GameEvents.ItemDropped(_currentItem, dropPosition);
             ClearHeldItem();
         }

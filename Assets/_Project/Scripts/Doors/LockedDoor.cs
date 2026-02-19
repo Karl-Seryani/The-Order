@@ -16,6 +16,11 @@ namespace TheOrder.Doors
         [SerializeField] private Items.ItemData _requiredItem;
         [SerializeField] private string _lockedPrompt = "Locked";
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _unlockSound;
+        [SerializeField] private AudioClip _rattleSound;
+        [SerializeField] [Range(0f, 1f)] private float _soundVolume = 0.7f;
+
         #endregion
 
         #region Private Fields
@@ -64,11 +69,15 @@ namespace TheOrder.Doors
                 if (inventory != null && inventory.HasKey(_requiredItem))
                 {
                     _isUnlocked = true;
+                    if (_unlockSound != null)
+                        AudioSource.PlayClipAtPoint(_unlockSound, transform.position, _soundVolume);
                     GameEvents.DoorUnlocked(_requiredItem, transform.position);
                     GameEvents.ItemUsed(_requiredItem);
                 }
                 else
                 {
+                    if (_rattleSound != null)
+                        AudioSource.PlayClipAtPoint(_rattleSound, transform.position, _soundVolume);
                     GameEvents.LockedDoorAttempt(_requiredItem);
                     return;
                 }

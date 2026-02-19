@@ -14,6 +14,10 @@ namespace TheOrder.Clues
         [Header("Clue Data")]
         [SerializeField] private ClueData _clueData;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _paperSound;
+        [SerializeField] [Range(0f, 1f)] private float _paperVolume = 0.4f;
+
         [Header("Note Mode")]
         [Tooltip("If true, this is a re-readable note that is never collected or destroyed.")]
         [SerializeField] private bool _isNote;
@@ -44,6 +48,8 @@ namespace TheOrder.Clues
             {
                 // First press — show content on screen
                 _isReading = true;
+                if (_paperSound != null)
+                    AudioSource.PlayClipAtPoint(_paperSound, transform.position, _paperVolume);
                 GameEvents.ClueViewed(_clueData);
             }
             else

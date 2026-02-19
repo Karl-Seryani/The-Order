@@ -15,6 +15,10 @@ namespace TheOrder.Items
         [Header("Required Item")]
         [SerializeField] private ItemData _requiredItem;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _unscrewSound;
+        [SerializeField] [Range(0f, 1f)] private float _unscrewVolume = 0.6f;
+
         [Header("Unscrew Animation")]
         [SerializeField] private float _unscrewDuration = 0.8f;
         [SerializeField] private float _unscrewRotations = 3f;
@@ -47,6 +51,8 @@ namespace TheOrder.Items
             if (heldItem == null || !heldItem.HasItem || heldItem.CurrentItem != _requiredItem)
                 return;
 
+            if (_unscrewSound != null)
+                AudioSource.PlayClipAtPoint(_unscrewSound, transform.position, _unscrewVolume);
             StartCoroutine(UnscrewAnimation());
         }
 

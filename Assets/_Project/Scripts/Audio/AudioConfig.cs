@@ -108,14 +108,18 @@ namespace TheOrder.Audio
         #region Footsteps
 
         [Header("Footsteps")]
-        [SerializeField] private AudioClip[] _footstepClips;
+        [SerializeField] private AudioClip[] _walkFootstepClips;
+        [SerializeField] private AudioClip[] _sprintFootstepClips;
         [SerializeField] [Range(0f, 1f)] private float _footstepVolume = 0.5f;
         [SerializeField] private float _walkFootstepInterval = 0.5f;
         [SerializeField] private float _sprintFootstepInterval = 0.35f;
         [SerializeField] private float _sprintSpeedThreshold = 4.5f;
 
-        /// <summary>Array of footstep clips for random selection.</summary>
-        public AudioClip[] FootstepClips => _footstepClips;
+        /// <summary>Walk footstep clips for random selection.</summary>
+        public AudioClip[] WalkFootstepClips => _walkFootstepClips;
+
+        /// <summary>Sprint footstep clips for random selection.</summary>
+        public AudioClip[] SprintFootstepClips => _sprintFootstepClips;
 
         /// <summary>Volume for footstep SFX.</summary>
         public float FootstepVolume => _footstepVolume;

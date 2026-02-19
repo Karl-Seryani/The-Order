@@ -76,6 +76,11 @@ namespace TheOrder
                     SetCursorLock(false);
                     break;
 
+                case GameState.Death:
+                    Time.timeScale = 0f;
+                    SetCursorLock(true);
+                    break;
+
                 case GameState.Ending:
                     Time.timeScale = 1f;
                     SetCursorLock(false);

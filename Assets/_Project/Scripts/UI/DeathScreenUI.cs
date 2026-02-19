@@ -18,6 +18,10 @@ namespace TheOrder.UI
         [SerializeField] private Image _fadeImage;
         [SerializeField] private Text _deathText;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _deathStinger;
+        [SerializeField] [Range(0f, 1f)] private float _deathStingerVolume = 0.8f;
+
         [Header("Timing")]
         [SerializeField] private float _fadeDuration = 0.5f;
         [SerializeField] private float _textFadeDuration = 0.3f;
@@ -28,6 +32,7 @@ namespace TheOrder.UI
         #region Private Fields
 
         private bool _isDying;
+        private AudioSource _audioSource;
 
         #endregion
 
@@ -35,6 +40,13 @@ namespace TheOrder.UI
 
         private void Awake()
         {
+            _audioSource = GetComponent<AudioSource>();
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+                _audioSource.playOnAwake = false;
+            }
+
             if (_deathCanvas != null)
             {
                 _deathCanvas.enabled = false;
@@ -85,10 +97,14 @@ namespace TheOrder.UI
         {
             _isDying = true;
 
+            // Play death stinger
+            if (_deathStinger != null && _audioSource != null)
+                _audioSource.PlayOneShot(_deathStinger, _deathStingerVolume);
+
             // Disable player input via GameManager (keeps state in sync for scene reload)
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.SetState(GameState.Paused);
+                GameManager.Instance.SetState(GameState.Death);
             }
 
             // Enable the death canvas

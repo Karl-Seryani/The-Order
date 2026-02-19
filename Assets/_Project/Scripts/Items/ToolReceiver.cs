@@ -34,6 +34,7 @@ namespace TheOrder.Items
 
         [Header("Audio")]
         [SerializeField] private AudioClip _useSound;
+        [SerializeField] private AudioClip _breakSound;
 
         #endregion
 
@@ -114,7 +115,11 @@ namespace TheOrder.Items
             if (_objectToDeactivate != null)
             {
                 if (_useBreakAnimation)
+                {
+                    if (_breakSound != null && _audioSource != null)
+                        _audioSource.PlayOneShot(_breakSound);
                     StartCoroutine(BreakAndFall(_objectToDeactivate));
+                }
                 else
                     _objectToDeactivate.SetActive(false);
             }

@@ -13,6 +13,10 @@ namespace TheOrder.Items
         [Header("Item Data")]
         [SerializeField] private ItemData _itemData;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _pickupSound;
+        [SerializeField] [Range(0f, 1f)] private float _pickupVolume = 0.6f;
+
         #endregion
 
         #region Public API
@@ -55,6 +59,8 @@ namespace TheOrder.Items
                 }
 
                 inventory.AddKey(_itemData);
+                if (_pickupSound != null)
+                    AudioSource.PlayClipAtPoint(_pickupSound, transform.position, _pickupVolume);
                 GameEvents.ItemPickedUp(_itemData);
                 Destroy(gameObject);
                 return;
@@ -74,6 +80,8 @@ namespace TheOrder.Items
             }
 
             heldItem.PickUp(_itemData);
+            if (_pickupSound != null)
+                AudioSource.PlayClipAtPoint(_pickupSound, transform.position, _pickupVolume);
             GameEvents.ItemPickedUp(_itemData);
             
             // Wake up rigidbody if this was a pre-placed kinematic item

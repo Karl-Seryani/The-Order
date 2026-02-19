@@ -18,7 +18,8 @@ namespace TheOrder.Player
 
         #region Private Fields
 
-        private readonly HashSet<Items.ItemData> _keys = new();
+        /// <summary>Static so key data survives scene reload (respawn). Cleared on new game.</summary>
+        private static readonly HashSet<Items.ItemData> _keys = new();
 
         #endregion
 
@@ -43,6 +44,12 @@ namespace TheOrder.Player
             _keys.Remove(key);
         }
 
+        /// <summary>Clear all keys. Call on new game (not respawn — keys persist across deaths).</summary>
+        public static void ClearKeys()
+        {
+            _keys.Clear();
+        }
+
         #endregion
 
         #region Unity Lifecycle
@@ -51,11 +58,10 @@ namespace TheOrder.Player
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(this);
+                Destroy(gameObject);
                 return;
             }
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
 
         private void OnDestroy()
