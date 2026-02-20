@@ -17,6 +17,10 @@ namespace TheOrder.Items
         [SerializeField] private Vector3 _meshScale = Vector3.one;
         [SerializeField] private ItemType _itemType;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _impactClip;
+        [SerializeField] [Range(0.1f, 5f)] private float _impactVolumeMultiplier = 1f;
+
         /// <summary>Unique identifier for this item.</summary>
         public string Id => _id;
 
@@ -37,5 +41,11 @@ namespace TheOrder.Items
 
         /// <summary>Whether this is a Tool (reusable) or Key.</summary>
         public ItemType Type => _itemType;
+
+        /// <summary>Sound played when this item hits a surface after being dropped.</summary>
+        public AudioClip ImpactClip => _impactClip;
+
+        /// <summary>Volume multiplier for impact sound (heavier items = louder).</summary>
+        public float ImpactVolumeMultiplier => _impactVolumeMultiplier;
     }
 }

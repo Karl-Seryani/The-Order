@@ -50,6 +50,12 @@ namespace TheOrder.Items
         private void Awake()
         {
             _audioSource = GetComponent<AudioSource>();
+            if (_audioSource == null)
+            {
+                _audioSource = gameObject.AddComponent<AudioSource>();
+                _audioSource.playOnAwake = false;
+                _audioSource.spatialBlend = 1f;
+            }
 
             if (_openVisual != null)
                 _openVisual.SetActive(false);

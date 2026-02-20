@@ -63,6 +63,13 @@ namespace TheOrder.Items
                 pickup = pickupGo.AddComponent<ItemPickup>();
             pickup.Initialize(item);
 
+            // Add collision audio for drop impact sounds
+            if (item.ImpactClip != null)
+            {
+                var collisionAudio = pickupGo.AddComponent<ItemCollisionAudio>();
+                collisionAudio.SetImpactClip(item.ImpactClip, item.ImpactVolumeMultiplier);
+            }
+
             pickupGo.name = $"Pickup_{item.DisplayName}";
             return pickupGo;
         }

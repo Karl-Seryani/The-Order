@@ -14,7 +14,7 @@ namespace TheOrder.Items
 
         [Header("Audio")]
         [SerializeField] private AudioClip _impactClip;
-        [SerializeField] [Range(0f, 1f)] private float _maxVolume = 0.7f;
+        [SerializeField] [Range(0f, 5f)] private float _maxVolume = 0.7f;
 
         [Header("Settings")]
         [SerializeField] private float _minImpactSpeed = 1f;
@@ -26,24 +26,35 @@ namespace TheOrder.Items
         #region Private Fields
 
         private float _lastImpactTime = -1f;
+        private AudioSource _audioSource;
 
         #endregion
 
         #region Public API
 
-        /// <summary>Set the impact clip at runtime (used by ItemSpawner).</summary>
-        public void SetImpactClip(AudioClip clip)
+        /// <summary>Set the impact clip and volume at runtime (used by ItemSpawner).</summary>
+        public void SetImpactClip(AudioClip clip, float volumeMultiplier = 1f)
         {
             _impactClip = clip;
+            _maxVolume = 0.7f * volumeMultiplier;
         }
 
         #endregion
 
         #region Unity Lifecycle
 
+        private void Awake()
+        {
+            _audioSource = gameObject.AddComponent<AudioSource>();
+            _audioSource.playOnAwake = false;
+            _audioSource.spatialBlend = 1f;
+            _audioSource.minDistance = 1f;
+            _audioSource.maxDistance = 25f;
+        }
+
         private void OnCollisionEnter(Collision collision)
         {
-            if (_impactClip == null) return;
+            if (_impactClip == null || _audioSource == null) return;
             if (Time.time - _lastImpactTime < _cooldown) return;
 
             float speed = collision.relativeVelocity.magnitude;
@@ -56,7 +67,7 @@ namespace TheOrder.Items
             float volume = Mathf.Lerp(0.1f, _maxVolume, t);
             float loudness = Mathf.Lerp(0.2f, 1f, t);
 
-            AudioSource.PlayClipAtPoint(_impactClip, collision.contacts[0].point, volume);
+            _audioSource.PlayOneShot(_impactClip, volume);
             GameEvents.InteractableNoise(transform.position, loudness);
         }
 
