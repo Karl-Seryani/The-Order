@@ -97,7 +97,7 @@ namespace TheOrder.Doors
                     return $"Unlock with {_requiredItem.DisplayName}";
 
                 if (_requiredItem != null)
-                    return $"{_lockedPrompt} — requires {_requiredItem.DisplayName}";
+                    return $"Locked  -  need {_requiredItem.DisplayName}";
 
                 return _lockedPrompt;
             }

@@ -126,7 +126,7 @@ namespace TheOrder.Ending
 
             if (heldItem == null || !heldItem.HasItem)
             {
-                return $"Car \u2014 {_installedCount}/{_requiredParts.Length} parts installed";
+                return $"Car  [{_installedCount}/{_requiredParts.Length}]";
             }
 
             // Holding drill — check this specific zone's wheel
@@ -136,7 +136,7 @@ namespace TheOrder.Ending
                 {
                     return "Drill wheel";
                 }
-                return $"Car \u2014 {_installedCount}/{_requiredParts.Length} parts installed";
+                return $"Car  [{_installedCount}/{_requiredParts.Length}]";
             }
 
             // Holding a car part — check if it matches this zone
@@ -145,7 +145,13 @@ namespace TheOrder.Ending
                 return $"Place {zonePart.ItemData.DisplayName}";
             }
 
-            return $"Car \u2014 {_installedCount}/{_requiredParts.Length} parts installed";
+            // Holding a car part but wrong zone
+            if (zonePart != null && !zonePart.IsPlaced && IsCarPart(heldItem.CurrentItem))
+            {
+                return $"Wrong spot  -  holding {heldItem.CurrentItem.DisplayName}";
+            }
+
+            return $"Car  [{_installedCount}/{_requiredParts.Length}]";
         }
 
         #endregion
@@ -176,7 +182,7 @@ namespace TheOrder.Ending
                 return "Need Car Key";
             }
 
-            return $"Car \u2014 {_installedCount}/{_requiredParts.Length} parts installed";
+            return $"Car  [{_installedCount}/{_requiredParts.Length}]";
         }
 
         #endregion
@@ -196,6 +202,17 @@ namespace TheOrder.Ending
             }
 
             GameEvents.CarRepairComplete();
+        }
+
+        private bool IsCarPart(Items.ItemData item)
+        {
+            if (item == null) return false;
+            for (int i = 0; i < _requiredParts.Length; i++)
+            {
+                if (_requiredParts[i] != null && _requiredParts[i].ItemData == item)
+                    return true;
+            }
+            return false;
         }
 
         #endregion

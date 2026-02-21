@@ -103,7 +103,7 @@ namespace TheOrder.Items
                 return $"Pick up {_itemData.DisplayName}";
 
             if (HeldItemController.Instance != null && HeldItemController.Instance.HasItem)
-                return "Hands full — drop current item first (Q)";
+                return "Hands full";
 
             return $"Pick up {_itemData.DisplayName}";
         }

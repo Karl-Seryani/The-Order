@@ -210,7 +210,7 @@ namespace TheOrder.UI
 
             if (hasTarget && _interactionPromptText != null)
             {
-                _interactionPromptText.text = $"E — {_playerInteraction.PromptText}";
+                _interactionPromptText.text = $"[E]  {_playerInteraction.PromptText}";
             }
 
             // Show/hide drop hint based on held item
@@ -226,7 +226,7 @@ namespace TheOrder.UI
             _dropHintText.gameObject.SetActive(holding);
             if (holding)
             {
-                _dropHintText.text = "Q — Drop";
+                _dropHintText.text = "[Q]  Drop";
             }
         }
 
@@ -414,7 +414,7 @@ namespace TheOrder.UI
         {
             if (requiredItem != null)
             {
-                ShowClueNotification($"Locked — requires {requiredItem.DisplayName}");
+                ShowClueNotification($"Locked  -  need {requiredItem.DisplayName}");
             }
             else
             {

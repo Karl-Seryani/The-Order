@@ -44,15 +44,16 @@ namespace TheOrder.UI
             new[]
             {
                 "MOVEMENT\n" +
-                "W A S D  —  Walk\n" +
-                "Shift (hold)  —  Sprint\n" +
-                "Mouse  —  Look around\n\n" +
+                "W A S D      Walk\n" +
+                "Shift          Sprint\n" +
+                "Mouse         Look around\n\n" +
                 "ACTIONS\n" +
-                "E  —  Interact / Read / Collect\n" +
-                "F  —  Toggle flashlight\n\n" +
+                "E                Interact\n" +
+                "F                Flashlight\n" +
+                "Q               Drop item\n\n" +
                 "INTERFACE\n" +
-                "Tab  —  Show current objective\n" +
-                "Esc  —  Pause"
+                "Tab             Objective\n" +
+                "Esc             Pause"
             },
             // Survival Tips
             new[]
@@ -60,12 +61,12 @@ namespace TheOrder.UI
                 "Hide in lockers to avoid the Hunter. Otherwise,\n" +
                 "outrun him and break line of sight around corners.\n\n" +
                 "Your flashlight reveals the world but also attracts\n" +
-                "attention. In darkness, the Hunter can barely see —\n" +
+                "attention. In darkness, the Hunter can barely see.\n" +
                 "use that to your advantage.\n\n" +
                 "Sprinting drains your stamina. If you run dry, you\n" +
                 "will be forced to walk until it recovers.\n\n" +
                 "Doors can be opened and closed. A closed door\n" +
-                "buys you time — the Hunter must open it to follow.\n\n" +
+                "buys you time. The Hunter must open it to follow.\n\n" +
                 "Stay quiet. Walking slowly makes almost no noise,\n" +
                 "but sprinting can be heard from a distance."
             },
@@ -80,7 +81,7 @@ namespace TheOrder.UI
                 "  YOUR GOAL\n" +
                 "  Find keys, unlock new areas, and locate the exit.\n" +
                 "  The more clues you find, the more you understand\n" +
-                "  what happened here — and what the Hunter really is.\n\n" +
+                "  what happened here and what the Hunter really is.\n\n" +
                 "  Explore carefully. Every room could hold a vital clue\n" +
                 "  or the Hunter himself."
             }
