@@ -420,6 +420,8 @@ namespace TheOrder.Hunter
         /// </summary>
         public void CheckForDoors()
         {
+            if (!_config.CanOpenDoors) return;
+
             Vector3 rayOrigin = transform.position + Vector3.up * 0.8f;
             if (Physics.Raycast(rayOrigin, transform.forward, out RaycastHit hit, 2f))
             {

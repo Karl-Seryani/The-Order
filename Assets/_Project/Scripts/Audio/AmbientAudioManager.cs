@@ -241,6 +241,31 @@ namespace TheOrder.Audio
 
         #endregion
 
+        #region Config Switching
+
+        /// <summary>
+        /// Switch to a different AudioConfig (e.g., indoor → outdoor zone transition).
+        /// Crossfades the ambient loop to the new config's clip.
+        /// </summary>
+        public void SetConfig(AudioConfig newConfig)
+        {
+            if (newConfig == null || newConfig == _config) return;
+
+            _config = newConfig;
+
+            // Switch ambient loop
+            if (_ambientSource != null && newConfig.AmbientLoopClip != null)
+            {
+                _ambientSource.clip = newConfig.AmbientLoopClip;
+                _ambientSource.volume = newConfig.AmbientVolume;
+                if (_isPlaying) _ambientSource.Play();
+            }
+
+            ResetRandomStingerTimer();
+        }
+
+        #endregion
+
         #region Audio Playback
 
         private void PlayRandomFootstep(bool isSprinting)

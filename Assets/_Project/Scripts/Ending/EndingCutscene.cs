@@ -14,9 +14,6 @@ namespace TheOrder.Ending
     {
         #region Serialized Fields
 
-        [Header("Trigger")]
-        [SerializeField] private Items.ItemData _triggerItem;
-
         [Header("UI")]
         [SerializeField] private CanvasGroup _fadeOverlay;
         [SerializeField] private Text _escapedText;
@@ -38,12 +35,12 @@ namespace TheOrder.Ending
 
         private void OnEnable()
         {
-            GameEvents.OnDoorUnlocked += HandleDoorUnlocked;
+            GameEvents.OnCarRepairComplete += HandleCarRepairComplete;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnDoorUnlocked -= HandleDoorUnlocked;
+            GameEvents.OnCarRepairComplete -= HandleCarRepairComplete;
         }
 
         private void Start()
@@ -64,11 +61,10 @@ namespace TheOrder.Ending
 
         #region Event Handlers
 
-        private void HandleDoorUnlocked(Items.ItemData item, Vector3 position)
+        private void HandleCarRepairComplete()
         {
-            // Disabled — MainDoor now just opens normally.
-            // Will be re-enabled for the car escape ending.
-            return;
+            if (_isPlaying) return;
+            StartCoroutine(PlayEndingSequence());
         }
 
         #endregion

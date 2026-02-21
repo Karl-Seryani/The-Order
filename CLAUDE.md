@@ -22,11 +22,11 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ## Architecture Rules
 
-1. **Event Bus** — ALL system-to-system communication via `GameEvents.cs` (18 event groups). No direct references between systems.
+1. **Event Bus** — ALL system-to-system communication via `GameEvents.cs` (20 event groups). No direct references between systems.
 2. **ScriptableObject Data** — all gameplay values in SOs (`HunterConfig`, `ItemData`, `ClueData`, `EndingData`). Never hardcode in MonoBehaviours.
 3. **New Input System Only** — never use `UnityEngine.Input`. Use `.inputactions` asset via `PlayerInputHandler`.
 4. **`TheOrder` Namespace** — every script. Sub-namespaces: `Player`, `Hunter`, `Items`, `Doors`, `Clues`, `Ending`, `UI`, `Audio`, `PlayerCamera`.
-5. **IInteractable Interface** — all interactables implement it. `PlayerInteraction` raycasts → `Interact()`. 7 types: DoorController, LockedDoor, SlidableFurniture, ItemPickup, ToolReceiver, ScrewInteractable, CluePickup.
+5. **IInteractable Interface** — all interactables implement it. `PlayerInteraction` raycasts → `Interact()`. 9 types: DoorController, LockedDoor, SlidableFurniture, ItemPickup, ToolReceiver, ScrewInteractable, CluePickup, CarPartPickup, CarInstallZone.
 6. **NavMesh Validation** — `NavMesh.SamplePosition()` before every `SetDestination()`.
 7. **URP Volume Overrides** — no legacy post-processing.
 8. **PlayerMoved Always Fires** — every frame (even speed 0) for Hunter vision detection.
@@ -64,7 +64,8 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ### Items
 - `ItemData` SO — defines tools/keys with mesh, icon, impact audio
-- `ItemPickup` — world pickups (keys → inventory, tools → hand)
+- `ItemPickup` — world pickups (keys → inventory, tools → hand). Destroyed on pickup, recreated by ItemSpawner on drop.
+- `CarPartPickup` — scene-object pickups (car parts, drill). Hides mesh on pickup, re-shows with Rigidbody on drop. Tracks `_currentlyHeld` static for drop handling. Listens to `OnItemDropped` to intercept and destroy phantom ItemSpawner pickups.
 - `ToolReceiver` — requires specific tool, spawns rewards, animates break
 - `ScrewInteractable` / `ScrewLock` — screw-based locking mechanism
 
@@ -78,9 +79,18 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `ClueManager` — singleton tracker, knowledge level calculation (Low/Medium/High)
 - `CluePickup` — IInteractable pickup
 
-### Endings (partially implemented)
+### Car Repair / Escape
+- `CarRepairStation` — on Body_Goblin (car frame, outdoor area). Manages part installation, drill logic, car key start. Delegates zone-specific interactions to `CarInstallZone` children.
+- `CarInstallZone` — child collider zones on Body_Goblin (Leftzonewheel, rightzonewheel, frontzonewheel, motor). Each references a specific `CarPartPickup`. Implements IInteractable, delegates to parent `CarRepairStation.InteractWithZone()`.
+- **Parts**: Motor_4Banger, Left wheel, right wheel, front wheel — each a root scene object with `CarPartPickup` + `BoxCollider`. Wheels require drill after placement.
+- **Drill** — at Gatehouse, uses `CarPartPickup` (Tool type, stays in hand when drilling wheels).
+- **Car Key** — Key type (goes to inventory). Required to start car after all 4 parts installed.
+- **Flow**: find parts in bunker → carry to Body_Goblin → place at zone → drill wheels → find car key → start car → `OnCarRepairComplete` → `EndingCutscene`
+- **Audio**: drill sound on wheel drilling, car engine sound on start.
+
+### Endings
 - `EndingData` SO — 9 ending combinations (3 knowledge levels × 3 choices)
-- `EndingCutscene` — exists but currently disabled (returns early)
+- `EndingCutscene` — wired to `OnCarRepairComplete` event
 
 ### UI
 - `HUDManager` — interaction prompts, crosshair, clue panel, item notifications, objective fade
@@ -120,6 +130,8 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 | `OnItemDropped` | `Action<ItemData, Vector3>` | Sound + Hunter alert |
 | `OnItemUsed` | `Action<ItemData>` | Tool consumption |
 | `OnObjectiveChanged` | `Action<string>` | HUD objective text |
+| `OnCarPartInstalled` | `Action<ItemData, int, int>` | Part installed (part, count, total) |
+| `OnCarRepairComplete` | `Action` | All parts installed + car started |
 | `OnEndingTriggered` | `Action<EndingData>` | Ending sequence |
 
 ---
@@ -155,6 +167,10 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - Hunter skeleton path: `Asylum/Hunter/root/pelvis/spine_01/.../hand_r` (for weapon attachment).
 - Mixamo FBX animations must be set to **Humanoid** rig type to match the Hunter avatar.
 - Serialized field defaults are overridden by scene values — use MCP `set_property` to update scene values.
+- `CarPartPickup` uses `OnEnable`/`OnDisable` for event subscription — these scene objects stay active (only renderers/colliders toggle), so subscription is stable.
+- `CarPartPickup._currentlyHeld` is static — resets on domain reload. Only one car part can be held at a time.
+- Car parts are root scene objects (no parent). `Place()` sets `transform.position` to world home position. Drop sets `transform.position` to drop position.
+- `HunterConfig.CanOpenDoors` field controls whether Hunter can open doors (disabled for outdoor area).
 
 ---
 
@@ -162,9 +178,10 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 - [ ] Death cinematic sequence (reverted — needs full redesign with better animations)
 - [ ] Hiding system (locker assets imported, no C# mechanic yet)
-- [ ] Ending system (EndingData SOs exist, EndingCutscene disabled, needs car escape flow)
 - [ ] Settings panel UI (button exists, panel empty)
 - [ ] Pause menu (GameState.Paused works, no menu UI)
+- [ ] Car Key pickup needs to be placed in the bunker scene
+- [x] Car repair escape system (4 parts + drill + car key → escape ending)
 - [x] Item progression system (ItemPickup → HeldItemController → ToolReceiver → LockedDoor chain works)
 - [x] Clue collection system (18 notes, knowledge levels, journal)
-- [x] Audio system (breathing FSM, door sounds, item impacts, ambient, flashlight click)
+- [x] Audio system (breathing FSM, door sounds, item impacts, ambient, flashlight click, drill, car start)

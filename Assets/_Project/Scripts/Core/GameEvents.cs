@@ -133,6 +133,18 @@ namespace TheOrder
 
         #endregion
 
+        #region Car Repair
+
+        /// <summary>Fired when a car part is installed. Passes part data, installed count, and total required.</summary>
+        public static event Action<Items.ItemData, int, int> OnCarPartInstalled;
+        public static void CarPartInstalled(Items.ItemData part, int installed, int total) => OnCarPartInstalled?.Invoke(part, installed, total);
+
+        /// <summary>Fired when all car parts are installed and the car is ready to escape.</summary>
+        public static event Action OnCarRepairComplete;
+        public static void CarRepairComplete() => OnCarRepairComplete?.Invoke();
+
+        #endregion
+
         #region Endings
 
         /// <summary>Fired when an ending is triggered. Passes ending data.</summary>

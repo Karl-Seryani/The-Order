@@ -37,6 +37,9 @@ namespace TheOrder
         [SerializeField] private float _losTimeout = 3f;
         [SerializeField] private float _catchDistance = 1.5f;
 
+        [Header("Doors")]
+        [SerializeField] private bool _canOpenDoors = true;
+
         #region Public Accessors
 
         // Movement
@@ -66,6 +69,9 @@ namespace TheOrder
         // Chase
         public float LosTimeout => _losTimeout;
         public float CatchDistance => _catchDistance;
+
+        // Doors
+        public bool CanOpenDoors => _canOpenDoors;
 
         #endregion
     }
