@@ -59,17 +59,9 @@ namespace TheOrder
         public static event Action OnPlayerLost;
         public static void PlayerLost() => OnPlayerLost?.Invoke();
 
-        /// <summary>Fired when the Hunter catches the player. Passes Hunter transform for camera targeting.</summary>
-        public static event Action<Transform> OnPlayerCaught;
-        public static void PlayerCaught(Transform hunterTransform) => OnPlayerCaught?.Invoke(hunterTransform);
-
-        /// <summary>Fired when the death cinematic starts. Disables player input before death state.</summary>
-        public static event Action OnDeathCinematicStarted;
-        public static void DeathCinematicStarted() => OnDeathCinematicStarted?.Invoke();
-
-        /// <summary>Fired when the death cinematic completes. Tells DeathScreenUI to take over.</summary>
-        public static event Action OnDeathCinematicComplete;
-        public static void DeathCinematicComplete() => OnDeathCinematicComplete?.Invoke();
+        /// <summary>Fired when the Hunter catches the player. Triggers death screen.</summary>
+        public static event Action OnPlayerCaught;
+        public static void PlayerCaught() => OnPlayerCaught?.Invoke();
 
         #endregion
 

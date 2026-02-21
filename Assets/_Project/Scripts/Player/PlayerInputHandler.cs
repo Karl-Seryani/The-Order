@@ -79,7 +79,6 @@ namespace TheOrder.Player
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
             GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
             GameEvents.OnWakeUpCompleted += HandleWakeUpCompleted;
-            GameEvents.OnDeathCinematicStarted += HandleDeathCinematicStarted;
             if (GameManager.Instance != null)
             {
                 HandleGameStateChanged(GameManager.Instance.CurrentState);
@@ -91,7 +90,6 @@ namespace TheOrder.Player
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
             GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
             GameEvents.OnWakeUpCompleted -= HandleWakeUpCompleted;
-            GameEvents.OnDeathCinematicStarted -= HandleDeathCinematicStarted;
         }
 
         private void Update()
@@ -140,11 +138,6 @@ namespace TheOrder.Player
         private void HandleWakeUpCompleted()
         {
             _playerInput.actions.FindActionMap("Player").Enable();
-        }
-
-        private void HandleDeathCinematicStarted()
-        {
-            _playerInput.actions.FindActionMap("Player").Disable();
         }
 
         #endregion

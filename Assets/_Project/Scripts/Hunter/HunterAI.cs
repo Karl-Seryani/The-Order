@@ -75,7 +75,6 @@ namespace TheOrder.Hunter
         // Animator hashes
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int IsLookingHash = Animator.StringToHash("IsLooking");
-        private static readonly int SlashTriggerHash = Animator.StringToHash("SlashTrigger");
 
         #endregion
 
@@ -478,31 +477,14 @@ namespace TheOrder.Hunter
         #region Game Over
 
         /// <summary>
-        /// Called when the Hunter catches the player. Snaps to face player,
-        /// triggers slash animation, and fires the caught event with transform.
+        /// Called when the Hunter catches the player. Fires event for death screen.
         /// </summary>
         public void CatchPlayer()
         {
-            Debug.Log("[HunterAI] Player caught! Starting death cinematic.");
+            Debug.Log("[HunterAI] Player caught! Game Over.");
             _isPaused = true;
             _agent.isStopped = true;
-
-            // Snap-rotate Hunter to face the player
-            Vector3 dirToPlayer = _playerPosition - transform.position;
-            dirToPlayer.y = 0f;
-            if (dirToPlayer.sqrMagnitude > 0.001f)
-            {
-                transform.rotation = Quaternion.LookRotation(dirToPlayer.normalized);
-            }
-
-            // Stop movement animation and trigger slash sequence
-            if (_animator != null)
-            {
-                _animator.SetFloat(SpeedHash, 0f);
-                _animator.SetTrigger(SlashTriggerHash);
-            }
-
-            GameEvents.PlayerCaught(transform);
+            GameEvents.PlayerCaught();
         }
 
         #endregion

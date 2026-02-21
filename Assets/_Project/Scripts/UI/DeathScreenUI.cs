@@ -7,7 +7,7 @@ namespace TheOrder.UI
 {
     /// <summary>
     /// Death screen overlay — fades to black with "YOU DIED" text, then reloads the scene.
-    /// Subscribes to GameEvents.OnDeathCinematicComplete (after cinematic plays).
+    /// Subscribes to GameEvents.OnPlayerCaught.
     /// </summary>
     public class DeathScreenUI : MonoBehaviour
     {
@@ -71,19 +71,19 @@ namespace TheOrder.UI
 
         private void OnEnable()
         {
-            GameEvents.OnDeathCinematicComplete += HandleDeathCinematicComplete;
+            GameEvents.OnPlayerCaught += HandlePlayerCaught;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnDeathCinematicComplete -= HandleDeathCinematicComplete;
+            GameEvents.OnPlayerCaught -= HandlePlayerCaught;
         }
 
         #endregion
 
         #region Event Handlers
 
-        private void HandleDeathCinematicComplete()
+        private void HandlePlayerCaught()
         {
             if (_isDying) return;
             StartCoroutine(DeathSequence());
@@ -107,19 +107,14 @@ namespace TheOrder.UI
                 GameManager.Instance.SetState(GameState.Death);
             }
 
-            // Enable the death canvas — screen is already black from cinematic
+            // Enable the death canvas
             if (_deathCanvas != null)
             {
                 _deathCanvas.enabled = true;
             }
 
-            // Set black background instantly (cinematic already cut to black)
-            if (_fadeImage != null)
-            {
-                Color c = _fadeImage.color;
-                c.a = 1f;
-                _fadeImage.color = c;
-            }
+            // Fade black image from transparent to opaque
+            yield return StartCoroutine(FadeImage(_fadeImage, 0f, 1f, _fadeDuration));
 
             // Fade in "YOU DIED" text
             yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
