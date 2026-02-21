@@ -105,6 +105,12 @@ namespace TheOrder.Doors
             return _isOpen ? "Close" : "Open";
         }
 
+        /// <summary>Blocked when barricaded.</summary>
+        public bool CanInteract(GameObject interactor) => !IsBarricaded;
+
+        /// <summary>Returns blocked reason.</summary>
+        public string GetBlockedMessage() => IsBarricaded ? "Barricaded" : "";
+
         #endregion
 
         #region Hunter AI — Instant Control

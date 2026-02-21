@@ -108,6 +108,26 @@ namespace TheOrder.Items
             return $"Pick up {_itemData.DisplayName}";
         }
 
+        /// <summary>Keys always pickable. Tools blocked when hands full.</summary>
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_itemData == null) return false;
+            if (_itemData.Type == ItemType.Key) return true;
+            var heldItem = HeldItemController.Instance;
+            return heldItem == null || !heldItem.HasItem;
+        }
+
+        /// <summary>Returns blocked reason.</summary>
+        public string GetBlockedMessage()
+        {
+            if (_itemData != null && _itemData.Type != ItemType.Key)
+            {
+                var heldItem = HeldItemController.Instance;
+                if (heldItem != null && heldItem.HasItem) return "Hands full";
+            }
+            return "";
+        }
+
         #endregion
     }
 }

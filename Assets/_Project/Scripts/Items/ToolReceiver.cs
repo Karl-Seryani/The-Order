@@ -156,6 +156,22 @@ namespace TheOrder.Items
             return _lockedPrompt;
         }
 
+        /// <summary>Can interact only when holding the correct tool.</summary>
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_isUsed) return true;
+            var heldItem = HeldItemController.Instance;
+            return heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem;
+        }
+
+        /// <summary>Returns blocked reason.</summary>
+        public string GetBlockedMessage()
+        {
+            if (_isUsed) return "";
+            if (_requiredItem != null) return $"Need {_requiredItem.DisplayName}";
+            return _lockedPrompt;
+        }
+
         #endregion
 
         #region Private Methods

@@ -174,6 +174,23 @@ namespace TheOrder.Items
             return _itemData != null ? $"Pick up {_itemData.DisplayName}" : "Pick up car part";
         }
 
+        /// <summary>Blocked when hands full.</summary>
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_isCollected || _isInstalled) return true;
+            var heldItem = HeldItemController.Instance;
+            return heldItem == null || !heldItem.HasItem;
+        }
+
+        /// <summary>Returns blocked reason.</summary>
+        public string GetBlockedMessage()
+        {
+            if (_isCollected || _isInstalled) return "";
+            var heldItem = HeldItemController.Instance;
+            if (heldItem != null && heldItem.HasItem) return "Hands full";
+            return "";
+        }
+
         #endregion
 
         #region Private Methods

@@ -68,6 +68,15 @@ namespace TheOrder.Player
 
             if (_input.InteractPressed && _currentTarget != null)
             {
+                if (!_currentTarget.CanInteract(gameObject))
+                {
+                    string blockedMessage = _currentTarget.GetBlockedMessage();
+                    if (!string.IsNullOrEmpty(blockedMessage))
+                    {
+                        GameEvents.InteractionBlocked(blockedMessage);
+                    }
+                }
+
                 _currentTarget.Interact(gameObject);
             }
 

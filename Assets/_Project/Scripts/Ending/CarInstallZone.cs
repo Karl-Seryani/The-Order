@@ -32,5 +32,17 @@ namespace TheOrder.Ending
             if (_station == null) return "";
             return _station.GetZonePromptText(_assignedPart);
         }
+
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_station == null) return false;
+            return _station.CanInteractWithZone(interactor, _assignedPart);
+        }
+
+        public string GetBlockedMessage()
+        {
+            if (_station == null) return "";
+            return _station.GetZoneBlockedMessage(_assignedPart);
+        }
     }
 }

@@ -105,6 +105,22 @@ namespace TheOrder.Doors
             return _doorController.GetPromptText();
         }
 
+        /// <summary>Can interact if already unlocked or player has the key.</summary>
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_isUnlocked) return true;
+            var inventory = Player.PlayerInventory.Instance;
+            return inventory != null && inventory.HasKey(_requiredItem);
+        }
+
+        /// <summary>Returns blocked reason when locked without key.</summary>
+        public string GetBlockedMessage()
+        {
+            if (_isUnlocked) return "";
+            if (_requiredItem != null) return $"Need {_requiredItem.DisplayName}";
+            return "Locked";
+        }
+
         #endregion
     }
 }

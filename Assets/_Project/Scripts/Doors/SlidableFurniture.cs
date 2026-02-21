@@ -96,6 +96,12 @@ namespace TheOrder.Doors
             return _promptText;
         }
 
+        /// <summary>Blocked when locked.</summary>
+        public bool CanInteract(GameObject interactor) => !_isLocked;
+
+        /// <summary>Returns blocked reason.</summary>
+        public string GetBlockedMessage() => _isLocked ? "Locked" : "";
+
         #endregion
 
         #region Animation

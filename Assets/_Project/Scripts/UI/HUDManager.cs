@@ -5,8 +5,8 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Manages the minimal dark HUD: interaction prompt, item notifications,
-    /// clue reading panel, and objective display (fade in/out).
+    /// Manages the minimal dark HUD: crosshair (dot/X), blocked interaction messages,
+    /// item notifications, clue reading panel, and objective display (fade in/out).
     /// No health bar, no stamina bar, no journal.
     /// </summary>
     public class HUDManager : MonoBehaviour
@@ -32,11 +32,11 @@ namespace TheOrder.UI
         [SerializeField] private float _objectiveDisplayDuration = 3f;
         [SerializeField] private float _objectiveFadeDuration = 0.8f;
 
-        [Header("Drop Hint")]
+        [Header("Drop Hint (Legacy)")]
         [SerializeField] private Text _dropHintText;
 
         [Header("Crosshair")]
-        [SerializeField] private float _crosshairSize = 4f;
+        [SerializeField] private float _crosshairSize = 7f;
         [SerializeField] private Color _crosshairColor = new Color(1f, 1f, 1f, 0.7f);
 
         #endregion
@@ -47,10 +47,13 @@ namespace TheOrder.UI
         private Player.PlayerInputHandler _input;
         private Coroutine _notificationCoroutine;
         private Coroutine _objectiveCoroutine;
+        private Coroutine _blockedMessageCoroutine;
         private string _currentObjective = "Find a way to escape";
         private bool _hasSearchedForInput;
         private bool _hasSearchedForInteraction;
         private Image _crosshairDot;
+        private GameObject _crosshairX;
+        private CanvasGroup _promptCanvasGroup;
 
         #endregion
 
@@ -73,10 +76,18 @@ namespace TheOrder.UI
                 _objectiveGroup.alpha = 0f;
             }
 
-            // Hide interaction prompt initially
+            // Repurpose interaction prompt panel for blocked messages (fade via CanvasGroup)
             if (_interactionPromptPanel != null)
             {
-                _interactionPromptPanel.SetActive(false);
+                _promptCanvasGroup = _interactionPromptPanel.GetComponent<CanvasGroup>();
+                if (_promptCanvasGroup == null)
+                {
+                    _promptCanvasGroup = _interactionPromptPanel.AddComponent<CanvasGroup>();
+                }
+                _promptCanvasGroup.alpha = 0f;
+                _promptCanvasGroup.blocksRaycasts = false;
+                _promptCanvasGroup.interactable = false;
+                _interactionPromptPanel.SetActive(true);
             }
 
             // Hide clue reading panel initially
@@ -91,13 +102,13 @@ namespace TheOrder.UI
                 _objectiveText.text = _currentObjective;
             }
 
-            // Hide drop hint initially
+            // Hide legacy drop hint permanently
             if (_dropHintText != null)
             {
                 _dropHintText.gameObject.SetActive(false);
             }
 
-            // Create crosshair dot at screen center
+            // Create crosshair elements
             CreateCrosshair();
 
             // Show objective on start — only if already Playing (not during wake-up)
@@ -116,7 +127,7 @@ namespace TheOrder.UI
             GameEvents.OnItemPickedUp += HandleItemPickedUp;
             GameEvents.OnItemDropped += HandleItemDropped;
             GameEvents.OnItemUsed += HandleItemUsed;
-            GameEvents.OnLockedDoorAttempt += HandleLockedDoorAttempt;
+            GameEvents.OnInteractionBlocked += HandleInteractionBlocked;
             GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
             GameEvents.OnWakeUpCompleted += HandleWakeUpCompleted;
         }
@@ -130,14 +141,14 @@ namespace TheOrder.UI
             GameEvents.OnItemPickedUp -= HandleItemPickedUp;
             GameEvents.OnItemDropped -= HandleItemDropped;
             GameEvents.OnItemUsed -= HandleItemUsed;
-            GameEvents.OnLockedDoorAttempt -= HandleLockedDoorAttempt;
+            GameEvents.OnInteractionBlocked -= HandleInteractionBlocked;
             GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
             GameEvents.OnWakeUpCompleted -= HandleWakeUpCompleted;
         }
 
         private void Update()
         {
-            UpdateInteractionPrompt();
+            UpdateCrosshair();
 
             // Search for input handler once if not found in Start()
             if (_input == null && !_hasSearchedForInput)
@@ -165,6 +176,7 @@ namespace TheOrder.UI
             if (canvas == null) canvas = GetComponent<Canvas>();
             if (canvas == null) return;
 
+            // Dot (default state)
             var dotGo = new GameObject("CrosshairDot");
             dotGo.transform.SetParent(canvas.transform, false);
 
@@ -172,24 +184,59 @@ namespace TheOrder.UI
             _crosshairDot.color = _crosshairColor;
             _crosshairDot.raycastTarget = false;
 
-            var rt = _crosshairDot.rectTransform;
+            var dotRt = _crosshairDot.rectTransform;
+            dotRt.anchorMin = new Vector2(0.5f, 0.5f);
+            dotRt.anchorMax = new Vector2(0.5f, 0.5f);
+            dotRt.pivot = new Vector2(0.5f, 0.5f);
+            dotRt.anchoredPosition = Vector2.zero;
+            dotRt.sizeDelta = new Vector2(_crosshairSize, _crosshairSize);
+
+            // X (shown when aiming at any interactable)
+            float xSpan = _crosshairSize * 3.7f;
+            float xThickness = _crosshairSize * 0.43f;
+
+            _crosshairX = new GameObject("CrosshairX");
+            _crosshairX.transform.SetParent(canvas.transform, false);
+
+            var xRt = _crosshairX.AddComponent<RectTransform>();
+            xRt.anchorMin = new Vector2(0.5f, 0.5f);
+            xRt.anchorMax = new Vector2(0.5f, 0.5f);
+            xRt.pivot = new Vector2(0.5f, 0.5f);
+            xRt.anchoredPosition = Vector2.zero;
+            xRt.sizeDelta = Vector2.zero;
+
+            Color xColor = new Color(1f, 1f, 1f, 0.9f);
+            CreateXLine(_crosshairX.transform, xColor, xSpan, xThickness, 45f);
+            CreateXLine(_crosshairX.transform, xColor, xSpan, xThickness, -45f);
+
+            _crosshairX.SetActive(false);
+        }
+
+        private void CreateXLine(Transform parent, Color color, float length, float thickness, float angle)
+        {
+            var lineGo = new GameObject("XLine");
+            lineGo.transform.SetParent(parent, false);
+
+            var img = lineGo.AddComponent<Image>();
+            img.color = color;
+            img.raycastTarget = false;
+
+            var rt = img.rectTransform;
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta = new Vector2(_crosshairSize, _crosshairSize);
+            rt.sizeDelta = new Vector2(length, thickness);
+            rt.localRotation = Quaternion.Euler(0f, 0f, angle);
         }
 
-        #endregion
-
-        #region Interaction Prompt
-
-        private void UpdateInteractionPrompt()
+        private void UpdateCrosshair()
         {
-            // Don't show prompts outside of Playing state
+            // Hide crosshair outside of Playing state
             if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameState.Playing)
             {
-                if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
+                if (_crosshairDot != null) _crosshairDot.gameObject.SetActive(false);
+                if (_crosshairX != null) _crosshairX.SetActive(false);
                 return;
             }
 
@@ -203,31 +250,56 @@ namespace TheOrder.UI
 
             bool hasTarget = _playerInteraction.HasTarget;
 
-            if (_interactionPromptPanel != null)
-            {
-                _interactionPromptPanel.SetActive(hasTarget);
-            }
-
-            if (hasTarget && _interactionPromptText != null)
-            {
-                _interactionPromptText.text = $"[E]  {_playerInteraction.PromptText}";
-            }
-
-            // Show/hide drop hint based on held item
-            UpdateDropHint();
+            // Dot when no target, X when aiming at any interactable
+            if (_crosshairDot != null) _crosshairDot.gameObject.SetActive(!hasTarget);
+            if (_crosshairX != null) _crosshairX.SetActive(hasTarget);
         }
 
-        private void UpdateDropHint()
-        {
-            if (_dropHintText == null) return;
+        #endregion
 
-            var heldItem = Items.HeldItemController.Instance;
-            bool holding = heldItem != null && heldItem.HasItem;
-            _dropHintText.gameObject.SetActive(holding);
-            if (holding)
+        #region Blocked Message
+
+        private void ShowBlockedMessage(string message)
+        {
+            if (_interactionPromptText == null || _promptCanvasGroup == null) return;
+
+            _interactionPromptText.text = message;
+
+            if (_blockedMessageCoroutine != null)
             {
-                _dropHintText.text = "[Q]  Drop";
+                StopCoroutine(_blockedMessageCoroutine);
             }
+
+            _blockedMessageCoroutine = StartCoroutine(FadeBlockedMessage());
+        }
+
+        private IEnumerator FadeBlockedMessage()
+        {
+            // Fade in (fast)
+            float elapsed = 0f;
+            const float FADE_IN_DURATION = 0.15f;
+            while (elapsed < FADE_IN_DURATION)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _promptCanvasGroup.alpha = elapsed / FADE_IN_DURATION;
+                yield return null;
+            }
+            _promptCanvasGroup.alpha = 1f;
+
+            // Hold
+            yield return new WaitForSecondsRealtime(2f);
+
+            // Fade out
+            elapsed = 0f;
+            const float FADE_OUT_DURATION = 0.5f;
+            while (elapsed < FADE_OUT_DURATION)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _promptCanvasGroup.alpha = 1f - (elapsed / FADE_OUT_DURATION);
+                yield return null;
+            }
+            _promptCanvasGroup.alpha = 0f;
+            _blockedMessageCoroutine = null;
         }
 
         #endregion
@@ -310,11 +382,11 @@ namespace TheOrder.UI
 
         #region Clue Notification
 
-        private void ShowClueNotification(string clueTitle)
+        private void ShowNotification(string text)
         {
             if (_clueNotificationText == null || _clueNotificationGroup == null) return;
 
-            _clueNotificationText.text = $"{clueTitle} collected";
+            _clueNotificationText.text = text;
 
             if (_notificationCoroutine != null)
             {
@@ -371,15 +443,14 @@ namespace TheOrder.UI
 
         private void HandleGameStateChanged(GameState newState)
         {
-            bool visible = newState == GameState.Playing;
-            if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(visible);
+            // Crosshair visibility handled by UpdateCrosshair()
         }
 
         private void HandleItemPickedUp(Items.ItemData item)
         {
             if (item != null)
             {
-                ShowClueNotification($"{item.DisplayName} picked up");
+                ShowNotification($"{item.DisplayName} picked up");
             }
         }
 
@@ -387,7 +458,7 @@ namespace TheOrder.UI
         {
             if (item != null)
             {
-                ShowClueNotification($"{item.DisplayName} dropped");
+                ShowNotification($"{item.DisplayName} dropped");
             }
         }
 
@@ -395,31 +466,24 @@ namespace TheOrder.UI
         {
             if (item != null)
             {
-                ShowClueNotification($"{item.DisplayName} used");
+                ShowNotification($"{item.DisplayName} used");
             }
+        }
+
+        private void HandleInteractionBlocked(string message)
+        {
+            ShowBlockedMessage(message);
         }
 
         private void HandleWakeUpStarted()
         {
-            if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
-            if (_dropHintText != null) _dropHintText.gameObject.SetActive(false);
+            if (_crosshairDot != null) _crosshairDot.gameObject.SetActive(false);
+            if (_crosshairX != null) _crosshairX.SetActive(false);
         }
 
         private void HandleWakeUpCompleted()
         {
-            if (_interactionPromptPanel != null) _interactionPromptPanel.SetActive(false);
-        }
-
-        private void HandleLockedDoorAttempt(Items.ItemData requiredItem)
-        {
-            if (requiredItem != null)
-            {
-                ShowClueNotification($"Locked  -  need {requiredItem.DisplayName}");
-            }
-            else
-            {
-                ShowClueNotification("This door is locked");
-            }
+            // Crosshair restored by UpdateCrosshair() on next frame
         }
 
         #endregion

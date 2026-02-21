@@ -106,6 +106,56 @@ namespace TheOrder.Ending
             }
         }
 
+        /// <summary>Whether the player can interact with a specific zone right now.</summary>
+        public bool CanInteractWithZone(GameObject interactor, Items.CarPartPickup zonePart)
+        {
+            if (_carStarted) return false;
+
+            if (_installedCount >= _requiredParts.Length)
+            {
+                var inventory = Player.PlayerInventory.Instance;
+                return inventory != null && inventory.HasKey(_carKeyItemData);
+            }
+
+            var heldItem = Items.HeldItemController.Instance;
+            if (heldItem == null || !heldItem.HasItem) return false;
+
+            // Holding drill — check if this zone has a drillable wheel
+            if (heldItem.CurrentItem == _drillItemData)
+            {
+                return zonePart != null && zonePart.RequiresDrill && zonePart.IsPlaced && !zonePart.IsInstalled;
+            }
+
+            // Holding a car part — check if it matches this zone
+            if (zonePart == null || zonePart.IsPlaced || !zonePart.IsCollected) return false;
+            return zonePart.ItemData == heldItem.CurrentItem;
+        }
+
+        /// <summary>Returns blocked message for a specific zone.</summary>
+        public string GetZoneBlockedMessage(Items.CarPartPickup zonePart)
+        {
+            if (_carStarted) return "";
+
+            if (_installedCount >= _requiredParts.Length)
+            {
+                return "Need Car Key";
+            }
+
+            var heldItem = Items.HeldItemController.Instance;
+            if (heldItem == null || !heldItem.HasItem) return "";
+
+            // Holding a car part at wrong zone
+            if (heldItem.CurrentItem != _drillItemData && IsCarPart(heldItem.CurrentItem))
+            {
+                if (zonePart != null && !zonePart.IsPlaced)
+                {
+                    return "Wrong spot";
+                }
+            }
+
+            return "";
+        }
+
         /// <summary>Returns prompt text for a specific zone.</summary>
         public string GetZonePromptText(Items.CarPartPickup zonePart)
         {
@@ -183,6 +233,27 @@ namespace TheOrder.Ending
             }
 
             return $"Car  [{_installedCount}/{_requiredParts.Length}]";
+        }
+
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_carStarted) return false;
+            if (_installedCount >= _requiredParts.Length)
+            {
+                var inventory = Player.PlayerInventory.Instance;
+                return inventory != null && inventory.HasKey(_carKeyItemData);
+            }
+            return true;
+        }
+
+        public string GetBlockedMessage()
+        {
+            if (_carStarted) return "";
+            if (_installedCount >= _requiredParts.Length)
+            {
+                return "Need Car Key";
+            }
+            return "";
         }
 
         #endregion

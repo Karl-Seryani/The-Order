@@ -117,6 +117,14 @@ namespace TheOrder
 
         #endregion
 
+        #region Interaction
+
+        /// <summary>Fired when the player tries to interact but the action is blocked.</summary>
+        public static event Action<string> OnInteractionBlocked;
+        public static void InteractionBlocked(string message) => OnInteractionBlocked?.Invoke(message);
+
+        #endregion
+
         #region Items
 
         /// <summary>Fired when the player picks up an item into their hand.</summary>

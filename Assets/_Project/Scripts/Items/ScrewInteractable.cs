@@ -71,6 +71,22 @@ namespace TheOrder.Items
             return "Requires tool";
         }
 
+        /// <summary>Can interact only when holding the correct tool.</summary>
+        public bool CanInteract(GameObject interactor)
+        {
+            if (_isUnscrewed || _isUnscrewing) return true;
+            var heldItem = HeldItemController.Instance;
+            return heldItem != null && heldItem.HasItem && heldItem.CurrentItem == _requiredItem;
+        }
+
+        /// <summary>Returns blocked reason.</summary>
+        public string GetBlockedMessage()
+        {
+            if (_isUnscrewed || _isUnscrewing) return "";
+            if (_requiredItem != null) return $"Need {_requiredItem.DisplayName}";
+            return "Need tool";
+        }
+
         #endregion
 
         #region Animation
