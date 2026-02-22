@@ -50,6 +50,13 @@ namespace TheOrder.Player
                 return;
             }
             Instance = this;
+
+            // Clear keys on fresh game start (not respawn)
+            // SkipWakeUpSequence is true only on respawn after death
+            if (GameManager.Instance == null || !GameManager.Instance.SkipWakeUpSequence)
+            {
+                _keys.Clear();
+            }
         }
 
         private void OnDestroy()
