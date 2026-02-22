@@ -66,12 +66,16 @@ namespace TheOrder.UI
         {
             if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
 
-            // Don't handle Escape during death or ending
+            // Don't handle Escape during death, ending, or wake-up sequence
             if (GameManager.Instance != null)
             {
                 var state = GameManager.Instance.CurrentState;
                 if (state == GameState.Death || state == GameState.Ending || state == GameState.MainMenu) return;
             }
+
+            // Block pause during day overlay and wake-up sequence
+            var fpsCam = FindFirstObjectByType<PlayerCamera.FirstPersonCamera>();
+            if (fpsCam != null && !fpsCam.IsEnabled) return;
 
             // If settings sub-panel is open, go back to pause panel
             if (_settingsPanel != null && _settingsPanel.activeSelf)
