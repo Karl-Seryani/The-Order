@@ -29,6 +29,7 @@ namespace TheOrder.Audio
 
         private float _randomStingerTimer;
         private bool _isPlaying;
+        private bool _isOutdoor;
         private Coroutine _activeStingerCoroutine;
 
         #endregion
@@ -122,6 +123,7 @@ namespace TheOrder.Audio
         private void HandlePlayerMoved(Vector3 position, float speed)
         {
             if (_config == null) return;
+            if (_isOutdoor) return;
 
             // No footsteps when stationary
             if (speed < 0.1f)
@@ -283,6 +285,8 @@ namespace TheOrder.Audio
             var clips = _config.OutdoorAmbientClips;
             if (clips == null || clips.Length == 0) return;
 
+            _isOutdoor = true;
+
             // Don't restart if already playing an outdoor clip
             if (_ambientSource.isPlaying && System.Array.IndexOf(clips, _ambientSource.clip) >= 0)
                 return;
@@ -301,6 +305,7 @@ namespace TheOrder.Audio
         /// </summary>
         public void StopOutdoorAmbient()
         {
+            _isOutdoor = false;
             if (_config == null || _ambientSource == null) return;
 
             // Restore indoor ambient loop
