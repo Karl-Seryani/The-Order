@@ -163,6 +163,12 @@ namespace TheOrder.UI
         private IEnumerator ForceRefresh()
         {
             yield return null;
+
+            // Toggle text components off/on to force Unity to rebuild them
+            if (_sectionTitle != null) { _sectionTitle.enabled = false; _sectionTitle.enabled = true; }
+            if (_bodyText != null) { _bodyText.enabled = false; _bodyText.enabled = true; }
+            if (_pageIndicator != null) { _pageIndicator.enabled = false; _pageIndicator.enabled = true; }
+
             Canvas.ForceUpdateCanvases();
             UpdateDisplay();
         }
@@ -229,10 +235,19 @@ namespace TheOrder.UI
         private void UpdateDisplay()
         {
             if (_sectionTitle != null)
+            {
                 _sectionTitle.text = SECTION_TITLES[_currentSection];
+                _sectionTitle.verticalOverflow = VerticalWrapMode.Overflow;
+                _sectionTitle.horizontalOverflow = HorizontalWrapMode.Overflow;
+            }
 
             if (_bodyText != null)
+            {
                 _bodyText.text = SECTION_PAGES[_currentSection][_currentPage];
+                _bodyText.verticalOverflow = VerticalWrapMode.Overflow;
+                _bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _bodyText.color = new Color(0.88f, 0.84f, 0.78f, 1f);
+            }
 
             int totalPages = SECTION_PAGES[_currentSection].Length;
             if (_pageIndicator != null)
