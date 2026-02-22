@@ -49,4 +49,12 @@ namespace TheOrder
         Tool,
         Key
     }
+
+    public enum DifficultyLevel
+    {
+        Practice,
+        Easy,
+        Medium,
+        Hard
+    }
 }

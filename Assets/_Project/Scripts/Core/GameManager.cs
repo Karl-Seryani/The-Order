@@ -14,8 +14,28 @@ namespace TheOrder
         [Header("State")]
         [SerializeField] private GameState _currentState = GameState.MainMenu;
 
+        private DifficultyLevel _currentDifficulty = DifficultyLevel.Medium;
+
         public GameState CurrentState => _currentState;
         public bool SkipWakeUpSequence { get; private set; }
+
+        /// <summary>The selected difficulty level. Persists across scenes.</summary>
+        public DifficultyLevel CurrentDifficulty => _currentDifficulty;
+
+        /// <summary>True unless Practice mode (Hunter is deactivated).</summary>
+        public bool HunterEnabled => _currentDifficulty != DifficultyLevel.Practice;
+
+        /// <summary>True for Medium and Hard (Hunter hears footsteps, doors, noise).</summary>
+        public bool HunterFullDetection => _currentDifficulty >= DifficultyLevel.Medium;
+
+        /// <summary>True for Practice and Hard (car repair escape required).</summary>
+        public bool RequiresCarRepair => _currentDifficulty == DifficultyLevel.Hard || _currentDifficulty == DifficultyLevel.Practice;
+
+        /// <summary>Set the difficulty level before loading the game scene.</summary>
+        public void SetDifficulty(DifficultyLevel level)
+        {
+            _currentDifficulty = level;
+        }
 
         #region Unity Lifecycle
 

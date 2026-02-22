@@ -181,6 +181,14 @@ namespace TheOrder.Hunter
                 return;
             }
 
+            // Practice mode — no Hunter at all
+            if (GameManager.Instance != null && !GameManager.Instance.HunterEnabled)
+            {
+                Debug.Log("[HunterAI] Practice mode — deactivating Hunter.");
+                gameObject.SetActive(false);
+                return;
+            }
+
             Debug.Log($"[HunterAI] Starting — {_patrolWaypoints.Length} waypoints, " +
                       $"onNavMesh={_agent.isOnNavMesh}, " +
                       $"pos={transform.position}, " +
@@ -508,30 +516,35 @@ namespace TheOrder.Hunter
             _playerSpeed = speed;
             _hasPlayerPosition = true;
 
-            // Sound detection
-            float distanceToPlayer = Vector3.Distance(transform.position, position);
+            // Sound detection (disabled in Easy mode — sight only)
+            bool fullDetection = GameManager.Instance == null || GameManager.Instance.HunterFullDetection;
 
-            // Sprint footsteps heard within configured radius
-            if (speed > _config.SprintSpeedThreshold)
+            if (fullDetection)
             {
-                if (distanceToPlayer <= _config.SprintHearingRadius)
-                {
-                    RegisterSound(position);
-                }
-            }
-            // Walking footsteps — only heard within 2m
-            else if (speed > 0.1f)
-            {
-                if (distanceToPlayer <= _config.WalkHearingRadius)
-                {
-                    RegisterSound(position);
-                }
-            }
+                float distanceToPlayer = Vector3.Distance(transform.position, position);
 
-            // Flashlight cone intersection — player shining light into Hunter's view
-            if (_playerFlashlightOn)
-            {
-                CheckFlashlightDetection();
+                // Sprint footsteps heard within configured radius
+                if (speed > _config.SprintSpeedThreshold)
+                {
+                    if (distanceToPlayer <= _config.SprintHearingRadius)
+                    {
+                        RegisterSound(position);
+                    }
+                }
+                // Walking footsteps — only heard within 2m
+                else if (speed > 0.1f)
+                {
+                    if (distanceToPlayer <= _config.WalkHearingRadius)
+                    {
+                        RegisterSound(position);
+                    }
+                }
+
+                // Flashlight cone intersection — player shining light into Hunter's view
+                if (_playerFlashlightOn)
+                {
+                    CheckFlashlightDetection();
+                }
             }
         }
 
@@ -556,8 +569,9 @@ namespace TheOrder.Hunter
         {
             _playerFlashlightOn = isOn;
 
-            // If flashlight just turned on, immediately check cone intersection
-            if (isOn && _hasPlayerPosition)
+            // If flashlight just turned on, immediately check cone intersection (full detection only)
+            if (isOn && _hasPlayerPosition &&
+                (GameManager.Instance == null || GameManager.Instance.HunterFullDetection))
             {
                 CheckFlashlightDetection();
             }
@@ -565,6 +579,9 @@ namespace TheOrder.Hunter
 
         private void HandleDoorOpened(Vector3 position)
         {
+            // Easy mode — sight only, no sound detection
+            if (GameManager.Instance != null && !GameManager.Instance.HunterFullDetection) return;
+
             // Ignore doors the Hunter opened himself (within 1s and 5m of last self-open)
             if (Time.time - _lastDoorOpenTime < 1f &&
                 Vector3.Distance(_lastDoorOpenPosition, position) < 5f)
@@ -581,6 +598,9 @@ namespace TheOrder.Hunter
 
         private void HandleInteractableNoise(Vector3 position, float loudness)
         {
+            // Easy mode — sight only, no sound detection
+            if (GameManager.Instance != null && !GameManager.Instance.HunterFullDetection) return;
+
             if (loudness < 0.5f) return;
 
             float distance = Vector3.Distance(transform.position, position);

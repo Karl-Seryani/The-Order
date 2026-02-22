@@ -56,7 +56,22 @@ namespace TheOrder.UI
 
         private void Start()
         {
-            SetObjective(_initialObjective);
+            string objective = GetDifficultyObjective();
+            SetObjective(objective);
+        }
+
+        private string GetDifficultyObjective()
+        {
+            if (GameManager.Instance == null) return _initialObjective;
+
+            return GameManager.Instance.CurrentDifficulty switch
+            {
+                DifficultyLevel.Practice => "Find car parts and repair the car to escape",
+                DifficultyLevel.Easy => "Find the main door and escape",
+                DifficultyLevel.Medium => "Find the main door and escape",
+                DifficultyLevel.Hard => "Find car parts and repair the car to escape",
+                _ => _initialObjective
+            };
         }
 
         private void OnEnable()

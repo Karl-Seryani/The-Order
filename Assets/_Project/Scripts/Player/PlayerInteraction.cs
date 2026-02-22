@@ -106,6 +106,14 @@ namespace TheOrder.Player
             // Try regular raycast
             if (Physics.Raycast(ray, out RaycastHit hit, _interactionRange, _interactionMask, QueryTriggerInteraction.Ignore))
             {
+                // Main door escape — Easy/Medium difficulty (overrides LockedDoor when enabled)
+                var escapeTrigger = hit.collider.GetComponentInParent<Ending.MainDoorEscapeTrigger>();
+                if (escapeTrigger != null && escapeTrigger.enabled)
+                {
+                    _currentTarget = escapeTrigger;
+                    return;
+                }
+
                 // Prefer LockedDoor over DoorController when both exist on a door
                 var lockedDoor = hit.collider.GetComponentInParent<Doors.LockedDoor>();
                 if (lockedDoor != null)

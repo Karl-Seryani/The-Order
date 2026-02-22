@@ -15,12 +15,20 @@ namespace TheOrder.UI
         [Header("Panels")]
         [SerializeField] private GameObject _menuPanel;
         [SerializeField] private GameObject _tutorialPanel;
+        [SerializeField] private GameObject _difficultyPanel;
 
         [Header("Buttons")]
         [SerializeField] private Button _playButton;
         [SerializeField] private Button _tutorialButton;
         [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _quitButton;
+
+        [Header("Difficulty Buttons")]
+        [SerializeField] private Button _practiceButton;
+        [SerializeField] private Button _easyButton;
+        [SerializeField] private Button _mediumButton;
+        [SerializeField] private Button _hardButton;
+        [SerializeField] private Button _difficultyBackButton;
 
         [Header("Settings")]
         [SerializeField] private GameObject _settingsPanel;
@@ -63,6 +71,12 @@ namespace TheOrder.UI
             if (_tutorialButton != null) _tutorialButton.onClick.AddListener(OnTutorialClicked);
             if (_settingsButton != null) _settingsButton.onClick.AddListener(OnSettingsClicked);
             if (_quitButton != null) _quitButton.onClick.AddListener(OnQuitClicked);
+
+            if (_practiceButton != null) _practiceButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Practice));
+            if (_easyButton != null) _easyButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Easy));
+            if (_mediumButton != null) _mediumButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Medium));
+            if (_hardButton != null) _hardButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Hard));
+            if (_difficultyBackButton != null) _difficultyBackButton.onClick.AddListener(OnDifficultyBackClicked);
         }
 
         private void Start()
@@ -73,6 +87,7 @@ namespace TheOrder.UI
             if (_menuPanel != null) _menuPanel.SetActive(true);
             if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
             if (_settingsPanel != null) _settingsPanel.SetActive(false);
+            if (_difficultyPanel != null) _difficultyPanel.SetActive(false);
 
             // Start background music
             if (_bgMusic != null)
@@ -84,10 +99,15 @@ namespace TheOrder.UI
 
         private void OnDestroy()
         {
-            if (_playButton != null) _playButton.onClick.RemoveListener(OnPlayClicked);
-            if (_tutorialButton != null) _tutorialButton.onClick.RemoveListener(OnTutorialClicked);
-            if (_settingsButton != null) _settingsButton.onClick.RemoveListener(OnSettingsClicked);
-            if (_quitButton != null) _quitButton.onClick.RemoveListener(OnQuitClicked);
+            if (_playButton != null) _playButton.onClick.RemoveAllListeners();
+            if (_tutorialButton != null) _tutorialButton.onClick.RemoveAllListeners();
+            if (_settingsButton != null) _settingsButton.onClick.RemoveAllListeners();
+            if (_quitButton != null) _quitButton.onClick.RemoveAllListeners();
+            if (_practiceButton != null) _practiceButton.onClick.RemoveAllListeners();
+            if (_easyButton != null) _easyButton.onClick.RemoveAllListeners();
+            if (_mediumButton != null) _mediumButton.onClick.RemoveAllListeners();
+            if (_hardButton != null) _hardButton.onClick.RemoveAllListeners();
+            if (_difficultyBackButton != null) _difficultyBackButton.onClick.RemoveAllListeners();
         }
 
         #endregion
@@ -100,6 +120,7 @@ namespace TheOrder.UI
             PlayClickSfx();
             if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
             if (_settingsPanel != null) _settingsPanel.SetActive(false);
+            if (_difficultyPanel != null) _difficultyPanel.SetActive(false);
             if (_menuPanel != null) _menuPanel.SetActive(true);
         }
 
@@ -110,8 +131,34 @@ namespace TheOrder.UI
         private void OnPlayClicked()
         {
             PlayClickSfx();
+            if (_difficultyPanel != null)
+            {
+                if (_menuPanel != null) _menuPanel.SetActive(false);
+                _difficultyPanel.SetActive(true);
+            }
+            else
+            {
+                // Fallback if no difficulty panel assigned — load directly (Medium default)
+                if (GameManager.Instance != null)
+                    GameManager.Instance.LoadScene(_gameSceneName);
+            }
+        }
+
+        private void OnDifficultySelected(DifficultyLevel level)
+        {
+            PlayClickSfx();
             if (GameManager.Instance != null)
+            {
+                GameManager.Instance.SetDifficulty(level);
                 GameManager.Instance.LoadScene(_gameSceneName);
+            }
+        }
+
+        private void OnDifficultyBackClicked()
+        {
+            PlayClickSfx();
+            if (_difficultyPanel != null) _difficultyPanel.SetActive(false);
+            if (_menuPanel != null) _menuPanel.SetActive(true);
         }
 
         private void OnTutorialClicked()

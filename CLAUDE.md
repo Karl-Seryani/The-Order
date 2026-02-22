@@ -26,7 +26,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 2. **ScriptableObject Data** — all gameplay values in SOs (`HunterConfig`, `ItemData`, `ClueData`, `EndingData`). Never hardcode in MonoBehaviours.
 3. **New Input System Only** — never use `UnityEngine.Input`. Use `.inputactions` asset via `PlayerInputHandler`.
 4. **`TheOrder` Namespace** — every script. Sub-namespaces: `Player`, `Hunter`, `Items`, `Doors`, `Clues`, `Ending`, `UI`, `Audio`, `PlayerCamera`.
-5. **IInteractable Interface** — all interactables implement it. `PlayerInteraction` raycasts → `Interact()`. 9 types: DoorController, LockedDoor, SlidableFurniture, ItemPickup, ToolReceiver, ScrewInteractable, CluePickup, CarPartPickup, CarInstallZone.
+5. **IInteractable Interface** — all interactables implement it. `PlayerInteraction` raycasts → `Interact()`. 10 types: DoorController, LockedDoor, SlidableFurniture, ItemPickup, ToolReceiver, ScrewInteractable, CluePickup, CarPartPickup, CarInstallZone, MainDoorEscapeTrigger.
 6. **NavMesh Validation** — `NavMesh.SamplePosition()` before every `SetDestination()`.
 7. **URP Volume Overrides** — no legacy post-processing.
 8. **PlayerMoved Always Fires** — every frame (even speed 0) for Hunter vision detection.
@@ -89,6 +89,18 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - **Flow**: find parts in bunker → carry to Body_Goblin → place at zone → drill wheels → find car key → start car → `OnCarRepairComplete` → `EndingCutscene`
 - **Audio**: drill sound on wheel drilling, car engine sound on start.
 
+### Difficulty System
+- `DifficultyLevel` enum — Practice, Easy, Medium, Hard (in `Enums.cs`)
+- `GameManager` stores `CurrentDifficulty`, set via `SetDifficulty()` before scene load
+- Convenience booleans: `HunterEnabled` (!= Practice), `HunterFullDetection` (>= Medium), `RequiresCarRepair` (Practice or Hard)
+- **Practice** — no Hunter (deactivated in Start), car repair escape
+- **Easy** — sight-only Hunter (sound/flashlight/door/noise detection disabled), main door escape
+- **Medium** — full Hunter, main door escape
+- **Hard** — full Hunter, car repair escape (original behavior)
+- `MainDoorEscapeTrigger` — IInteractable on `Asylum/MainDoor/Door`, fires `CarRepairComplete` on E press. Disables itself (`enabled = false`) when `RequiresCarRepair`. `PlayerInteraction` prioritizes it over `LockedDoor` when enabled.
+- `MainMenuUI` — Play button shows difficulty panel, difficulty buttons call `SetDifficulty` + `LoadScene`
+- `ObjectiveManager` — difficulty-aware initial objective text
+
 ### Endings
 - `EndingData` SO — 9 ending combinations (3 knowledge levels × 3 choices)
 - `EndingCutscene` — wired to `OnCarRepairComplete` event
@@ -97,7 +109,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 ### UI
 - `HUDManager` — interaction prompts, crosshair, clue panel, item notifications, objective fade
 - `DeathScreenUI` — fade to black, "YOU DIED", death stinger, scene reload
-- `MainMenuUI` — Play/Tutorial/Settings/Quit, background music
+- `MainMenuUI` — Play (→ difficulty panel) / Tutorial / Settings / Quit, background music
 - `ObjectiveManager` — objective text management
 
 ### Audio
@@ -180,11 +192,13 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ## Upcoming
 
+- [ ] Horror UI font overhaul (replace Arial with horror-themed fonts across all UI)
 - [ ] Death cinematic sequence (reverted — needs full redesign with better animations)
 - [ ] Hiding system (locker assets imported, no C# mechanic yet)
 - [ ] Settings panel UI (button exists, panel empty)
 - [ ] Pause menu (GameState.Paused works, no menu UI)
 - [ ] Car Key pickup needs to be placed in the bunker scene
+- [x] Difficulty system (Practice/Easy/Medium/Hard with Hunter + escape variants)
 - [x] Car repair escape system (4 parts + drill + car key → escape ending)
 - [x] Item progression system (ItemPickup → HeldItemController → ToolReceiver → LockedDoor chain works)
 - [x] Clue collection system (18 notes, knowledge levels, journal)
