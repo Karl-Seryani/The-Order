@@ -4,7 +4,15 @@
       "mcp__UnityMCP__find_gameobjects",
       "mcp__UnityMCP__manage_scene",
       "mcp__UnityMCP__manage_gameobject",
-      "mcp__UnityMCP__manage_components"
+      "mcp__UnityMCP__manage_components",
+      "mcp__unity-mcp__find_gameobjects",
+      "mcp__unity-mcp__create_script",
+      "Bash(git add:*)",
+      "mcp__unity-mcp__refresh_unity"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "unity-mcp"
+  ]
 }
