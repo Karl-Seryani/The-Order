@@ -34,7 +34,9 @@ namespace TheOrder.Player
             light.color = _color;
             light.shadows = LightShadows.None;
             light.renderMode = LightRenderMode.ForcePixel;
+#if UNITY_EDITOR
             light.lightmapBakeType = LightmapBakeType.Realtime;
+#endif
         }
     }
 }
