@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace TheOrder.UI
@@ -27,6 +29,13 @@ namespace TheOrder.UI
         [SerializeField] private Button _hunterTab;
         [SerializeField] private Button _survivalTab;
         [SerializeField] private Button _escapeTab;
+
+        #endregion
+
+        #region Public API
+
+        /// <summary>Override back action for use outside main menu (e.g. pause menu).</summary>
+        public Action OnBackAction { get; set; }
 
         #endregion
 
@@ -151,6 +160,12 @@ namespace TheOrder.UI
             UpdateDisplay();
         }
 
+        private void Update()
+        {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                OnBackClicked();
+        }
+
         #endregion
 
         #region Navigation
@@ -194,7 +209,9 @@ namespace TheOrder.UI
 
         private void OnBackClicked()
         {
-            if (_mainMenuUI != null)
+            if (OnBackAction != null)
+                OnBackAction();
+            else if (_mainMenuUI != null)
                 _mainMenuUI.ShowMainMenu();
         }
 

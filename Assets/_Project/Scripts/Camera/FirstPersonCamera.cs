@@ -27,6 +27,12 @@ namespace TheOrder.PlayerCamera
 
         #endregion
 
+        #region Constants
+
+        private const string SENSITIVITY_PREF_KEY = "MouseSensitivity";
+
+        #endregion
+
         #region Public API
 
         /// <summary>Enable or disable camera look. Used during wake-up sequence.</summary>
@@ -34,6 +40,17 @@ namespace TheOrder.PlayerCamera
         {
             get => _isEnabled;
             set => _isEnabled = value;
+        }
+
+        /// <summary>Current mouse sensitivity value.</summary>
+        public float Sensitivity => _mouseSensitivity;
+
+        /// <summary>Set mouse sensitivity and persist to PlayerPrefs.</summary>
+        public void SetSensitivity(float value)
+        {
+            _mouseSensitivity = Mathf.Clamp(value, 0.5f, 5f);
+            PlayerPrefs.SetFloat(SENSITIVITY_PREF_KEY, _mouseSensitivity);
+            PlayerPrefs.Save();
         }
 
         #endregion
@@ -45,6 +62,11 @@ namespace TheOrder.PlayerCamera
             if (_playerBody != null)
             {
                 _input = _playerBody.GetComponent<Player.PlayerInputHandler>();
+            }
+
+            if (PlayerPrefs.HasKey(SENSITIVITY_PREF_KEY))
+            {
+                _mouseSensitivity = PlayerPrefs.GetFloat(SENSITIVITY_PREF_KEY);
             }
         }
 

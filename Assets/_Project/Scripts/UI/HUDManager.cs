@@ -149,21 +149,6 @@ namespace TheOrder.UI
         private void Update()
         {
             UpdateCrosshair();
-
-            // Search for input handler once if not found in Start()
-            if (_input == null && !_hasSearchedForInput)
-            {
-                _input = FindFirstObjectByType<Player.PlayerInputHandler>();
-                _hasSearchedForInput = true;
-            }
-
-            if (_input != null && (_input.JournalPressed || _input.PausePressed))
-            {
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.TogglePause();
-                }
-            }
         }
 
         #endregion

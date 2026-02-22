@@ -196,8 +196,8 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 - [ ] Death cinematic sequence (reverted — needs full redesign with better animations)
 - [ ] Hiding system (locker assets imported, no C# mechanic yet)
-- [ ] Settings panel UI (button exists, panel empty)
-- [ ] Pause menu (GameState.Paused works, no menu UI)
+- [x] Settings panel UI (mouse sensitivity slider, PlayerPrefs persistence, live FirstPersonCamera update)
+- [x] Pause menu (Escape toggles, Resume/Tutorial/Settings/Quit, cursor management, PauseMenuCanvas in Bunker)
 - [ ] Car Key pickup needs to be placed in the bunker scene
 - [x] Horror UI — Nosifer + Creepster fonts, blood red/parchment palette, 1920x1080 canvas, Very High quality
 - [x] Difficulty system (Practice/Easy/Medium/Hard with Hunter + escape variants)

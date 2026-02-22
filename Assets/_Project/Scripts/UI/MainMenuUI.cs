@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace TheOrder.UI
@@ -94,6 +95,28 @@ namespace TheOrder.UI
             {
                 _musicSource.clip = _bgMusic;
                 _musicSource.Play();
+            }
+        }
+
+        private void Update()
+        {
+            if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
+
+            // Escape backs out of whichever sub-panel is open
+            if (_settingsPanel != null && _settingsPanel.activeSelf)
+            {
+                ShowMainMenu();
+                return;
+            }
+            if (_tutorialPanel != null && _tutorialPanel.activeSelf)
+            {
+                ShowMainMenu();
+                return;
+            }
+            if (_difficultyPanel != null && _difficultyPanel.activeSelf)
+            {
+                ShowMainMenu();
+                return;
             }
         }
 
