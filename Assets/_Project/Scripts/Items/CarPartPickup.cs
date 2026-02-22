@@ -250,12 +250,9 @@ namespace TheOrder.Items
 
             _dropRigidbody = gameObject.AddComponent<Rigidbody>();
             _dropRigidbody.mass = 1.5f;
-            _dropRigidbody.linearDamping = 0.8f;
-            _dropRigidbody.angularDamping = 1.0f;
+            _dropRigidbody.linearDamping = 0.05f;
+            _dropRigidbody.angularDamping = 0.5f;
             _dropRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-
-            // Give it a small upward arc like tool drops
-            _dropRigidbody.linearVelocity = Vector3.up * 1.0f;
         }
 
         private void RemoveDropPhysics()
