@@ -52,6 +52,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 ### Camera (on Player/PlayerCamera child)
 - `FirstPersonCamera` — manual mouse look (pitch + yaw), `IsEnabled` flag for sequences
 - `WakeUpSequence` — cinematic blink + camera rotation on first spawn
+- `PlayerAmbientLight` — very dim spotlight (0.5 intensity) on camera, 140° cone, lets player barely see ahead without flashlight
 
 ### Hunter (on Asylum/Hunter)
 - `HunterAI` — main controller, sight/sound/flashlight detection, NavMesh navigation, door opening
