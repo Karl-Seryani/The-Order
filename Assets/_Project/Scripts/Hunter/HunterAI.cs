@@ -197,7 +197,34 @@ namespace TheOrder.Hunter
                       $"eyePoint={((_eyePoint != null) ? "assigned" : "MISSING")}");
 #endif
 
+            // Restore Hunter position from previous death if available
+            if (RunStateManager.Instance != null)
+            {
+                Vector3? savedPos = RunStateManager.Instance.GetHunterPosition();
+                if (savedPos.HasValue)
+                {
+                    _agent.Warp(savedPos.Value);
+                    _lastPatrolWaypointIndex = RunStateManager.Instance.GetHunterWaypointIndex();
+                    RunStateManager.Instance.ClearHunterState();
+#if UNITY_EDITOR
+                    Debug.Log($"[HunterAI] Restored position from previous death: {savedPos.Value}, waypoint={_lastPatrolWaypointIndex}");
+#endif
+                }
+            }
+
             _lastPatrolPosition = transform.position;
+
+            // Wait for wake-up sequence to finish before starting patrol
+            _isPaused = true;
+            _agent.isStopped = true;
+            GameEvents.OnWakeUpCompleted += HandleWakeUpCompletedStart;
+        }
+
+        private void HandleWakeUpCompletedStart()
+        {
+            GameEvents.OnWakeUpCompleted -= HandleWakeUpCompletedStart;
+            _isPaused = false;
+            _agent.isStopped = false;
             _stateMachine.ChangeState(_patrolState, HunterState.Patrol);
         }
 
@@ -295,9 +322,21 @@ namespace TheOrder.Hunter
             Vector3 hunterPos = _eyePoint != null ? _eyePoint.position : transform.position;
             Vector3 playerCenter = _playerPosition + Vector3.up * 0.8f;
 
-            return IsFlashlightHittingTarget(
-                hunterPos, playerCenter, _playerForward,
-                _config.FlashlightConeAngle, GetEffectiveSightRange());
+            if (!IsFlashlightHittingTarget(
+                    hunterPos, playerCenter, _playerForward,
+                    _config.FlashlightConeAngle, GetEffectiveSightRange()))
+                return false;
+
+            // Obstruction check — light doesn't pass through walls/doors
+            Vector3 toHunter = hunterPos - playerCenter;
+            float distance = toHunter.magnitude;
+            if (Physics.Raycast(playerCenter, toHunter.normalized, distance,
+                    ~_playerLayer, QueryTriggerInteraction.Ignore))
+            {
+                return false; // Something between player and Hunter blocks the light
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -361,13 +400,33 @@ namespace TheOrder.Hunter
 
         /// <summary>
         /// Navigate to a target position, validating it against the NavMesh first.
+        /// Uses a two-pass approach to avoid snapping to a different floor.
         /// </summary>
         public bool NavigateTo(Vector3 position)
         {
-            if (NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            // Pass 1: tight radius stays on same floor
+            if (NavMesh.SamplePosition(position, out NavMeshHit hit, 0.5f, NavMesh.AllAreas))
             {
                 _agent.SetDestination(hit.position);
                 return true;
+            }
+
+            // Pass 2: wider radius, but reject if Y delta is too large (different floor)
+            if (NavMesh.SamplePosition(position, out hit, 2f, NavMesh.AllAreas))
+            {
+                if (Mathf.Abs(hit.position.y - transform.position.y) <= 2f)
+                {
+                    _agent.SetDestination(hit.position);
+                    return true;
+                }
+
+                // Hit was on different floor — re-sample using Hunter's current Y
+                Vector3 sameFloorPos = new Vector3(position.x, transform.position.y, position.z);
+                if (NavMesh.SamplePosition(sameFloorPos, out NavMeshHit floorHit, 1f, NavMesh.AllAreas))
+                {
+                    _agent.SetDestination(floorHit.position);
+                    return true;
+                }
             }
 
             Debug.LogWarning("[HunterAI] Could not find NavMesh position near: " + position, this);
@@ -490,6 +549,14 @@ namespace TheOrder.Hunter
 #if UNITY_EDITOR
             Debug.Log("[HunterAI] Player caught! Starting death cinematic.");
 #endif
+            // Auto-drop held item — same as pressing Q
+            if (Items.HeldItemController.Instance != null && Items.HeldItemController.Instance.HasItem)
+                Items.HeldItemController.Instance.Drop();
+
+            // Save Hunter state for persistence across deaths
+            if (RunStateManager.Instance != null)
+                RunStateManager.Instance.SaveHunterState(transform.position, _lastPatrolWaypointIndex);
+
             _isPaused = true;
             _agent.isStopped = true;
             GameEvents.DeathCinematicStart();
@@ -560,7 +627,7 @@ namespace TheOrder.Hunter
             {
                 float distanceToPlayer = Vector3.Distance(transform.position, position);
 
-                // Sprint footsteps heard within configured radius
+                // Sprint footsteps heard across floors (NavigateTo keeps Hunter on same floor)
                 if (speed > _config.SprintSpeedThreshold)
                 {
                     if (distanceToPlayer <= _config.SprintHearingRadius)
@@ -568,16 +635,17 @@ namespace TheOrder.Hunter
                         RegisterSound(position);
                     }
                 }
-                // Walking footsteps — only heard within 2m
+                // Walking footsteps — only heard within 2m, same floor only
                 else if (speed > 0.1f)
                 {
-                    if (distanceToPlayer <= _config.WalkHearingRadius)
+                    float yDelta = Mathf.Abs(position.y - transform.position.y);
+                    if (yDelta <= 3f && distanceToPlayer <= _config.WalkHearingRadius)
                     {
                         RegisterSound(position);
                     }
                 }
 
-                // Flashlight cone intersection — player shining light into Hunter's view
+                // Flashlight cone intersection — same floor only (light doesn't pass through floors)
                 if (_playerFlashlightOn)
                 {
                     CheckFlashlightDetection();
@@ -591,6 +659,7 @@ namespace TheOrder.Hunter
         /// </summary>
         private void CheckFlashlightDetection()
         {
+            // Obstruction raycast in IsFlashlightHittingHunter handles walls/floors
             if (IsFlashlightHittingHunter())
             {
                 RegisterSound(_playerPosition);
@@ -619,6 +688,9 @@ namespace TheOrder.Hunter
             // Easy mode — sight only, no sound detection
             if (GameManager.Instance != null && !GameManager.Instance.HunterFullDetection) return;
 
+            // Ignore sounds from a different floor (Y delta > 3m)
+            if (Mathf.Abs(position.y - transform.position.y) > 3f) return;
+
             // Ignore doors the Hunter opened himself (within 1s and 5m of last self-open)
             if (Time.time - _lastDoorOpenTime < 1f &&
                 Vector3.Distance(_lastDoorOpenPosition, position) < 5f)
@@ -637,6 +709,9 @@ namespace TheOrder.Hunter
         {
             // Easy mode — sight only, no sound detection
             if (GameManager.Instance != null && !GameManager.Instance.HunterFullDetection) return;
+
+            // Ignore sounds from a different floor (Y delta > 3m)
+            if (Mathf.Abs(position.y - transform.position.y) > 3f) return;
 
             if (loudness < 0.5f) return;
 

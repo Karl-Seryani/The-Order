@@ -33,7 +33,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 9. **Hunter Is Silent** — footsteps only. No breathing or voice. Chase music is allowed as ambient atmosphere (not from the Hunter).
 10. **`_isPaused` Flag** — never toggle `enabled` on event-driven MonoBehaviours (triggers OnDisable).
 11. **Static Batching** — uncheck Static on any object that moves at runtime (SlidableFurniture, etc.).
-12. **Singletons** — `GameManager`, `PlayerInventory`, `HeldItemController`, `ClueManager` persist across scenes.
+12. **Singletons** — `GameManager`, `PlayerInventory`, `HeldItemController`, `ClueManager`, `RunStateManager` persist across scenes.
 
 ---
 
@@ -57,23 +57,28 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 ### Hunter (on Asylum/Hunter)
 - `HunterAI` — main controller, sight/sound/flashlight detection, NavMesh navigation, door opening
 - `HunterStateMachine` — plain C# FSM (non-MonoBehaviour)
-- **Patrol** → waypoints, 2-5s idle, transitions on sight/sound
-- **Investigate** → navigates to sound, looks around 4s, 8s timeout → back to patrol
-- **Chase** → full-speed pursuit, repath every 0.2s, 3s LOS grace, catch at ≤1.5m
+- **Patrol** → waypoints, 2-5s idle, transitions on sight/sound. Starts paused, begins on `OnWakeUpCompleted`.
+- **Investigate** → navigates to sound, looks around 4s, 60s safety timeout → back to patrol
+- **Chase** → full-speed pursuit, repath every 0.2s, 3s LOS grace, catch at ≤2.5m
 - `HunterConfig` SO — all AI tuning (speeds, ranges, timeouts, flashlight multiplier)
 - `HunterAudio` — footstep sounds only
+- **NavigateTo** — two-pass Y-constraint: 0.5m tight first, 2m fallback rejects Y-delta > 2m (prevents cross-floor pathing)
+- **Sound detection** — doors/interactable noise ignored if Y-delta > 3m. Sprint heard across floors (NavigateTo constrains).
+- **Flashlight detection** — obstruction raycast from player to Hunter blocks through walls/doors/floors. Stairwell LOS works.
+- **Auto-drop on death** — `CatchPlayer()` calls `Drop()` before death cinematic. Saves Hunter position for respawn persistence.
 
 ### Items
-- `ItemData` SO — defines tools/keys with mesh, icon, impact audio
-- `ItemPickup` — world pickups (keys → inventory, tools → hand). Destroyed on pickup, recreated by ItemSpawner on drop.
-- `CarPartPickup` — scene-object pickups (car parts, drill). Hides mesh on pickup, re-shows with Rigidbody on drop. Tracks `_currentlyHeld` static for drop handling. Listens to `OnItemDropped` to intercept and destroy phantom ItemSpawner pickups.
-- `ToolReceiver` — requires specific tool, spawns rewards, animates break
+- `ItemData` SO — defines tools/keys with mesh, icon, impact audio. `Id` field used as persistence key.
+- `ItemPickup` — world pickups (keys → inventory, tools → hand). Destroyed on pickup, recreated by ItemSpawner on drop. Persists: consumed keys destroyed on respawn, dropped tools teleported to saved position.
+- `CarPartPickup` — scene-object pickups (car parts, drill). Hides mesh on pickup, re-shows with Rigidbody on drop. Tracks `_currentlyHeld` static for drop handling. Listens to `OnItemDropped` to intercept and destroy phantom ItemSpawner pickups. Saves drop position for persistence.
+- `HeldItemController` — tracks `_heldItemPersistenceId` for drop position persistence. `DropSilently()` for death auto-drop (forward toss, no sound).
+- `ToolReceiver` — requires specific tool, spawns rewards, animates break. Re-spawns reward items at persisted positions on restore.
 - `ScrewInteractable` / `ScrewLock` — screw-based locking mechanism
 
 ### Doors
-- `DoorController` — smooth rotation, toggle open/close, configurable axis
+- `DoorController` — smooth rotation, toggle open/close, configurable axis. Init in `Awake()`. `_noiseLoudness` field fires `InteractableNoise` on open (MorgueBox_Door4 = 10, heard anywhere).
 - `LockedDoor` — key-based lock wrapper, unlock SFX
-- `SlidableFurniture` — drawers/cabinets slide along configurable axis
+- `SlidableFurniture` — drawers/cabinets slide along configurable axis. Init in `Awake()`.
 
 ### Clues
 - `ClueData` SO — 18 notes with title, text, sprite, optional audio
@@ -88,6 +93,14 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - **Car Key** — Key type (goes to inventory). Required to start car after all 4 parts installed.
 - **Flow**: find parts in bunker → carry to Body_Goblin → place at zone → drill wheels → find car key → start car → `OnCarRepairComplete` → `EndingCutscene`
 - **Audio**: drill sound on wheel drilling, car engine sound on start.
+
+### 3-Day Run System
+- `RunStateManager` — singleton (DontDestroyOnLoad), tracks day 1-3 + all persisted state across deaths
+- Persists: UsedToolReceivers, UnscrewedScrews, UnlockedDoors, CarParts, ItemDropPositions, ConsumedKeys, HunterPosition
+- `TransformExtensions.GetPersistenceId()` — stable hierarchy path string for persistence keys
+- `DayOverlayUI` — black screen overlay with day text, chains to wake-up via OnComplete callback
+- `BunkerSceneBootstrap` — orchestrates: day overlay → wake-up sequence on every scene load
+- Keys persist within a run (cleared on new game or game over). Items track drop positions.
 
 ### Difficulty System
 - `DifficultyLevel` enum — Practice, Easy, Medium, Hard (in `Enums.cs`)
@@ -108,9 +121,11 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ### UI
 - `HUDManager` — interaction prompts, crosshair, clue panel, item notifications, objective fade
-- `DeathScreenUI` — fade to black, "YOU DIED", death stinger, scene reload
+- `DeathScreenUI` — fade to black, "YOU DIED", death stinger. Day 1/2: advance day + reload (full day overlay + wake-up). Day 3: "GAME OVER" → reset + MainMenu.
+- `DayOverlayUI` — black screen with "Day X" text. Driven by BunkerSceneBootstrap. Timing: 2s black → fade in → 3s hold → fade out → 1s gap → OnComplete chains wake-up. Freezes camera directly (no WakeUpStarted to avoid audio). Day 3 text in blood red. DayOverlayCanvas sortingOrder=200 (above WakeUpCanvas=100).
 - `MainMenuUI` — Play (→ difficulty panel) / Tutorial / Settings / Quit, background music
-- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape) with prev/next navigation
+- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape) with prev/next navigation. ForceRefresh coroutine for pause menu context.
+- `PauseMenuUI` — Escape toggles, Resume/Tutorial/Settings/Quit. Button borders removed (Image alpha=0). Explicit cursor unlock on sub-panel switch.
 - `ObjectiveManager` — objective text management
 - `HorrorFontApplier` — runtime font override on Canvas Awake. Nosifer (title, >=28pt) + Creepster (body). Attached to all canvases.
 
@@ -177,7 +192,10 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - **Player layer = 8** — required for Hunter vision detection.
 - `GameManager.SetState()` has same-state guard — never fire `GameStateChanged` directly.
 - `DeathScreenUI` uses `Time.unscaledDeltaTime` / `WaitForSecondsRealtime` (pause-safe).
-- `WakeUpSequence` skipped on respawn via `SkipWakeUpSequence` flag.
+- `WakeUpSequence` plays on every scene load (day overlay → wake-up). `SkipWakeUpSequence` only for edge cases.
+- `DoorController`/`SlidableFurniture` init in `Awake()` — ensures `ForceOpen()` from `ToolReceiver.Start()` finds valid base values.
+- Hunter starts paused (`_isPaused=true`), subscribes to `OnWakeUpCompleted` to begin patrol.
+- `DayOverlayUI` disables `FirstPersonCamera.IsEnabled` directly — never fires `WakeUpStarted` (would trigger audio).
 - `FindFirstObjectByType` in Update is expensive — cache with search-once flag.
 - `CharacterController.velocity` underreports — use `PlayerController.CurrentSpeed` (3.0 walk / 5.5 sprint).
 - `CharacterController` must be disabled before direct `transform.position` changes.
@@ -196,9 +214,11 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 - [ ] Death cinematic sequence (reverted — needs full redesign with better animations)
 - [ ] Hiding system (locker assets imported, no C# mechanic yet)
-- [x] Settings panel UI (mouse sensitivity slider, PlayerPrefs persistence, live FirstPersonCamera update)
-- [x] Pause menu (Escape toggles, Resume/Tutorial/Settings/Quit, cursor management, PauseMenuCanvas in Bunker)
 - [ ] Car Key pickup needs to be placed in the bunker scene
+- [x] 3-day run system (RunStateManager persistence, day overlay, item/key/door/Hunter position tracking, auto-drop on death)
+- [x] Hunter AI improvements (Y-constrained navigation, flashlight obstruction raycast, cross-floor sound filtering, wake-up delay)
+- [x] Settings panel UI (mouse sensitivity slider 0.1-5.0, PlayerPrefs persistence, live FirstPersonCamera update)
+- [x] Pause menu (Escape toggles, Resume/Tutorial/Settings/Quit, cursor management, borderless buttons)
 - [x] Horror UI — Nosifer + Creepster fonts, blood red/parchment palette, 1920x1080 canvas, Very High quality
 - [x] Difficulty system (Practice/Easy/Medium/Hard with Hunter + escape variants)
 - [x] Car repair escape system (4 parts + drill + car key → escape ending)

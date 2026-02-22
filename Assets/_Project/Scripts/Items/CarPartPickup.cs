@@ -83,6 +83,11 @@ namespace TheOrder.Items
             if (!_requiresDrill)
             {
                 _isInstalled = true;
+                SaveRunState(CarPartState.Installed);
+            }
+            else
+            {
+                SaveRunState(CarPartState.Placed);
             }
 
             if (_currentlyHeld == this)
@@ -97,6 +102,7 @@ namespace TheOrder.Items
         public void Drill()
         {
             _isInstalled = true;
+            SaveRunState(CarPartState.Installed);
         }
 
         #endregion
@@ -107,6 +113,11 @@ namespace TheOrder.Items
         {
             _renderers = GetComponentsInChildren<Renderer>();
             _colliders = GetComponentsInChildren<Collider>();
+        }
+
+        private void Start()
+        {
+            RestoreRunState();
         }
 
         private void OnEnable()
@@ -220,6 +231,13 @@ namespace TheOrder.Items
 
             _isCollected = false;
 
+            // Save drop position for persistence
+            if (RunStateManager.Instance != null)
+            {
+                string posId = transform.GetPersistenceId() + "_pos";
+                RunStateManager.Instance.SaveItemDropPosition(posId, dropPosition);
+            }
+
             // Add physics so it falls like a real dropped tool
             AddDropPhysics();
 
@@ -261,6 +279,48 @@ namespace TheOrder.Items
             {
                 Destroy(_dropRigidbody);
                 _dropRigidbody = null;
+            }
+        }
+
+        #endregion
+
+        #region Run State Persistence
+
+        private void SaveRunState(CarPartState state)
+        {
+            if (RunStateManager.Instance == null) return;
+            RunStateManager.Instance.SetCarPartState(transform.GetPersistenceId(), state);
+        }
+
+        private void RestoreRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            string persistId = transform.GetPersistenceId();
+            var state = RunStateManager.Instance.GetCarPartState(persistId);
+
+            if (state != CarPartState.None)
+            {
+                // Part was placed or installed — snap to home position
+                RemoveDropPhysics();
+                transform.position = _homePosition;
+                transform.rotation = Quaternion.Euler(_homeRotation);
+
+                for (int i = 0; i < _renderers.Length; i++)
+                    _renderers[i].enabled = true;
+
+                _isCollected = true;
+                _isPlaced = true;
+
+                if (state == CarPartState.Installed)
+                    _isInstalled = true;
+                return;
+            }
+
+            // Part was never placed — check if it was dropped somewhere
+            string posId = persistId + "_pos";
+            if (RunStateManager.Instance.TryGetItemDropPosition(posId, out Vector3 dropPos))
+            {
+                transform.position = dropPos;
             }
         }
 

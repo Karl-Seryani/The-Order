@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -63,7 +64,6 @@ namespace TheOrder.UI
                 "  F  -  Toggle flashlight\n" +
                 "  Q  -  Drop held item\n\n" +
                 "INTERFACE\n\n" +
-                "  TAB  -  Show current objective\n" +
                 "  ESC  -  Pause"
             },
             // The Hunter
@@ -85,18 +85,18 @@ namespace TheOrder.UI
             // Survival
             new[]
             {
+                "3 DAYS TO ESCAPE\n\n" +
+                "You have 3 days. Each death costs one day.\n" +
+                "Your progress carries over between deaths.\n" +
+                "Unlocked doors, used items, and keys persist.\n" +
+                "On Day 3, it is your last chance.\n\n" +
                 "LIGHT AND DARKNESS\n\n" +
                 "Your flashlight reveals the path ahead\n" +
-                "but also makes you visible from afar.\n" +
-                "Use darkness to your advantage.\n\n" +
+                "but also makes you visible from afar.\n\n" +
                 "SOUND\n\n" +
                 "Sprinting echoes through the halls.\n" +
                 "Walk slowly to stay silent.\n" +
-                "Opening doors and drawers creates noise.\n\n" +
-                "STAMINA\n\n" +
-                "Sprinting drains your stamina. If it runs\n" +
-                "out, you cannot sprint until it recovers.\n" +
-                "Manage it wisely during a chase.",
+                "Opening doors and drawers creates noise.\n\n",
                 // Page 2
                 "ITEM CHAIN\n\n" +
                 "Hammer - breaks barricades\n" +
@@ -154,6 +154,16 @@ namespace TheOrder.UI
             // Reset to first section when tutorial opens
             _currentSection = 0;
             _currentPage = 0;
+            UpdateDisplay();
+
+            // Force layout rebuild after one frame to ensure text renders
+            StartCoroutine(ForceRefresh());
+        }
+
+        private IEnumerator ForceRefresh()
+        {
+            yield return null;
+            Canvas.ForceUpdateCanvases();
             UpdateDisplay();
         }
 

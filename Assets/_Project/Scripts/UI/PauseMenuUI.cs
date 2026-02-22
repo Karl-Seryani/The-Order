@@ -162,6 +162,10 @@ namespace TheOrder.UI
             PlayClickSfx();
             if (_pausePanel != null) _pausePanel.SetActive(false);
             if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
+
+            // Keep cursor unlocked for sub-panel interaction
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         private void OnSettingsClicked()
@@ -169,6 +173,10 @@ namespace TheOrder.UI
             PlayClickSfx();
             if (_pausePanel != null) _pausePanel.SetActive(false);
             if (_settingsPanel != null) _settingsPanel.SetActive(true);
+
+            // Keep cursor unlocked for sub-panel interaction
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         private void OnQuitClicked()

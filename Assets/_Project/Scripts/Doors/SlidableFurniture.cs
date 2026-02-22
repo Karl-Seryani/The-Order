@@ -57,7 +57,7 @@ namespace TheOrder.Doors
 
         #region Unity Lifecycle
 
-        private void Start()
+        private void Awake()
         {
             _closedPosition = transform.localPosition;
             _rigidbody = GetComponent<Rigidbody>();
@@ -101,6 +101,22 @@ namespace TheOrder.Doors
 
         /// <summary>Returns blocked reason.</summary>
         public string GetBlockedMessage() => _isLocked ? "Locked" : "";
+
+        #endregion
+
+        #region Run State Restore
+
+        /// <summary>Silently set the furniture to open state without sound or events. Used by persistence restore.</summary>
+        public void ForceOpen()
+        {
+            if (_animationCoroutine != null)
+                StopCoroutine(_animationCoroutine);
+
+            _currentOffset = _slideDistance;
+            _isOpen = true;
+            _isAnimating = false;
+            ApplyPosition();
+        }
 
         #endregion
 

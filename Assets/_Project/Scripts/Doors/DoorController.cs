@@ -27,6 +27,10 @@ namespace TheOrder.Doors
         [SerializeField] private AudioClip _barricadeThudSound;
         [SerializeField] [Range(0f, 1f)] private float _soundVolume = 0.7f;
 
+        [Header("Noise")]
+        [Tooltip("Extra noise loudness when opened (0 = normal door sound only). High values (e.g. 10) alert the Hunter from anywhere.")]
+        [SerializeField] private float _noiseLoudness;
+
         [Header("Barricade")]
         [SerializeField] private bool _startsBarricaded;
 
@@ -65,7 +69,7 @@ namespace TheOrder.Doors
 
         #region Unity Lifecycle
 
-        private void Start()
+        private void Awake()
         {
             _doorTransform = _hingePoint != null ? _hingePoint : transform;
             _closedRotation = _doorTransform.localRotation;
@@ -130,6 +134,8 @@ namespace TheOrder.Doors
             ApplyRotation();
             PlaySound(_openSound);
             GameEvents.DoorOpened(transform.position);
+            if (_noiseLoudness > 0f)
+                GameEvents.InteractableNoise(transform.position, _noiseLoudness);
         }
 
         /// <summary>Instantly close the door. Used by Hunter AI.</summary>
@@ -146,6 +152,22 @@ namespace TheOrder.Doors
             ApplyRotation();
             PlaySound(_closeSound);
 
+        }
+
+        #endregion
+
+        #region Run State Restore
+
+        /// <summary>Silently set the door to open state without sound or events. Used by persistence restore.</summary>
+        public void ForceOpen()
+        {
+            if (_animationCoroutine != null)
+                StopCoroutine(_animationCoroutine);
+
+            _currentAngle = _rotationAngle;
+            _isOpen = true;
+            _isAnimating = false;
+            ApplyRotation();
         }
 
         #endregion
@@ -175,7 +197,11 @@ namespace TheOrder.Doors
             _isOpen = Mathf.Abs(_currentAngle) > Mathf.Abs(_rotationAngle) * 0.5f;
 
             if (_isOpen && !wasOpen)
+            {
                 GameEvents.DoorOpened(transform.position);
+                if (_noiseLoudness > 0f)
+                    GameEvents.InteractableNoise(transform.position, _noiseLoudness);
+            }
             else if (!_isOpen && wasOpen)
             {
                 PlaySound(_closeSound);

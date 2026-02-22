@@ -14,7 +14,7 @@ namespace TheOrder.UI
     {
         #region Constants
 
-        private const float SENSITIVITY_MIN = 0.5f;
+        private const float SENSITIVITY_MIN = 0.1f;
         private const float SENSITIVITY_MAX = 5f;
         private const float SENSITIVITY_DEFAULT = 2f;
 

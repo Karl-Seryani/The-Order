@@ -37,6 +37,7 @@ namespace TheOrder.Items
         private GameObject _heldMeshInstance;
         private CharacterController _characterController;
         private Player.PlayerController _playerController;
+        private string _heldItemPersistenceId;
 
         #endregion
 
@@ -47,6 +48,9 @@ namespace TheOrder.Items
 
         /// <summary>True if the player is holding an item.</summary>
         public bool HasItem => _currentItem != null;
+
+        /// <summary>Set the persistence ID for the currently held item (used for position tracking on drop).</summary>
+        public void SetHeldItemPersistenceId(string id) => _heldItemPersistenceId = id;
 
         /// <summary>
         /// Pick up an item. Instantiates its mesh at the hand point.
@@ -121,6 +125,41 @@ namespace TheOrder.Items
                 AudioSource.PlayClipAtPoint(_dropSound, dropPosition, shouldPlaceGently ? _dropVolume * 0.3f : _dropVolume);
             GameEvents.InteractableNoise(dropPosition, loudness);
 
+            // Save drop position for persistence
+            SaveDropPosition(dropPosition);
+
+            GameEvents.ItemDropped(_currentItem, dropPosition);
+            ClearHeldItem();
+        }
+
+        /// <summary>
+        /// Drop the currently held item naturally without sound or noise.
+        /// Used when the player dies — item tosses forward and falls with gravity.
+        /// Still fires ItemDropped so CarPartPickup can intercept.
+        /// </summary>
+        public void DropSilently()
+        {
+            if (!HasItem) return;
+
+            // Spawn slightly in front of player at waist height
+            Vector3 dropPosition = transform.position + transform.forward * 0.5f;
+            var droppedItem = ItemSpawner.SpawnPickup(_currentItem, dropPosition);
+
+            var rb = droppedItem.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                // Toss forward with upward arc — same feel as Q drop
+                rb.linearVelocity = transform.forward * 1.5f + Vector3.up * 1f;
+                rb.angularVelocity = new Vector3(
+                    Random.Range(-1f, 1f),
+                    Random.Range(-2f, 2f),
+                    Random.Range(-1f, 1f)
+                );
+            }
+
+            // Save drop position for persistence
+            SaveDropPosition(dropPosition);
+
             GameEvents.ItemDropped(_currentItem, dropPosition);
             ClearHeldItem();
         }
@@ -131,6 +170,7 @@ namespace TheOrder.Items
         public void ClearHeldItem()
         {
             _currentItem = null;
+            _heldItemPersistenceId = null;
 
             if (_heldMeshInstance != null)
             {
@@ -169,6 +209,18 @@ namespace TheOrder.Items
         #endregion
 
         #region Private Methods
+
+        private void SaveDropPosition(Vector3 position)
+        {
+            if (RunStateManager.Instance == null || _currentItem == null) return;
+
+            string id = !string.IsNullOrEmpty(_heldItemPersistenceId)
+                ? _heldItemPersistenceId
+                : _currentItem.Id;
+
+            if (!string.IsNullOrEmpty(id))
+                RunStateManager.Instance.SaveItemDropPosition(id, position);
+        }
 
         private UnityEngine.Camera _cachedCamera;
 

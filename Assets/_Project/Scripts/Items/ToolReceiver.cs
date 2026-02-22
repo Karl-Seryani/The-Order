@@ -61,6 +61,11 @@ namespace TheOrder.Items
                 _openVisual.SetActive(false);
         }
 
+        private void Start()
+        {
+            RestoreRunState();
+        }
+
         #endregion
 
         #region IInteractable
@@ -81,6 +86,7 @@ namespace TheOrder.Items
 
             // Correct item — activate
             _isUsed = true;
+            SaveRunState();
             GameEvents.ItemUsed(heldItem.CurrentItem);
             
             // Don't destroy the tool - player keeps it for reuse
@@ -198,6 +204,70 @@ namespace TheOrder.Items
                     Random.Range(-3f, 3f),
                     Random.Range(-3f, 3f)
                 );
+            }
+        }
+
+        private void SaveRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            RunStateManager.Instance.MarkToolReceiverUsed(transform.GetPersistenceId());
+        }
+
+        private void RestoreRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            string id = transform.GetPersistenceId();
+            if (!RunStateManager.Instance.IsToolReceiverUsed(id)) return;
+
+            // Silently apply the same effects as Interact without sounds/physics
+            _isUsed = true;
+            enabled = false;
+
+            if (_closedVisual != null)
+                _closedVisual.SetActive(false);
+            if (_openVisual != null)
+                _openVisual.SetActive(true);
+
+            if (_doorToUnblock != null)
+                _doorToUnblock.IsBarricaded = false;
+
+            var doorController = GetComponent<Doors.DoorController>();
+            if (doorController != null && !doorController.IsOpen)
+                doorController.ForceOpen();
+
+            var slidableFurniture = GetComponent<Doors.SlidableFurniture>();
+            if (slidableFurniture != null && !slidableFurniture.IsOpen)
+                slidableFurniture.ForceOpen();
+
+            if (_objectToDeactivate != null)
+                _objectToDeactivate.SetActive(false);
+            if (_objectToEnable != null)
+                _objectToEnable.SetActive(true);
+
+            // Re-spawn reward item if it hasn't been consumed
+            if (_rewardItem != null && !string.IsNullOrEmpty(_rewardItem.Id))
+            {
+                if (!RunStateManager.Instance.IsKeyConsumed(_rewardItem.Id))
+                {
+                    // Check if it was dropped somewhere, otherwise use original spawn point
+                    Vector3 spawnPos;
+                    if (RunStateManager.Instance.TryGetItemDropPosition(_rewardItem.Id, out Vector3 dropPos))
+                        spawnPos = dropPos;
+                    else if (_rewardSpawnPoint != null)
+                        spawnPos = _rewardSpawnPoint.position;
+                    else
+                        spawnPos = transform.position + Vector3.up * 0.8f;
+
+                    var rewardObj = ItemSpawner.SpawnPickup(_rewardItem, spawnPos);
+
+                    // No velocity — just place it
+                    var rb = rewardObj.GetComponent<Rigidbody>();
+                    if (rb != null)
+                    {
+                        rb.linearVelocity = Vector3.zero;
+                        rb.angularVelocity = Vector3.zero;
+                    }
+                }
             }
         }
 

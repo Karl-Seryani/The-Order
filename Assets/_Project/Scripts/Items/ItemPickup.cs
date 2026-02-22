@@ -19,6 +19,12 @@ namespace TheOrder.Items
 
         #endregion
 
+        #region Private Fields
+
+        private string _persistenceId;
+
+        #endregion
+
         #region Public API
 
         /// <summary>The item data this pickup represents.</summary>
@@ -30,6 +36,24 @@ namespace TheOrder.Items
         public void Initialize(ItemData itemData)
         {
             _itemData = itemData;
+        }
+
+        /// <summary>Override the persistence ID (used for spawned items that need to track a source).</summary>
+        public void SetPersistenceId(string id) => _persistenceId = id;
+
+        #endregion
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (string.IsNullOrEmpty(_persistenceId))
+                _persistenceId = transform.GetPersistenceId();
+        }
+
+        private void Start()
+        {
+            RestoreRunState();
         }
 
         #endregion
@@ -59,6 +83,11 @@ namespace TheOrder.Items
                 }
 
                 inventory.AddKey(_itemData);
+
+                // Mark key as consumed so it stays gone on respawn
+                if (RunStateManager.Instance != null && !string.IsNullOrEmpty(_itemData.Id))
+                    RunStateManager.Instance.MarkKeyConsumed(_itemData.Id);
+
                 if (_pickupSound != null)
                     AudioSource.PlayClipAtPoint(_pickupSound, transform.position, _pickupVolume);
                 GameEvents.ItemPickedUp(_itemData);
@@ -80,6 +109,8 @@ namespace TheOrder.Items
             }
 
             heldItem.PickUp(_itemData);
+            heldItem.SetHeldItemPersistenceId(!string.IsNullOrEmpty(_itemData.Id) ? _itemData.Id : _persistenceId);
+
             if (_pickupSound != null)
                 AudioSource.PlayClipAtPoint(_pickupSound, transform.position, _pickupVolume);
             GameEvents.ItemPickedUp(_itemData);
@@ -118,6 +149,31 @@ namespace TheOrder.Items
                 if (heldItem != null && heldItem.HasItem) return "Hands full";
             }
             return "";
+        }
+
+        #endregion
+
+        #region Run State Persistence
+
+        private void RestoreRunState()
+        {
+            if (RunStateManager.Instance == null || _itemData == null) return;
+
+            string id = !string.IsNullOrEmpty(_itemData.Id) ? _itemData.Id : _persistenceId;
+            if (string.IsNullOrEmpty(id)) return;
+
+            // If key was consumed (picked up in a previous life), destroy this pickup
+            if (_itemData.Type == ItemType.Key && RunStateManager.Instance.IsKeyConsumed(id))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            // If this item was dropped somewhere, teleport to that position
+            if (RunStateManager.Instance.TryGetItemDropPosition(id, out Vector3 dropPos))
+            {
+                transform.position = dropPos;
+            }
         }
 
         #endregion

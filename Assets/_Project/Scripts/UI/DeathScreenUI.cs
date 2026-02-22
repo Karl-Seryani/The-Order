@@ -6,8 +6,9 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Death screen overlay — fades to black with "YOU DIED" text, then reloads the scene.
-    /// Subscribes to GameEvents.OnPlayerCaught.
+    /// Death screen overlay — fades to black with "YOU DIED" text.
+    /// On Day 1/2: advances day and reloads scene (progress persists).
+    /// On Day 3: shows "GAME OVER", resets run, and returns to main menu.
     /// </summary>
     public class DeathScreenUI : MonoBehaviour
     {
@@ -26,6 +27,7 @@ namespace TheOrder.UI
         [SerializeField] private float _fadeDuration = 0.5f;
         [SerializeField] private float _textFadeDuration = 0.3f;
         [SerializeField] private float _holdDuration = 1.5f;
+        [SerializeField] private float _gameOverHoldDuration = 3f;
 
         #endregion
 
@@ -116,18 +118,38 @@ namespace TheOrder.UI
             // Fade black image from transparent to opaque
             yield return StartCoroutine(FadeImage(_fadeImage, 0f, 1f, _fadeDuration));
 
-            // Fade in "YOU DIED" text
-            yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
+            // Check if this is the final day
+            var run = RunStateManager.Instance;
+            bool isGameOver = run != null && run.CurrentDay >= RunStateManager.MAX_DAYS;
 
-            // Hold
-            yield return new WaitForSecondsRealtime(_holdDuration);
-
-            // Reload scene
-            if (GameManager.Instance != null)
+            if (isGameOver)
             {
-                GameManager.Instance.SetSkipWakeUpSequence(true);
+                // Show GAME OVER on final day
+                if (_deathText != null)
+                    _deathText.text = "GAME OVER";
+                yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
+                yield return new WaitForSecondsRealtime(_gameOverHoldDuration);
+
+                // Reset everything for a fresh game
+                if (run != null) run.ResetRun();
+                Player.PlayerInventory.ClearKeys();
+                if (Clues.ClueManager.Instance != null)
+                    Clues.ClueManager.Instance.ClearAll();
+
+                // Return to main menu
+                SceneManager.LoadScene(0);
             }
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            else
+            {
+                // Show YOU DIED, advance day, reload
+                yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
+                yield return new WaitForSecondsRealtime(_holdDuration);
+
+                if (run != null) run.AdvanceDay();
+
+                // Reload scene — full day overlay + wake-up sequence plays again
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            }
         }
 
         private IEnumerator FadeImage(Image image, float startAlpha, float endAlpha, float duration)
