@@ -164,13 +164,18 @@ namespace TheOrder.UI
         {
             yield return null;
 
-            // Toggle text components off/on to force Unity to rebuild them
-            if (_sectionTitle != null) { _sectionTitle.enabled = false; _sectionTitle.enabled = true; }
-            if (_bodyText != null) { _bodyText.enabled = false; _bodyText.enabled = true; }
-            if (_pageIndicator != null) { _pageIndicator.enabled = false; _pageIndicator.enabled = true; }
+            // Request font atlas rebuild for all characters in the text
+            if (_bodyText != null && _bodyText.font != null)
+                _bodyText.font.RequestCharactersInTexture(_bodyText.text, _bodyText.fontSize, _bodyText.fontStyle);
+            if (_sectionTitle != null && _sectionTitle.font != null)
+                _sectionTitle.font.RequestCharactersInTexture(_sectionTitle.text, _sectionTitle.fontSize, _sectionTitle.fontStyle);
+
+            // Force full text mesh rebuild
+            if (_sectionTitle != null) _sectionTitle.SetAllDirty();
+            if (_bodyText != null) _bodyText.SetAllDirty();
+            if (_pageIndicator != null) _pageIndicator.SetAllDirty();
 
             Canvas.ForceUpdateCanvases();
-            UpdateDisplay();
         }
 
         private void Update()
@@ -234,28 +239,14 @@ namespace TheOrder.UI
 
         private void UpdateDisplay()
         {
-            // Reset fonts to built-in Arial to guarantee rendering
-            // (HorrorFontApplier's custom fonts can fail to generate text meshes)
-            Font builtinFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-
             if (_sectionTitle != null)
             {
                 _sectionTitle.text = SECTION_TITLES[_currentSection];
-                _sectionTitle.font = builtinFont;
-                _sectionTitle.fontSize = 36;
-                _sectionTitle.color = new Color(0.85f, 0.12f, 0.1f, 1f);
-                _sectionTitle.verticalOverflow = VerticalWrapMode.Overflow;
-                _sectionTitle.horizontalOverflow = HorizontalWrapMode.Overflow;
             }
 
             if (_bodyText != null)
             {
                 _bodyText.text = SECTION_PAGES[_currentSection][_currentPage];
-                _bodyText.font = builtinFont;
-                _bodyText.fontSize = 22;
-                _bodyText.color = new Color(0.88f, 0.84f, 0.78f, 1f);
-                _bodyText.verticalOverflow = VerticalWrapMode.Overflow;
-                _bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
             }
 
             int totalPages = SECTION_PAGES[_currentSection].Length;
