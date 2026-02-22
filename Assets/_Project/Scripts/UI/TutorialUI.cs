@@ -234,9 +234,16 @@ namespace TheOrder.UI
 
         private void UpdateDisplay()
         {
+            // Reset fonts to built-in Arial to guarantee rendering
+            // (HorrorFontApplier's custom fonts can fail to generate text meshes)
+            Font builtinFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
             if (_sectionTitle != null)
             {
                 _sectionTitle.text = SECTION_TITLES[_currentSection];
+                _sectionTitle.font = builtinFont;
+                _sectionTitle.fontSize = 36;
+                _sectionTitle.color = new Color(0.85f, 0.12f, 0.1f, 1f);
                 _sectionTitle.verticalOverflow = VerticalWrapMode.Overflow;
                 _sectionTitle.horizontalOverflow = HorizontalWrapMode.Overflow;
             }
@@ -244,9 +251,11 @@ namespace TheOrder.UI
             if (_bodyText != null)
             {
                 _bodyText.text = SECTION_PAGES[_currentSection][_currentPage];
+                _bodyText.font = builtinFont;
+                _bodyText.fontSize = 22;
+                _bodyText.color = new Color(0.88f, 0.84f, 0.78f, 1f);
                 _bodyText.verticalOverflow = VerticalWrapMode.Overflow;
                 _bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
-                _bodyText.color = new Color(0.88f, 0.84f, 0.78f, 1f);
             }
 
             int totalPages = SECTION_PAGES[_currentSection].Length;
