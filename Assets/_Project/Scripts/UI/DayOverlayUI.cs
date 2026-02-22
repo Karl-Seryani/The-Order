@@ -69,7 +69,10 @@ namespace TheOrder.UI
         private void Awake()
         {
             if (_canvasGroup != null)
+            {
                 _canvasGroup.alpha = 0f;
+                _canvasGroup.blocksRaycasts = false;
+            }
 
             // Ensure the black background covers the screen and renders behind text
             if (_blackBackground != null)
@@ -106,6 +109,9 @@ namespace TheOrder.UI
         {
             if (_canvasGroup == null) yield break;
 
+            // Block interaction during overlay
+            _canvasGroup.blocksRaycasts = true;
+
             // Wait on black screen before showing text
             yield return new WaitForSecondsRealtime(_initialDelay);
 
@@ -131,6 +137,7 @@ namespace TheOrder.UI
                 yield return null;
             }
             _canvasGroup.alpha = 0f;
+            _canvasGroup.blocksRaycasts = false;
             _showCoroutine = null;
 
             // Brief pause before wake-up begins
