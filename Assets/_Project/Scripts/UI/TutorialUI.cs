@@ -24,8 +24,9 @@ namespace TheOrder.UI
 
         [Header("Tabs")]
         [SerializeField] private Button _controlsTab;
+        [SerializeField] private Button _hunterTab;
         [SerializeField] private Button _survivalTab;
-        [SerializeField] private Button _cluesTab;
+        [SerializeField] private Button _escapeTab;
 
         #endregion
 
@@ -34,8 +35,9 @@ namespace TheOrder.UI
         private static readonly string[] SECTION_TITLES =
         {
             "Controls",
-            "Survival Tips",
-            "Clues & Escape"
+            "The Hunter",
+            "Survival",
+            "Escape"
         };
 
         private static readonly string[][] SECTION_PAGES =
@@ -43,47 +45,83 @@ namespace TheOrder.UI
             // Controls
             new[]
             {
-                "MOVEMENT\n" +
-                "W A S D      Walk\n" +
-                "Shift          Sprint\n" +
-                "Mouse         Look around\n\n" +
-                "ACTIONS\n" +
-                "E                Interact\n" +
-                "F                Flashlight\n" +
-                "Q               Drop item\n\n" +
-                "INTERFACE\n" +
-                "Tab             Objective\n" +
-                "Esc             Pause"
+                "MOVEMENT\n\n" +
+                "  W A S D  -  Walk\n" +
+                "  SHIFT  -  Sprint\n" +
+                "  MOUSE  -  Look around\n\n" +
+                "ACTIONS\n\n" +
+                "  E  -  Interact / Pick up / Read\n" +
+                "  F  -  Toggle flashlight\n" +
+                "  Q  -  Drop held item\n\n" +
+                "INTERFACE\n\n" +
+                "  TAB  -  Show current objective\n" +
+                "  ESC  -  Pause"
             },
-            // Survival Tips
+            // The Hunter
             new[]
             {
-                "Hide in lockers to avoid the Hunter. Otherwise,\n" +
-                "outrun him and break line of sight around corners.\n\n" +
-                "Your flashlight reveals the world but also attracts\n" +
-                "attention. In darkness, the Hunter can barely see.\n" +
-                "use that to your advantage.\n\n" +
-                "Sprinting drains your stamina. If you run dry, you\n" +
-                "will be forced to walk until it recovers.\n\n" +
-                "Doors can be opened and closed. A closed door\n" +
-                "buys you time. The Hunter must open it to follow.\n\n" +
-                "Stay quiet. Walking slowly makes almost no noise,\n" +
-                "but sprinting can be heard from a distance."
+                "Something stalks these halls.\n\n" +
+                "He does not speak. He does not rest.\n" +
+                "He patrols the corridors in silence,\n" +
+                "searching for you.\n\n" +
+                "If he sees you, he will chase.\n" +
+                "If he catches you, it is over.\n\n" +
+                "On EASY difficulty, the Hunter can only\n" +
+                "detect you by sight. Stay out of his\n" +
+                "line of sight and you are safe.\n\n" +
+                "On MEDIUM and HARD, he also hears\n" +
+                "your footsteps, doors, and flashlight.\n" +
+                "Every sound you make is a risk."
             },
-            // Clues & Endings
+            // Survival
             new[]
             {
-                "Scattered throughout the bunker are 18 clue documents\n" +
-                "that reveal the truth about this place.\n\n" +
-                "  COLLECTING CLUES\n" +
-                "  Approach a document and press E to read it.\n" +
-                "  Press E again to collect it.\n\n" +
-                "  YOUR GOAL\n" +
-                "  Find keys, unlock new areas, and locate the exit.\n" +
-                "  The more clues you find, the more you understand\n" +
-                "  what happened here and what the Hunter really is.\n\n" +
-                "  Explore carefully. Every room could hold a vital clue\n" +
-                "  or the Hunter himself."
+                "LIGHT AND DARKNESS\n\n" +
+                "Your flashlight reveals the way forward\n" +
+                "but also makes you visible from far away.\n" +
+                "In darkness, the Hunter's sight is limited.\n" +
+                "Use that to your advantage.\n\n" +
+                "SOUND\n\n" +
+                "Sprinting echoes through the halls.\n" +
+                "Walk slowly to stay silent.\n" +
+                "Opening doors and drawers creates noise.\n\n" +
+                "STAMINA\n\n" +
+                "Sprinting drains your stamina. If it runs\n" +
+                "out, you cannot sprint until it recovers.\n" +
+                "Manage it wisely during a chase.",
+                // Page 2
+                "DOORS\n\n" +
+                "Doors can be opened and closed freely.\n" +
+                "A closed door buys you precious seconds.\n" +
+                "The Hunter must stop to open it.\n\n" +
+                "KEYS AND LOCKED AREAS\n\n" +
+                "Some doors require specific keys.\n" +
+                "Search drawers, shelves, and hidden\n" +
+                "corners to find them.\n\n" +
+                "CLUES\n\n" +
+                "18 documents are scattered throughout\n" +
+                "the bunker. Approach one and press E\n" +
+                "to read it, then E again to collect.\n" +
+                "They reveal the truth about this place."
+            },
+            // Escape
+            new[]
+            {
+                "PRACTICE MODE\n\n" +
+                "No Hunter. Explore freely and learn the\n" +
+                "layout. Repair the car to escape.\n\n" +
+                "EASY MODE\n\n" +
+                "The Hunter patrols but can only see you.\n" +
+                "Find the main door and press E to escape.\n\n" +
+                "MEDIUM MODE\n\n" +
+                "The Hunter hears everything. Stay quiet.\n" +
+                "Find the main door and press E to escape.\n\n" +
+                "HARD MODE\n\n" +
+                "Full Hunter. No easy way out.\n" +
+                "Find 4 car parts scattered in the bunker.\n" +
+                "Carry them outside to the car frame.\n" +
+                "Use the drill on the wheels. Find the\n" +
+                "car key. Start the engine. Drive away."
             }
         };
 
@@ -100,8 +138,9 @@ namespace TheOrder.UI
             if (_nextButton != null) _nextButton.onClick.AddListener(OnNextClicked);
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
             if (_controlsTab != null) _controlsTab.onClick.AddListener(() => GoToSection(0));
-            if (_survivalTab != null) _survivalTab.onClick.AddListener(() => GoToSection(1));
-            if (_cluesTab != null) _cluesTab.onClick.AddListener(() => GoToSection(2));
+            if (_hunterTab != null) _hunterTab.onClick.AddListener(() => GoToSection(1));
+            if (_survivalTab != null) _survivalTab.onClick.AddListener(() => GoToSection(2));
+            if (_escapeTab != null) _escapeTab.onClick.AddListener(() => GoToSection(3));
         }
 
         private void OnEnable()

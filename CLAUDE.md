@@ -110,7 +110,9 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `HUDManager` — interaction prompts, crosshair, clue panel, item notifications, objective fade
 - `DeathScreenUI` — fade to black, "YOU DIED", death stinger, scene reload
 - `MainMenuUI` — Play (→ difficulty panel) / Tutorial / Settings / Quit, background music
+- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape) with prev/next navigation
 - `ObjectiveManager` — objective text management
+- `HorrorFontApplier` — runtime font override on Canvas Awake. Nosifer (title, >=28pt) + Creepster (body). Attached to all canvases.
 
 ### Audio
 - `AudioConfig` SO — centralized audio tuning (ambient, stingers, footsteps, outdoor/indoor ambient)
@@ -192,12 +194,12 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ## Upcoming
 
-- [ ] Horror UI font overhaul (replace Arial with horror-themed fonts across all UI)
 - [ ] Death cinematic sequence (reverted — needs full redesign with better animations)
 - [ ] Hiding system (locker assets imported, no C# mechanic yet)
 - [ ] Settings panel UI (button exists, panel empty)
 - [ ] Pause menu (GameState.Paused works, no menu UI)
 - [ ] Car Key pickup needs to be placed in the bunker scene
+- [x] Horror UI — Nosifer + Creepster fonts, blood red/parchment palette, 1920x1080 canvas, Very High quality
 - [x] Difficulty system (Practice/Easy/Medium/Hard with Hunter + escape variants)
 - [x] Car repair escape system (4 parts + drill + car key → escape ending)
 - [x] Item progression system (ItemPickup → HeldItemController → ToolReceiver → LockedDoor chain works)
