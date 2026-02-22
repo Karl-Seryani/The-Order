@@ -67,6 +67,8 @@ namespace TheOrder.Player
 
         private void Update()
         {
+            if (!_controller.enabled) return;
+
             HandleCrouch();
             HandleGravity();
             HandleMovement();

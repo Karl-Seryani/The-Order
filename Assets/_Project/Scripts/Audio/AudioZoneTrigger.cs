@@ -12,7 +12,11 @@ namespace TheOrder.Audio
     {
         #region Serialized Fields
 
-        [Header("Audio Configs")]
+        [Header("Mode")]
+        [Tooltip("When true, uses outdoor/indoor ambient swap instead of config switching.")]
+        [SerializeField] private bool _isOutdoorZone;
+
+        [Header("Audio Configs (config-switch mode)")]
         [Tooltip("Config to use when the player enters this trigger (e.g., outdoor config).")]
         [SerializeField] private AudioConfig _enterConfig;
 
@@ -29,17 +33,33 @@ namespace TheOrder.Audio
         private void OnTriggerEnter(Collider other)
         {
             if (other.gameObject.layer != 8) return;
-            if (_audioManager == null || _enterConfig == null) return;
+            if (_audioManager == null) return;
 
-            _audioManager.SetConfig(_enterConfig);
+            if (_isOutdoorZone)
+            {
+                _audioManager.PlayOutdoorAmbient();
+            }
+            else
+            {
+                if (_enterConfig != null)
+                    _audioManager.SetConfig(_enterConfig);
+            }
         }
 
         private void OnTriggerExit(Collider other)
         {
             if (other.gameObject.layer != 8) return;
-            if (_audioManager == null || _exitConfig == null) return;
+            if (_audioManager == null) return;
 
-            _audioManager.SetConfig(_exitConfig);
+            if (_isOutdoorZone)
+            {
+                _audioManager.StopOutdoorAmbient();
+            }
+            else
+            {
+                if (_exitConfig != null)
+                    _audioManager.SetConfig(_exitConfig);
+            }
         }
 
         #endregion

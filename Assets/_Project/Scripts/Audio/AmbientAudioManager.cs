@@ -226,13 +226,22 @@ namespace TheOrder.Audio
 
         private void HandleItemPickedUp(Items.ItemData item)
         {
-            if (_config == null || _config.SecondKeyStingerClip == null) return;
-            if (item == null || item.Type != ItemType.Key) return;
+            if (_config == null || item == null) return;
+
+            // Machine Room Key stinger (specific item match)
+            if (_config.MachineRoomKeyItemData != null && item == _config.MachineRoomKeyItemData
+                && _config.MachineRoomKeyStingerClip != null)
+            {
+                PlayTimedStinger(_config.MachineRoomKeyStingerClip, _config.MachineRoomKeyStingerVolume,
+                    _config.MachineRoomKeyStingerDuration);
+            }
+
+            // Second key stinger (generic key count)
+            if (item.Type != ItemType.Key) return;
 
             _keyPickupCount++;
 
-            // Play stinger on the second key pickup
-            if (_keyPickupCount == 2)
+            if (_keyPickupCount == 2 && _config.SecondKeyStingerClip != null)
             {
                 PlayTimedStinger(_config.SecondKeyStingerClip, _config.SecondKeyStingerVolume,
                     _config.SecondKeyStingerDuration);
@@ -262,6 +271,67 @@ namespace TheOrder.Audio
             }
 
             ResetRandomStingerTimer();
+        }
+
+        /// <summary>
+        /// Switch ambient source to a random outdoor forest loop.
+        /// </summary>
+        public void PlayOutdoorAmbient()
+        {
+            if (_config == null || _ambientSource == null) return;
+
+            var clips = _config.OutdoorAmbientClips;
+            if (clips == null || clips.Length == 0) return;
+
+            // Don't restart if already playing an outdoor clip
+            if (_ambientSource.isPlaying && System.Array.IndexOf(clips, _ambientSource.clip) >= 0)
+                return;
+
+            var clip = clips[Random.Range(0, clips.Length)];
+            if (clip == null) return;
+
+            _ambientSource.clip = clip;
+            _ambientSource.volume = _config.OutdoorAmbientVolume;
+            _ambientSource.loop = true;
+            _ambientSource.Play();
+        }
+
+        /// <summary>
+        /// Stop outdoor ambient and restore the indoor ambient loop.
+        /// </summary>
+        public void StopOutdoorAmbient()
+        {
+            if (_config == null || _ambientSource == null) return;
+
+            // Restore indoor ambient loop
+            if (_config.AmbientLoopClip != null)
+            {
+                _ambientSource.clip = _config.AmbientLoopClip;
+                _ambientSource.volume = _config.AmbientVolume;
+                _ambientSource.loop = true;
+                _ambientSource.Play();
+            }
+            else
+            {
+                _ambientSource.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Play a one-shot creepy ambient clip when re-entering the bunker.
+        /// The clip plays once then the source stops (no loop).
+        /// </summary>
+        public void PlayIndoorAmbientOnce()
+        {
+            if (_config == null || _ambientSource == null) return;
+
+            var clip = _config.IndoorAmbientOneShot;
+            if (clip == null) return;
+
+            _ambientSource.clip = clip;
+            _ambientSource.volume = _config.IndoorOneShotVolume;
+            _ambientSource.loop = false;
+            _ambientSource.Play();
         }
 
         #endregion

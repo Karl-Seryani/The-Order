@@ -91,6 +91,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 ### Endings
 - `EndingData` SO — 9 ending combinations (3 knowledge levels × 3 choices)
 - `EndingCutscene` — wired to `OnCarRepairComplete` event
+- `CarSeat` — IInteractable on car seat, enter/exit with camera transition, caches exact player position/rotation for clean restore
 
 ### UI
 - `HUDManager` — interaction prompts, crosshair, clue panel, item notifications, objective fade
@@ -99,8 +100,10 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `ObjectiveManager` — objective text management
 
 ### Audio
-- `AudioConfig` SO — centralized audio tuning
-- `AmbientAudioManager` — ambient sound management
+- `AudioConfig` SO — centralized audio tuning (ambient, stingers, footsteps, outdoor/indoor ambient)
+- `AmbientAudioManager` — ambient sound management, stinger playback, outdoor/indoor ambient swap
+- `AudioZoneTrigger` — trigger collider that switches audio on zone transitions (config-swap or outdoor mode)
+- `FloorCreakTrigger` — trigger zone plays creak SFX + fires `InteractableNoise` for Hunter alert
 - `PlayerAudio` — breathing FSM
 - `HunterAudio` — footstep sounds
 
@@ -185,3 +188,4 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - [x] Item progression system (ItemPickup → HeldItemController → ToolReceiver → LockedDoor chain works)
 - [x] Clue collection system (18 notes, knowledge levels, journal)
 - [x] Audio system (breathing FSM, door sounds, item impacts, ambient, flashlight click, drill, car start)
+- [x] Audio enhancements (MachineRoomKey cinematic stinger, outdoor forest ambient, floor creak triggers + Hunter alert)

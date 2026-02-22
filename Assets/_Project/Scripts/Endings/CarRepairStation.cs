@@ -7,7 +7,7 @@ namespace TheOrder.Ending
     /// maps to a specific car part. Handles:
     /// 1. Holding a car part + aiming at matching zone → place it
     /// 2. Holding the drill + aiming at a wheel zone → drill that wheel
-    /// 3. All parts installed + has car key → start the car
+    /// Car starting is handled by CarSeat (enter car) + CarIgnition (turn key).
     /// </summary>
     public class CarRepairStation : MonoBehaviour, IInteractable
     {
@@ -52,19 +52,37 @@ namespace TheOrder.Ending
 
         #endregion
 
+        #region Public API
+
+        /// <summary>True when all required parts are installed and drilled.</summary>
+        public bool AllPartsDrilled => _installedCount >= _requiredParts.Length;
+
+        /// <summary>Called by CarIgnition when player turns the key.</summary>
+        public void StartCarFromIgnition()
+        {
+            if (_carStarted) return;
+
+            var inventory = Player.PlayerInventory.Instance;
+            if (inventory == null || !inventory.HasKey(_carKeyItemData)) return;
+
+            _carStarted = true;
+
+            if (_carStartClip != null)
+            {
+                _audioSource.PlayOneShot(_carStartClip, _installVolume);
+            }
+
+            GameEvents.CarRepairComplete();
+        }
+
+        #endregion
+
         #region Zone API (called by CarInstallZone children)
 
         /// <summary>Called by a CarInstallZone when the player interacts with it.</summary>
         public void InteractWithZone(GameObject interactor, Items.CarPartPickup zonePart)
         {
             if (_carStarted) return;
-
-            // --- All parts installed → start car with key ---
-            if (_installedCount >= _requiredParts.Length)
-            {
-                TryStartCar();
-                return;
-            }
 
             var heldItem = Items.HeldItemController.Instance;
             if (heldItem == null || !heldItem.HasItem) return;
@@ -110,12 +128,7 @@ namespace TheOrder.Ending
         public bool CanInteractWithZone(GameObject interactor, Items.CarPartPickup zonePart)
         {
             if (_carStarted) return false;
-
-            if (_installedCount >= _requiredParts.Length)
-            {
-                var inventory = Player.PlayerInventory.Instance;
-                return inventory != null && inventory.HasKey(_carKeyItemData);
-            }
+            if (_installedCount >= _requiredParts.Length) return false;
 
             var heldItem = Items.HeldItemController.Instance;
             if (heldItem == null || !heldItem.HasItem) return false;
@@ -135,11 +148,7 @@ namespace TheOrder.Ending
         public string GetZoneBlockedMessage(Items.CarPartPickup zonePart)
         {
             if (_carStarted) return "";
-
-            if (_installedCount >= _requiredParts.Length)
-            {
-                return "Need Car Key";
-            }
+            if (_installedCount >= _requiredParts.Length) return "";
 
             var heldItem = Items.HeldItemController.Instance;
             if (heldItem == null || !heldItem.HasItem) return "";
@@ -160,17 +169,7 @@ namespace TheOrder.Ending
         public string GetZonePromptText(Items.CarPartPickup zonePart)
         {
             if (_carStarted) return "";
-
-            // All parts installed — need car key
-            if (_installedCount >= _requiredParts.Length)
-            {
-                var inventory = Player.PlayerInventory.Instance;
-                if (inventory != null && inventory.HasKey(_carKeyItemData))
-                {
-                    return "Start car";
-                }
-                return "Need Car Key";
-            }
+            if (_installedCount >= _requiredParts.Length) return "";
 
             var heldItem = Items.HeldItemController.Instance;
 
@@ -210,70 +209,28 @@ namespace TheOrder.Ending
 
         public void Interact(GameObject interactor)
         {
-            if (_carStarted) return;
-
-            if (_installedCount >= _requiredParts.Length)
-            {
-                TryStartCar();
-            }
+            // Body_Goblin direct hit — no-op, zones handle part placement
         }
 
         public string GetPromptText()
         {
             if (_carStarted) return "";
-
-            if (_installedCount >= _requiredParts.Length)
-            {
-                var inventory = Player.PlayerInventory.Instance;
-                if (inventory != null && inventory.HasKey(_carKeyItemData))
-                {
-                    return "Start car";
-                }
-                return "Need Car Key";
-            }
-
             return $"Car  [{_installedCount}/{_requiredParts.Length}]";
         }
 
         public bool CanInteract(GameObject interactor)
         {
-            if (_carStarted) return false;
-            if (_installedCount >= _requiredParts.Length)
-            {
-                var inventory = Player.PlayerInventory.Instance;
-                return inventory != null && inventory.HasKey(_carKeyItemData);
-            }
-            return true;
+            return !_carStarted;
         }
 
         public string GetBlockedMessage()
         {
-            if (_carStarted) return "";
-            if (_installedCount >= _requiredParts.Length)
-            {
-                return "Need Car Key";
-            }
             return "";
         }
 
         #endregion
 
         #region Private Methods
-
-        private void TryStartCar()
-        {
-            var inventory = Player.PlayerInventory.Instance;
-            if (inventory == null || !inventory.HasKey(_carKeyItemData)) return;
-
-            _carStarted = true;
-
-            if (_carStartClip != null)
-            {
-                _audioSource.PlayOneShot(_carStartClip, _installVolume);
-            }
-
-            GameEvents.CarRepairComplete();
-        }
 
         private bool IsCarPart(Items.ItemData item)
         {

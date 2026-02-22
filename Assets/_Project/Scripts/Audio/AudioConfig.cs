@@ -1,3 +1,4 @@
+using TheOrder.Items;
 using UnityEngine;
 
 namespace TheOrder.Audio
@@ -75,6 +76,12 @@ namespace TheOrder.Audio
         [SerializeField] [Range(0f, 1f)] private float _secondKeyStingerVolume = 0.5f;
         [SerializeField] private float _secondKeyStingerDuration = 10f;
 
+        [Header("Machine Room Key Stinger")]
+        [SerializeField] private AudioClip _machineRoomKeyStingerClip;
+        [SerializeField] [Range(0f, 1f)] private float _machineRoomKeyStingerVolume = 0.5f;
+        [SerializeField] private float _machineRoomKeyStingerDuration = 15f;
+        [SerializeField] private ItemData _machineRoomKeyItemData;
+
         [Header("Random Stinger")]
         [SerializeField] private AudioClip _randomStingerClip;
         [SerializeField] [Range(0f, 1f)] private float _randomStingerVolume = 0.4f;
@@ -96,12 +103,38 @@ namespace TheOrder.Audio
         public float SecondKeyStingerVolume => _secondKeyStingerVolume;
         public float SecondKeyStingerDuration => _secondKeyStingerDuration;
 
+        /// <summary>Clip played when the Machine Room Key is picked up.</summary>
+        public AudioClip MachineRoomKeyStingerClip => _machineRoomKeyStingerClip;
+        public float MachineRoomKeyStingerVolume => _machineRoomKeyStingerVolume;
+        public float MachineRoomKeyStingerDuration => _machineRoomKeyStingerDuration;
+        public ItemData MachineRoomKeyItemData => _machineRoomKeyItemData;
+
         /// <summary>Clip played at random intervals.</summary>
         public AudioClip RandomStingerClip => _randomStingerClip;
         public float RandomStingerVolume => _randomStingerVolume;
         public float RandomStingerDuration => _randomStingerDuration;
         public float RandomStingerMinInterval => _randomStingerMinInterval;
         public float RandomStingerMaxInterval => _randomStingerMaxInterval;
+
+        #endregion
+
+        #region Outdoor / Indoor Ambient
+
+        [Header("Outdoor Ambient")]
+        [SerializeField] private AudioClip[] _outdoorAmbientClips;
+        [SerializeField] [Range(0f, 1f)] private float _outdoorAmbientVolume = 0.3f;
+
+        [Header("Indoor Re-entry One-Shot")]
+        [SerializeField] private AudioClip _indoorAmbientOneShot;
+        [SerializeField] [Range(0f, 1f)] private float _indoorOneShotVolume = 0.3f;
+
+        /// <summary>Random forest ambient clips for the outdoor area.</summary>
+        public AudioClip[] OutdoorAmbientClips => _outdoorAmbientClips;
+        public float OutdoorAmbientVolume => _outdoorAmbientVolume;
+
+        /// <summary>One-shot ambient clip played on re-entering the bunker.</summary>
+        public AudioClip IndoorAmbientOneShot => _indoorAmbientOneShot;
+        public float IndoorOneShotVolume => _indoorOneShotVolume;
 
         #endregion
 
