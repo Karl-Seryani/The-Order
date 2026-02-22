@@ -64,6 +64,9 @@ namespace TheOrder.Hunter
         // Paused state
         private bool _isPaused;
 
+        // Smoothed speed for animator (prevents idle flicker)
+        private float _smoothedSpeed;
+
         // Door self-ignore (prevents investigating own door opens)
         private float _lastDoorOpenTime = -Mathf.Infinity;
         private Vector3 _lastDoorOpenPosition;
@@ -72,9 +75,6 @@ namespace TheOrder.Hunter
         private readonly RaycastHit[] _raycastBuffer = new RaycastHit[16];
         private static readonly HitDistanceComparer _hitDistanceComparer = new();
 
-        // Animator hashes
-        private static readonly int SpeedHash = Animator.StringToHash("Speed");
-        private static readonly int IsLookingHash = Animator.StringToHash("IsLooking");
 
         #endregion
 
@@ -465,6 +465,10 @@ namespace TheOrder.Hunter
 
         #endregion
 
+        // Animator hashes
+        private static readonly int SpeedHash = Animator.StringToHash("Speed");
+        private static readonly int IsLookingHash = Animator.StringToHash("IsLooking");
+
         #region Animator
 
         private void UpdateAnimator()
@@ -472,6 +476,22 @@ namespace TheOrder.Hunter
             if (_animator == null || _animator.runtimeAnimatorController == null) return;
 
             float speed = _agent.velocity.magnitude;
+
+            // Clamp minimum speed while agent has a destination to prevent
+            // idle flicker during repathing velocity dips
+            if (!_agent.isStopped && _agent.hasPath && !_agent.pathPending)
+            {
+                HunterState state = _stateMachine.CurrentStateType;
+                float minSpeed = state switch
+                {
+                    HunterState.Chase => _config.ChaseSpeed * 0.5f,
+                    HunterState.Investigate => _config.InvestigateSpeed * 0.5f,
+                    HunterState.Patrol => _config.PatrolSpeed * 0.5f,
+                    _ => 0f
+                };
+                speed = Mathf.Max(speed, minSpeed);
+            }
+
             _animator.SetFloat(SpeedHash, speed);
         }
 
@@ -487,14 +507,53 @@ namespace TheOrder.Hunter
         #region Game Over
 
         /// <summary>
-        /// Called when the Hunter catches the player. Fires event for death screen.
+        /// Called when the Hunter catches the player. Fires cinematic event.
+        /// DeathCinematic handles the sequence and fires PlayerCaught when done.
         /// </summary>
         public void CatchPlayer()
         {
-            Debug.Log("[HunterAI] Player caught! Game Over.");
+            Debug.Log("[HunterAI] Player caught! Starting death cinematic.");
             _isPaused = true;
             _agent.isStopped = true;
-            GameEvents.PlayerCaught();
+            GameEvents.DeathCinematicStart();
+        }
+
+        /// <summary>
+        /// Play the attack animation. Called by DeathCinematic.
+        /// </summary>
+        public void PlayAttack()
+        {
+            if (_animator == null || _animator.runtimeAnimatorController == null) return;
+            _animator.Play("attack1", 0, 0f);
+        }
+
+        /// <summary>
+        /// Returns a transform for the camera to look at during death cinematic.
+        /// Tries to find the upper chest bone, falls back to transform + Y offset.
+        /// </summary>
+        public Vector3 GetLookTarget()
+        {
+            // Try common Mixamo bone names for upper chest
+            string[] boneNames = { "spine_02", "Spine2", "Character1_Spine2", "mixamorig:Spine2" };
+            foreach (string boneName in boneNames)
+            {
+                Transform bone = FindChildRecursive(transform, boneName);
+                if (bone != null) return bone.position;
+            }
+
+            // Fallback — chest height offset
+            return transform.position + Vector3.up * 1.2f;
+        }
+
+        private static Transform FindChildRecursive(Transform parent, string name)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == name) return child;
+                Transform found = FindChildRecursive(child, name);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         #endregion
