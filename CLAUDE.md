@@ -124,8 +124,8 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `DeathScreenUI` — fade to black, "YOU DIED", death stinger. Day 1/2: advance day + reload (full day overlay + wake-up). Day 3: "GAME OVER" → reset + MainMenu.
 - `DayOverlayUI` — black screen with "Day X" text. Driven by BunkerSceneBootstrap. Timing: 2s black → fade in → 3s hold → fade out → 1s gap → OnComplete chains wake-up. Freezes camera directly (no WakeUpStarted to avoid audio). Day 3 text in blood red. DayOverlayCanvas sortingOrder=200 (above WakeUpCanvas=100).
 - `MainMenuUI` — Play (→ difficulty panel) / Tutorial / Settings / Quit, background music
-- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape) with prev/next navigation. ForceRefresh coroutine for pause menu context.
-- `PauseMenuUI` — Escape toggles, Resume/Tutorial/Settings/Quit. Button borders removed (Image alpha=0). Explicit cursor unlock on sub-panel switch.
+- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape) with prev/next navigation. Main menu only.
+- `PauseMenuUI` — Escape toggles, Resume/Settings/Quit. Button borders removed (Image alpha=0). Explicit cursor unlock on sub-panel switch. Blocked during day overlay and wake-up (`FirstPersonCamera.IsEnabled` check).
 - `ObjectiveManager` — objective text management
 - `HorrorFontApplier` — runtime font override on Canvas Awake. Nosifer (title, >=28pt) + Creepster (body). Attached to all canvases.
 
@@ -195,7 +195,9 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `WakeUpSequence` plays on every scene load (day overlay → wake-up). `SkipWakeUpSequence` only for edge cases.
 - `DoorController`/`SlidableFurniture` init in `Awake()` — ensures `ForceOpen()` from `ToolReceiver.Start()` finds valid base values.
 - Hunter starts paused (`_isPaused=true`), subscribes to `OnWakeUpCompleted` to begin patrol.
-- `DayOverlayUI` disables `FirstPersonCamera.IsEnabled` directly — never fires `WakeUpStarted` (would trigger audio).
+- `DayOverlayUI` disables `FirstPersonCamera.IsEnabled` + Player action map directly — never fires `WakeUpStarted` (would trigger audio).
+- `PauseMenuUI` blocks Escape when `FirstPersonCamera.IsEnabled` is false (during day overlay + wake-up).
+- Hunter bedroom kill (within 10m of spawn) — position NOT persisted, resets to scene default to prevent spawn-camping.
 - `FindFirstObjectByType` in Update is expensive — cache with search-once flag.
 - `CharacterController.velocity` underreports — use `PlayerController.CurrentSpeed` (3.0 walk / 5.5 sprint).
 - `CharacterController` must be disabled before direct `transform.position` changes.
