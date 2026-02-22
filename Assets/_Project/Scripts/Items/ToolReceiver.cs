@@ -190,20 +190,19 @@ namespace TheOrder.Items
 
             var rewardObj = ItemSpawner.SpawnPickup(_rewardItem, spawnPos);
 
-            // Add upward and forward velocity so it pops out away from the object
             var rb = rewardObj.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                // Pop up and forward
-                Vector3 popDirection = transform.forward * 2.0f + Vector3.up * 2.5f;
-                rb.linearVelocity = popDirection;
-                
-                // Add random rotation for natural feel
+                // Gentle pop upward — no horizontal velocity to avoid clipping into walls/floor
+                rb.linearVelocity = Vector3.up * 2f;
                 rb.angularVelocity = new Vector3(
-                    Random.Range(-3f, 3f),
-                    Random.Range(-3f, 3f),
-                    Random.Range(-3f, 3f)
+                    Random.Range(-1f, 1f),
+                    Random.Range(-1f, 1f),
+                    Random.Range(-1f, 1f)
                 );
+
+                // Prevent clipping through thin surfaces
+                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             }
         }
 
