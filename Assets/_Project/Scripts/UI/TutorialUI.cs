@@ -69,27 +69,26 @@ namespace TheOrder.UI
             // The Hunter
             new[]
             {
-                "Something stalks these halls.\n\n" +
-                "He does not speak. He does not rest.\n" +
-                "He patrols the corridors in silence,\n" +
-                "searching for you.\n\n" +
+                "A monster stalks these halls.\n\n" +
+                "He growls. He never rests.\n" +
+                "He patrols the corridors searching\n" +
+                "for you.\n\n" +
                 "If he sees you, he will chase.\n" +
                 "If he catches you, it is over.\n\n" +
-                "On EASY difficulty, the Hunter can only\n" +
-                "detect you by sight. Stay out of his\n" +
-                "line of sight and you are safe.\n\n" +
-                "On MEDIUM and HARD, he also hears\n" +
-                "your footsteps, doors, and flashlight.\n" +
+                "On EASY, the Hunter detects you by\n" +
+                "sight only. No flashlight, sprint, or\n" +
+                "noise detection.\n\n" +
+                "On MEDIUM and HARD, he hears your\n" +
+                "footsteps, doors, and flashlight.\n" +
                 "Every sound you make is a risk."
             },
             // Survival
             new[]
             {
                 "LIGHT AND DARKNESS\n\n" +
-                "Your flashlight reveals the way forward\n" +
-                "but also makes you visible from far away.\n" +
-                "In darkness, the Hunter's sight is limited.\n" +
-                "Use that to your advantage.\n\n" +
+                "Your flashlight reveals the path ahead\n" +
+                "but also makes you visible from afar.\n" +
+                "Use darkness to your advantage.\n\n" +
                 "SOUND\n\n" +
                 "Sprinting echoes through the halls.\n" +
                 "Walk slowly to stay silent.\n" +
@@ -99,38 +98,36 @@ namespace TheOrder.UI
                 "out, you cannot sprint until it recovers.\n" +
                 "Manage it wisely during a chase.",
                 // Page 2
-                "DOORS\n\n" +
-                "Doors can be opened and closed freely.\n" +
-                "A closed door buys you precious seconds.\n" +
-                "The Hunter must stop to open it.\n\n" +
-                "KEYS AND LOCKED AREAS\n\n" +
-                "Some doors require specific keys.\n" +
-                "Search drawers, shelves, and hidden\n" +
-                "corners to find them.\n\n" +
+                "ITEM CHAIN\n\n" +
+                "Hammer - breaks barricades\n" +
+                "Screwdriver - unscrews locked drawers\n" +
+                "Knife - cuts open cushions\n" +
+                "Wrench - pries open the morgue door\n\n" +
+                "Search shelves, drawers, and mugs\n" +
+                "to find what you need.\n\n" +
                 "CLUES\n\n" +
-                "18 documents are scattered throughout\n" +
-                "the bunker. Approach one and press E\n" +
-                "to read it, then E again to collect.\n" +
-                "They reveal the truth about this place."
+                "2 documents are hidden in the bunker.\n" +
+                "Press E to read, then E again to collect.\n" +
+                "They hold useful information."
             },
             // Escape
             new[]
             {
-                "PRACTICE MODE\n\n" +
-                "No Hunter. Explore freely and learn the\n" +
-                "layout. Repair the car to escape.\n\n" +
-                "EASY MODE\n\n" +
-                "The Hunter patrols but can only see you.\n" +
-                "Find the main door and press E to escape.\n\n" +
-                "MEDIUM MODE\n\n" +
-                "The Hunter hears everything. Stay quiet.\n" +
-                "Find the main door and press E to escape.\n\n" +
-                "HARD MODE\n\n" +
-                "Full Hunter. No easy way out.\n" +
-                "Find 4 car parts scattered in the bunker.\n" +
-                "Carry them outside to the car frame.\n" +
-                "Use the drill on the wheels. Find the\n" +
-                "car key. Start the engine. Drive away."
+                "PRACTICE\n\n" +
+                "No Hunter. Get familiar with the layout\n" +
+                "and item locations. Build the car to escape.\n\n" +
+                "EASY\n\n" +
+                "Hunter patrols but only detects by sight.\n" +
+                "Find the Main Door Key to escape.\n\n" +
+                "MEDIUM\n\n" +
+                "Hunter hears everything. Stay quiet.\n" +
+                "Find the Main Door Key to escape.\n\n" +
+                "HARD\n\n" +
+                "Same detection as Medium, but you must\n" +
+                "also build the car. Find 3 wheels + motor,\n" +
+                "place them on the car frame outside.\n" +
+                "Drill the wheels in. Find the car key\n" +
+                "in the 1st floor kitchen. Start the engine."
             }
         };
 
