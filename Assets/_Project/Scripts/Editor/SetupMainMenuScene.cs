@@ -25,10 +25,8 @@ namespace TheOrder.Editor
         private static readonly Color BUTTON_HOVER = new Color(0.95f, 0.78f, 0.3f, 0.25f);
         private static readonly Color BUTTON_PRESSED = new Color(0.95f, 0.78f, 0.3f, 0.15f);
         private static readonly Color BUTTON_TEXT_NORMAL = new Color(1f, 1f, 1f, 1f);
-        private static readonly Color BUTTON_TEXT_HOVER_COLOR = new Color(1f, 0.85f, 0.4f, 1f);
         // Tutorial panel background
         private static readonly Color BACKGROUND_COLOR = new Color(0.05f, 0.05f, 0.08f, 0.95f);
-        private static readonly Color TAB_ACTIVE = new Color(0.3f, 0.3f, 0.38f, 1f);
 
         [MenuItem("Tools/The Order/Setup Main Menu Scene")]
         public static void Setup()

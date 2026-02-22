@@ -322,12 +322,6 @@ namespace TheOrder.Audio
             }
         }
 
-        private void PlaySFXAtPoint(AudioClip clip, Vector3 position, float volume)
-        {
-            if (clip == null) return;
-            AudioSource.PlayClipAtPoint(clip, position, volume);
-        }
-
         #endregion
 
         #region Stinger Playback

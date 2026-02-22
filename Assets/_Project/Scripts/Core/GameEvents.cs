@@ -99,10 +99,6 @@ namespace TheOrder
         public static event Action<Vector3> OnDoorOpened;
         public static void DoorOpened(Vector3 position) => OnDoorOpened?.Invoke(position);
 
-        /// <summary>Fired when a door is closed. Passes door world position for sound propagation.</summary>
-        public static event Action<Vector3> OnDoorClosed;
-        public static void DoorClosed(Vector3 position) => OnDoorClosed?.Invoke(position);
-
         #endregion
 
         #region UI

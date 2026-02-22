@@ -145,7 +145,7 @@ namespace TheOrder.Doors
             _isAnimating = false;
             ApplyRotation();
             PlaySound(_closeSound);
-            GameEvents.DoorClosed(transform.position);
+
         }
 
         #endregion
@@ -179,7 +179,7 @@ namespace TheOrder.Doors
             else if (!_isOpen && wasOpen)
             {
                 PlaySound(_closeSound);
-                GameEvents.DoorClosed(transform.position);
+    
             }
         }
 
