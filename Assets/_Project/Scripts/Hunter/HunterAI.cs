@@ -553,9 +553,15 @@ namespace TheOrder.Hunter
             if (Items.HeldItemController.Instance != null && Items.HeldItemController.Instance.HasItem)
                 Items.HeldItemController.Instance.Drop();
 
-            // Save Hunter state for persistence across deaths
+            // Save Hunter state for persistence — but not if kill was in the bedroom
+            // (spawn room). Let Hunter reset to starting position so player isn't spawn-camped.
             if (RunStateManager.Instance != null)
-                RunStateManager.Instance.SaveHunterState(transform.position, _lastPatrolWaypointIndex);
+            {
+                Vector3 bedroomPos = new Vector3(-21.24f, 4.196f, -21.57f);
+                float distToBedroom = Vector3.Distance(transform.position, bedroomPos);
+                if (distToBedroom > 10f)
+                    RunStateManager.Instance.SaveHunterState(transform.position, _lastPatrolWaypointIndex);
+            }
 
             _isPaused = true;
             _agent.isStopped = true;
