@@ -3,9 +3,9 @@ using UnityEngine;
 namespace TheOrder.Hunter
 {
     /// <summary>
-    /// Manages Hunter footstep audio with 3D spatial sound.
-    /// Footstep interval scales with movement speed.
-    /// The Hunter is silent — footsteps only.
+    /// Manages Hunter audio — footsteps with speed-matched intervals,
+    /// terrifying sounds during investigation and waypoint idle,
+    /// and death cinematic sound.
     /// </summary>
     public class HunterAudio : MonoBehaviour
     {
@@ -24,6 +24,14 @@ namespace TheOrder.Hunter
         [SerializeField] private float _footstepVolume = 0.6f;
         [SerializeField] private float _speedThreshold = 0.5f;
 
+        [Header("Investigate / Idle Sounds")]
+        [SerializeField] private AudioClip[] _investigateSounds;
+        [SerializeField] [Range(0f, 1f)] private float _investigateVolume = 0.7f;
+
+        [Header("Death Cinematic Sound")]
+        [SerializeField] private AudioClip _deathCinematicSound;
+        [SerializeField] [Range(0f, 1f)] private float _deathCinematicVolume = 0.8f;
+
         [Header("Audio Sources")]
         [SerializeField] private AudioSource _footstepSource;
 
@@ -33,6 +41,10 @@ namespace TheOrder.Hunter
 
         private UnityEngine.AI.NavMeshAgent _agent;
         private float _footstepTimer;
+        private bool _isPaused;
+        private bool _isInvestigating;
+        private float _idleSoundTimer;
+        private bool _wasMoving;
 
         #endregion
 
@@ -42,20 +54,36 @@ namespace TheOrder.Hunter
         {
             _agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
 
-            // Setup footstep audio source for 3D spatial sound
-            if (_footstepSource != null)
+            if (_footstepSource == null)
             {
-                _footstepSource.spatialBlend = 1f;
-                _footstepSource.minDistance = 1f;
-                _footstepSource.maxDistance = 20f;
-                _footstepSource.rolloffMode = AudioRolloffMode.Logarithmic;
-                _footstepSource.playOnAwake = false;
+                _footstepSource = gameObject.AddComponent<AudioSource>();
             }
+            _footstepSource.spatialBlend = 1f;
+            _footstepSource.minDistance = 1f;
+            _footstepSource.maxDistance = 20f;
+            _footstepSource.rolloffMode = AudioRolloffMode.Logarithmic;
+            _footstepSource.playOnAwake = false;
+        }
+
+        private void OnEnable()
+        {
+            GameEvents.OnHunterStateChanged += HandleHunterStateChanged;
+            GameEvents.OnGameStateChanged += HandleGameStateChanged;
+            GameEvents.OnDeathCinematicStart += HandleDeathCinematicStart;
+        }
+
+        private void OnDisable()
+        {
+            GameEvents.OnHunterStateChanged -= HandleHunterStateChanged;
+            GameEvents.OnGameStateChanged -= HandleGameStateChanged;
+            GameEvents.OnDeathCinematicStart -= HandleDeathCinematicStart;
         }
 
         private void Update()
         {
+            if (_isPaused) return;
             UpdateFootsteps();
+            UpdateIdleSound();
         }
 
         #endregion
@@ -74,22 +102,25 @@ namespace TheOrder.Hunter
                 return;
             }
 
-            // Determine interval based on speed — threshold from config
             float sprintThreshold = _config != null ? _config.SprintSpeedThreshold : 4f;
-            float interval = speed >= sprintThreshold ? _runStepInterval : _walkStepInterval;
+            bool isRunning = speed >= sprintThreshold;
+            float interval = isRunning ? _runStepInterval : _walkStepInterval;
 
             _footstepTimer += Time.deltaTime;
 
             if (_footstepTimer >= interval)
             {
                 _footstepTimer = 0f;
-                PlayFootstep(speed >= sprintThreshold);
+                PlayFootstep(isRunning);
             }
         }
 
         private void PlayFootstep(bool isRunning)
         {
             AudioClip[] clips = isRunning ? _runFootsteps : _walkFootsteps;
+
+            if ((clips == null || clips.Length == 0) && isRunning)
+                clips = _walkFootsteps;
 
             if (clips == null || clips.Length == 0) return;
 
@@ -98,6 +129,74 @@ namespace TheOrder.Hunter
             {
                 _footstepSource.PlayOneShot(clip, _footstepVolume);
             }
+        }
+
+        #endregion
+
+        #region Idle / Investigate Sounds
+
+        /// <summary>
+        /// Detect when the Hunter stops moving (waypoint idle) and play a terrifying sound.
+        /// </summary>
+        private void UpdateIdleSound()
+        {
+            if (_agent == null) return;
+
+            float speed = _agent.velocity.magnitude;
+            bool isMoving = speed > _speedThreshold;
+
+            // Detect transition from moving → stopped
+            if (_wasMoving && !isMoving)
+            {
+                PlayInvestigateSound();
+            }
+
+            _wasMoving = isMoving;
+        }
+
+        private void PlayInvestigateSound()
+        {
+            if (_investigateSounds == null || _investigateSounds.Length == 0) return;
+            if (_footstepSource == null) return;
+
+            AudioClip clip = _investigateSounds[Random.Range(0, _investigateSounds.Length)];
+            if (clip != null)
+            {
+                _footstepSource.PlayOneShot(clip, _investigateVolume);
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandleHunterStateChanged(HunterState newState)
+        {
+            if (newState == HunterState.Investigate)
+            {
+                if (!_isInvestigating)
+                {
+                    _isInvestigating = true;
+                    PlayInvestigateSound();
+                }
+            }
+            else
+            {
+                _isInvestigating = false;
+            }
+        }
+
+        private void HandleDeathCinematicStart()
+        {
+            if (_deathCinematicSound != null && _footstepSource != null)
+            {
+                _footstepSource.PlayOneShot(_deathCinematicSound, _deathCinematicVolume);
+            }
+        }
+
+        private void HandleGameStateChanged(GameState newState)
+        {
+            _isPaused = newState != GameState.Playing;
         }
 
         #endregion
