@@ -52,9 +52,11 @@ namespace TheOrder.UI
             if (_hasShown) return;
             _hasShown = true;
 
-            // Freeze player camera/input during the overlay without triggering audio
+            // Freeze ALL player input during the overlay without triggering audio
             var cam = FindFirstObjectByType<PlayerCamera.FirstPersonCamera>();
             if (cam != null) cam.IsEnabled = false;
+            var input = FindFirstObjectByType<Player.PlayerInputHandler>();
+            if (input != null) input.enabled = false;
 
             UpdateDayLabel();
             if (_showCoroutine != null)
