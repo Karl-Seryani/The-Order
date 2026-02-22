@@ -135,23 +135,9 @@ namespace TheOrder.Hunter
 
         #region Idle / Investigate Sounds
 
-        /// <summary>
-        /// Detect when the Hunter stops moving (waypoint idle) and play a terrifying sound.
-        /// </summary>
         private void UpdateIdleSound()
         {
-            if (_agent == null) return;
-
-            float speed = _agent.velocity.magnitude;
-            bool isMoving = speed > _speedThreshold;
-
-            // Detect transition from moving → stopped
-            if (_wasMoving && !isMoving)
-            {
-                PlayInvestigateSound();
-            }
-
-            _wasMoving = isMoving;
+            // Disabled — too frequent roaring
         }
 
         private void PlayInvestigateSound()
