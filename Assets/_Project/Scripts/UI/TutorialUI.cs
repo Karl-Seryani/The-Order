@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -151,31 +150,9 @@ namespace TheOrder.UI
 
         private void OnEnable()
         {
-            // Reset to first section when tutorial opens
             _currentSection = 0;
             _currentPage = 0;
             UpdateDisplay();
-
-            // Force layout rebuild after one frame to ensure text renders
-            StartCoroutine(ForceRefresh());
-        }
-
-        private IEnumerator ForceRefresh()
-        {
-            yield return null;
-
-            // Request font atlas rebuild for all characters in the text
-            if (_bodyText != null && _bodyText.font != null)
-                _bodyText.font.RequestCharactersInTexture(_bodyText.text, _bodyText.fontSize, _bodyText.fontStyle);
-            if (_sectionTitle != null && _sectionTitle.font != null)
-                _sectionTitle.font.RequestCharactersInTexture(_sectionTitle.text, _sectionTitle.fontSize, _sectionTitle.fontStyle);
-
-            // Force full text mesh rebuild
-            if (_sectionTitle != null) _sectionTitle.SetAllDirty();
-            if (_bodyText != null) _bodyText.SetAllDirty();
-            if (_pageIndicator != null) _pageIndicator.SetAllDirty();
-
-            Canvas.ForceUpdateCanvases();
         }
 
         private void Update()

@@ -15,12 +15,10 @@ namespace TheOrder.UI
 
         [Header("Panels")]
         [SerializeField] private GameObject _pausePanel;
-        [SerializeField] private GameObject _tutorialPanel;
         [SerializeField] private GameObject _settingsPanel;
 
         [Header("Buttons")]
         [SerializeField] private Button _resumeButton;
-        [SerializeField] private Button _tutorialButton;
         [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _quitButton;
 
@@ -48,17 +46,8 @@ namespace TheOrder.UI
             _sfxSource.playOnAwake = false;
 
             if (_resumeButton != null) _resumeButton.onClick.AddListener(OnResumeClicked);
-            if (_tutorialButton != null) _tutorialButton.onClick.AddListener(OnTutorialClicked);
             if (_settingsButton != null) _settingsButton.onClick.AddListener(OnSettingsClicked);
             if (_quitButton != null) _quitButton.onClick.AddListener(OnQuitClicked);
-
-            // Wire sub-panel back actions
-            if (_tutorialPanel != null)
-            {
-                var tutorialUI = _tutorialPanel.GetComponent<TutorialUI>();
-                if (tutorialUI != null)
-                    tutorialUI.OnBackAction = ShowPausePanel;
-            }
 
             if (_settingsPanel != null)
             {
@@ -84,13 +73,8 @@ namespace TheOrder.UI
                 if (state == GameState.Death || state == GameState.Ending || state == GameState.MainMenu) return;
             }
 
-            // If a sub-panel is open, go back to pause panel
+            // If settings sub-panel is open, go back to pause panel
             if (_settingsPanel != null && _settingsPanel.activeSelf)
-            {
-                ShowPausePanel();
-                return;
-            }
-            if (_tutorialPanel != null && _tutorialPanel.activeSelf)
             {
                 ShowPausePanel();
                 return;
@@ -111,7 +95,6 @@ namespace TheOrder.UI
         private void OnDestroy()
         {
             if (_resumeButton != null) _resumeButton.onClick.RemoveAllListeners();
-            if (_tutorialButton != null) _tutorialButton.onClick.RemoveAllListeners();
             if (_settingsButton != null) _settingsButton.onClick.RemoveAllListeners();
             if (_quitButton != null) _quitButton.onClick.RemoveAllListeners();
         }
@@ -124,7 +107,6 @@ namespace TheOrder.UI
         {
             PlayClickSfx();
             if (_canvas != null) _canvas.enabled = true;
-            if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
             if (_settingsPanel != null) _settingsPanel.SetActive(false);
             if (_pausePanel != null) _pausePanel.SetActive(true);
 
@@ -136,7 +118,6 @@ namespace TheOrder.UI
         private void HideAll()
         {
             if (_pausePanel != null) _pausePanel.SetActive(false);
-            if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
             if (_settingsPanel != null) _settingsPanel.SetActive(false);
             if (_canvas != null) _canvas.enabled = false;
 
@@ -155,17 +136,6 @@ namespace TheOrder.UI
             HideAll();
             if (GameManager.Instance != null)
                 GameManager.Instance.SetState(GameState.Playing);
-        }
-
-        private void OnTutorialClicked()
-        {
-            PlayClickSfx();
-            if (_pausePanel != null) _pausePanel.SetActive(false);
-            if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
-
-            // Keep cursor unlocked for sub-panel interaction
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
         }
 
         private void OnSettingsClicked()
