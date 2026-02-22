@@ -83,14 +83,6 @@ namespace TheOrder
 
         #region Doors
 
-        /// <summary>Fired when a locked door is unlocked. Passes item used and door position.</summary>
-        public static event Action<Items.ItemData, Vector3> OnDoorUnlocked;
-        public static void DoorUnlocked(Items.ItemData item, Vector3 position) => OnDoorUnlocked?.Invoke(item, position);
-
-        /// <summary>Fired when the player tries a locked door without the correct item. For UI feedback.</summary>
-        public static event Action<Items.ItemData> OnLockedDoorAttempt;
-        public static void LockedDoorAttempt(Items.ItemData requiredItem) => OnLockedDoorAttempt?.Invoke(requiredItem);
-
         #endregion
 
         #region Interaction Noise
@@ -147,21 +139,9 @@ namespace TheOrder
 
         #region Car Repair
 
-        /// <summary>Fired when a car part is installed. Passes part data, installed count, and total required.</summary>
-        public static event Action<Items.ItemData, int, int> OnCarPartInstalled;
-        public static void CarPartInstalled(Items.ItemData part, int installed, int total) => OnCarPartInstalled?.Invoke(part, installed, total);
-
         /// <summary>Fired when all car parts are installed and the car is ready to escape.</summary>
         public static event Action OnCarRepairComplete;
         public static void CarRepairComplete() => OnCarRepairComplete?.Invoke();
-
-        #endregion
-
-        #region Endings
-
-        /// <summary>Fired when an ending is triggered. Passes ending data.</summary>
-        public static event Action<EndingData> OnEndingTriggered;
-        public static void EndingTriggered(EndingData ending) => OnEndingTriggered?.Invoke(ending);
 
         #endregion
     }

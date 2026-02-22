@@ -100,7 +100,6 @@ namespace TheOrder.Ending
                         _audioSource.PlayOneShot(_drillClip, _installVolume);
                     }
 
-                    GameEvents.CarPartInstalled(zonePart.ItemData, _installedCount, _requiredParts.Length);
                 }
                 return;
             }
@@ -120,7 +119,6 @@ namespace TheOrder.Ending
             if (!zonePart.RequiresDrill)
             {
                 _installedCount++;
-                GameEvents.CarPartInstalled(zonePart.ItemData, _installedCount, _requiredParts.Length);
             }
         }
 

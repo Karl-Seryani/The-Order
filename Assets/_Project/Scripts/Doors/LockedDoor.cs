@@ -38,14 +38,6 @@ namespace TheOrder.Doors
         /// <summary>The item required to unlock this door.</summary>
         public Items.ItemData RequiredItem => _requiredItem;
 
-        /// <summary>
-        /// Unlock this door without an item. Used for external unlock triggers.
-        /// </summary>
-        public void ForceUnlock()
-        {
-            _isUnlocked = true;
-        }
-
         #endregion
 
         #region Unity Lifecycle
@@ -71,14 +63,12 @@ namespace TheOrder.Doors
                     _isUnlocked = true;
                     if (_unlockSound != null)
                         AudioSource.PlayClipAtPoint(_unlockSound, transform.position, _soundVolume);
-                    GameEvents.DoorUnlocked(_requiredItem, transform.position);
                     GameEvents.ItemUsed(_requiredItem);
                 }
                 else
                 {
                     if (_rattleSound != null)
                         AudioSource.PlayClipAtPoint(_rattleSound, transform.position, _soundVolume);
-                    GameEvents.LockedDoorAttempt(_requiredItem);
                     return;
                 }
             }

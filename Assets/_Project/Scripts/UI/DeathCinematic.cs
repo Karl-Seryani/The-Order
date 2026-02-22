@@ -33,6 +33,9 @@ namespace TheOrder.UI
         #region Private Fields
 
         private bool _isPlaying;
+        private Hunter.HunterAI _hunterAI;
+        private PlayerCamera.FirstPersonCamera _fpCamera;
+        private Player.PlayerController _playerController;
 
         #endregion
 
@@ -55,6 +58,9 @@ namespace TheOrder.UI
         private void HandleDeathCinematicStart()
         {
             if (_isPlaying) return;
+            _hunterAI = FindFirstObjectByType<Hunter.HunterAI>();
+            _fpCamera = FindFirstObjectByType<PlayerCamera.FirstPersonCamera>();
+            _playerController = FindFirstObjectByType<Player.PlayerController>();
             StartCoroutine(DeathCinematicSequence());
         }
 
@@ -109,10 +115,10 @@ namespace TheOrder.UI
         {
             _isPlaying = true;
 
-            // --- Setup: find references once ---
-            var hunterAI = FindFirstObjectByType<Hunter.HunterAI>();
-            var fpCamera = FindFirstObjectByType<PlayerCamera.FirstPersonCamera>();
-            var playerController = FindFirstObjectByType<Player.PlayerController>();
+            // --- Setup: use cached references ---
+            var hunterAI = _hunterAI;
+            var fpCamera = _fpCamera;
+            var playerController = _playerController;
 
             if (hunterAI == null || fpCamera == null)
             {

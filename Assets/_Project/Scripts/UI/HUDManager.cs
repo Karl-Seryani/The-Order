@@ -32,9 +32,6 @@ namespace TheOrder.UI
         [SerializeField] private float _objectiveDisplayDuration = 3f;
         [SerializeField] private float _objectiveFadeDuration = 0.8f;
 
-        [Header("Drop Hint (Legacy)")]
-        [SerializeField] private Text _dropHintText;
-
         [Header("Crosshair")]
         [SerializeField] private float _crosshairSize = 7f;
         [SerializeField] private Color _crosshairColor = new Color(1f, 1f, 1f, 0.7f);
@@ -44,12 +41,10 @@ namespace TheOrder.UI
         #region Private Fields
 
         private Player.PlayerInteraction _playerInteraction;
-        private Player.PlayerInputHandler _input;
         private Coroutine _notificationCoroutine;
         private Coroutine _objectiveCoroutine;
         private Coroutine _blockedMessageCoroutine;
         private string _currentObjective = "Find a way to escape";
-        private bool _hasSearchedForInput;
         private bool _hasSearchedForInteraction;
         private Image _crosshairDot;
         private GameObject _crosshairX;
@@ -62,7 +57,6 @@ namespace TheOrder.UI
         private void Start()
         {
             _playerInteraction = FindFirstObjectByType<Player.PlayerInteraction>();
-            _input = FindFirstObjectByType<Player.PlayerInputHandler>();
 
             // Hide notification initially
             if (_clueNotificationGroup != null)
@@ -102,12 +96,6 @@ namespace TheOrder.UI
                 _objectiveText.text = _currentObjective;
             }
 
-            // Hide legacy drop hint permanently
-            if (_dropHintText != null)
-            {
-                _dropHintText.gameObject.SetActive(false);
-            }
-
             // Create crosshair elements
             CreateCrosshair();
 
@@ -123,13 +111,11 @@ namespace TheOrder.UI
             GameEvents.OnClueViewed += HandleClueViewed;
             GameEvents.OnClueCollected += HandleClueCollected;
             GameEvents.OnObjectiveChanged += HandleObjectiveChanged;
-            GameEvents.OnGameStateChanged += HandleGameStateChanged;
             GameEvents.OnItemPickedUp += HandleItemPickedUp;
             GameEvents.OnItemDropped += HandleItemDropped;
             GameEvents.OnItemUsed += HandleItemUsed;
             GameEvents.OnInteractionBlocked += HandleInteractionBlocked;
             GameEvents.OnWakeUpStarted += HandleWakeUpStarted;
-            GameEvents.OnWakeUpCompleted += HandleWakeUpCompleted;
         }
 
         private void OnDisable()
@@ -137,13 +123,11 @@ namespace TheOrder.UI
             GameEvents.OnClueViewed -= HandleClueViewed;
             GameEvents.OnClueCollected -= HandleClueCollected;
             GameEvents.OnObjectiveChanged -= HandleObjectiveChanged;
-            GameEvents.OnGameStateChanged -= HandleGameStateChanged;
             GameEvents.OnItemPickedUp -= HandleItemPickedUp;
             GameEvents.OnItemDropped -= HandleItemDropped;
             GameEvents.OnItemUsed -= HandleItemUsed;
             GameEvents.OnInteractionBlocked -= HandleInteractionBlocked;
             GameEvents.OnWakeUpStarted -= HandleWakeUpStarted;
-            GameEvents.OnWakeUpCompleted -= HandleWakeUpCompleted;
         }
 
         private void Update()
@@ -426,11 +410,6 @@ namespace TheOrder.UI
             ShowObjective();
         }
 
-        private void HandleGameStateChanged(GameState newState)
-        {
-            // Crosshair visibility handled by UpdateCrosshair()
-        }
-
         private void HandleItemPickedUp(Items.ItemData item)
         {
             if (item != null)
@@ -464,11 +443,6 @@ namespace TheOrder.UI
         {
             if (_crosshairDot != null) _crosshairDot.gameObject.SetActive(false);
             if (_crosshairX != null) _crosshairX.SetActive(false);
-        }
-
-        private void HandleWakeUpCompleted()
-        {
-            // Crosshair restored by UpdateCrosshair() on next frame
         }
 
         #endregion

@@ -128,9 +128,6 @@ namespace TheOrder.Ending
 
             yield return new WaitForSecondsRealtime(0.5f);
 
-            // Fire ending event
-            GameEvents.EndingTriggered(null);
-
             // Load Main Menu
             Time.timeScale = 1f;
             SceneManager.LoadScene("MainMenu");

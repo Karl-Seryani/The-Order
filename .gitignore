@@ -52,3 +52,9 @@ Assets/Forst/
 
 # Sandbox
 /private/
+
+# Cleanup additions
+*.slnx
+mono_crash*.json
+Assets/Screenshots/
+Assets/_Recovery/

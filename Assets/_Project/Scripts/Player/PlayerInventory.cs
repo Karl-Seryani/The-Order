@@ -38,18 +38,6 @@ namespace TheOrder.Player
             return key != null && _keys.Contains(key);
         }
 
-        /// <summary>Remove a key after use (optional — keys persist by default).</summary>
-        public void RemoveKey(Items.ItemData key)
-        {
-            _keys.Remove(key);
-        }
-
-        /// <summary>Clear all keys. Call on new game (not respawn — keys persist across deaths).</summary>
-        public static void ClearKeys()
-        {
-            _keys.Clear();
-        }
-
         #endregion
 
         #region Unity Lifecycle

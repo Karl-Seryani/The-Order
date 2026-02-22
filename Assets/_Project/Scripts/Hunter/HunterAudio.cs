@@ -4,7 +4,7 @@ namespace TheOrder.Hunter
 {
     /// <summary>
     /// Manages Hunter audio — footsteps with speed-matched intervals,
-    /// terrifying sounds during investigation and waypoint idle,
+    /// terrifying sounds during investigation,
     /// and death cinematic sound.
     /// </summary>
     public class HunterAudio : MonoBehaviour
@@ -43,8 +43,6 @@ namespace TheOrder.Hunter
         private float _footstepTimer;
         private bool _isPaused;
         private bool _isInvestigating;
-        private float _idleSoundTimer;
-        private bool _wasMoving;
 
         #endregion
 
@@ -83,7 +81,6 @@ namespace TheOrder.Hunter
         {
             if (_isPaused) return;
             UpdateFootsteps();
-            UpdateIdleSound();
         }
 
         #endregion
@@ -133,12 +130,7 @@ namespace TheOrder.Hunter
 
         #endregion
 
-        #region Idle / Investigate Sounds
-
-        private void UpdateIdleSound()
-        {
-            // Disabled — too frequent roaring
-        }
+        #region Investigate Sounds
 
         private void PlayInvestigateSound()
         {

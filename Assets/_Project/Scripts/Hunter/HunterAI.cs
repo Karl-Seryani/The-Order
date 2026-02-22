@@ -41,7 +41,6 @@ namespace TheOrder.Hunter
         // Player tracking — updated via events
         private Vector3 _playerPosition;
         private Vector3 _playerForward;
-        private float _playerSpeed;
         private bool _playerFlashlightOn;
         private bool _hasPlayerPosition;
 
@@ -63,9 +62,6 @@ namespace TheOrder.Hunter
 
         // Paused state
         private bool _isPaused;
-
-        // Smoothed speed for animator (prevents idle flicker)
-        private float _smoothedSpeed;
 
         // Door self-ignore (prevents investigating own door opens)
         private float _lastDoorOpenTime = -Mathf.Infinity;
@@ -152,7 +148,9 @@ namespace TheOrder.Hunter
             GameEvents.OnDoorOpened += HandleDoorOpened;
             GameEvents.OnInteractableNoise += HandleInteractableNoise;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
+#if UNITY_EDITOR
             Debug.Log($"[HunterAI] OnEnable — subscribed to events, isPaused={_isPaused}");
+#endif
         }
 
         private void OnDisable()
@@ -184,16 +182,20 @@ namespace TheOrder.Hunter
             // Practice mode — no Hunter at all
             if (GameManager.Instance != null && !GameManager.Instance.HunterEnabled)
             {
+#if UNITY_EDITOR
                 Debug.Log("[HunterAI] Practice mode — deactivating Hunter.");
+#endif
                 gameObject.SetActive(false);
                 return;
             }
 
+#if UNITY_EDITOR
             Debug.Log($"[HunterAI] Starting — {_patrolWaypoints.Length} waypoints, " +
                       $"onNavMesh={_agent.isOnNavMesh}, " +
                       $"pos={transform.position}, " +
                       $"playerLayer={_playerLayer.value}, " +
                       $"eyePoint={((_eyePoint != null) ? "assigned" : "MISSING")}");
+#endif
 
             _lastPatrolPosition = transform.position;
             _stateMachine.ChangeState(_patrolState, HunterState.Patrol);
@@ -276,21 +278,6 @@ namespace TheOrder.Hunter
             return range;
         }
 
-        /// <summary>
-        /// Check if the player is within the sight cone (angle + range) without obstruction check.
-        /// Useful for testing.
-        /// </summary>
-        public static bool IsInSightCone(Vector3 hunterPos, Vector3 hunterForward, Vector3 playerPos, float sightRange, float sightAngle)
-        {
-            Vector3 direction = playerPos - hunterPos;
-            float distance = direction.magnitude;
-
-            if (distance > sightRange) return false;
-
-            float angle = Vector3.Angle(hunterForward, direction.normalized);
-            return angle <= sightAngle * 0.5f;
-        }
-
         #endregion
 
         #region Detection — Flashlight
@@ -342,18 +329,6 @@ namespace TheOrder.Hunter
             if (collider == null) return false;
             Transform t = collider.transform;
             return t == transform || t.IsChildOf(transform);
-        }
-
-        #endregion
-
-        #region Detection — Sound
-
-        /// <summary>
-        /// Check if a sound at a given position and radius can be heard by the Hunter.
-        /// </summary>
-        public static bool IsInHearingRange(Vector3 hunterPos, Vector3 soundPos, float hearingRadius)
-        {
-            return Vector3.Distance(hunterPos, soundPos) <= hearingRadius;
         }
 
         #endregion
@@ -512,7 +487,9 @@ namespace TheOrder.Hunter
         /// </summary>
         public void CatchPlayer()
         {
+#if UNITY_EDITOR
             Debug.Log("[HunterAI] Player caught! Starting death cinematic.");
+#endif
             _isPaused = true;
             _agent.isStopped = true;
             GameEvents.DeathCinematicStart();
@@ -567,12 +544,13 @@ namespace TheOrder.Hunter
             // Clamp to sane max — CharacterController.velocity can spike on first grounded frame
             speed = Mathf.Min(speed, 10f);
 
+#if UNITY_EDITOR
             if (!_hasPlayerPosition)
             {
                 Debug.Log($"[HunterAI] First player position received: {position}, speed={speed:F1}");
             }
+#endif
             _playerPosition = position;
-            _playerSpeed = speed;
             _hasPlayerPosition = true;
 
             // Sound detection (disabled in Easy mode — sight only)

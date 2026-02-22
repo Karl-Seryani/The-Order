@@ -14,7 +14,6 @@ namespace TheOrder.UI
     {
         #region Constants
 
-        private const string SENSITIVITY_PREF_KEY = "MouseSensitivity";
         private const float SENSITIVITY_MIN = 0.5f;
         private const float SENSITIVITY_MAX = 5f;
         private const float SENSITIVITY_DEFAULT = 2f;
@@ -33,6 +32,12 @@ namespace TheOrder.UI
 
         #endregion
 
+        #region Private Fields
+
+        private FirstPersonCamera _camera;
+
+        #endregion
+
         #region Public API
 
         /// <summary>Override back action for use outside main menu (e.g. pause menu).</summary>
@@ -44,6 +49,8 @@ namespace TheOrder.UI
 
         private void Awake()
         {
+            _camera = FindFirstObjectByType<FirstPersonCamera>();
+
             if (_sensitivitySlider != null)
             {
                 _sensitivitySlider.minValue = SENSITIVITY_MIN;
@@ -58,7 +65,8 @@ namespace TheOrder.UI
 
         private void OnEnable()
         {
-            float savedValue = PlayerPrefs.GetFloat(SENSITIVITY_PREF_KEY, SENSITIVITY_DEFAULT);
+            if (_camera == null) _camera = FindFirstObjectByType<FirstPersonCamera>();
+            float savedValue = PlayerPrefs.GetFloat("MouseSensitivity", SENSITIVITY_DEFAULT);
 
             if (_sensitivitySlider != null)
                 _sensitivitySlider.value = savedValue;
@@ -87,13 +95,10 @@ namespace TheOrder.UI
         private void OnSensitivityChanged(float value)
         {
             UpdateLabel(value);
-            PlayerPrefs.SetFloat(SENSITIVITY_PREF_KEY, value);
-            PlayerPrefs.Save();
 
-            // Apply live to camera if in-game
-            var cam = FindFirstObjectByType<FirstPersonCamera>();
-            if (cam != null)
-                cam.SetSensitivity(value);
+            // Apply live to camera if in-game (SetSensitivity handles PlayerPrefs persistence)
+            if (_camera != null)
+                _camera.SetSensitivity(value);
         }
 
         private void OnBackClicked()

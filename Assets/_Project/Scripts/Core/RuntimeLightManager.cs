@@ -27,16 +27,14 @@ namespace TheOrder
                 if (light.type == LightType.Spot && IsPlayerFlashlight(light.transform))
                     continue;
 
-                // Skip flickering lights — they manage themselves
-                if (light.GetComponent<FlickeringLight>() != null)
-                    continue;
-
                 light.shadows = LightShadows.None;
                 light.enabled = false;
                 count++;
             }
 
+#if UNITY_EDITOR
             Debug.Log($"[RuntimeLightManager] Disabled {count} scene lights.");
+#endif
         }
 
         private static bool IsPlayerFlashlight(Transform t)

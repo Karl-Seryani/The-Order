@@ -37,22 +37,6 @@ namespace TheOrder.Clues
         /// <summary>Total number of clues in the game.</summary>
         public int TotalClues => _totalClues;
 
-        /// <summary>Returns all collected clues in order of collection.</summary>
-        public IReadOnlyList<ClueData> GetCollectedClues() => _collectedClues;
-
-        /// <summary>Reset all clue progress. Call on new game (not respawn).</summary>
-        public void ClearAll()
-        {
-            _collectedClueIds.Clear();
-            _collectedClues.Clear();
-        }
-
-        /// <summary>Returns true if the specified clue has been collected.</summary>
-        public bool IsClueCollected(string clueId)
-        {
-            return _collectedClueIds.Contains(clueId);
-        }
-
         /// <summary>
         /// Calculates knowledge level based on total clues collected.
         /// None = 0, Low = less than half, Medium = half or more, High = all.

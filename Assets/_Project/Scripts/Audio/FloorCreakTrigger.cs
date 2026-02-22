@@ -29,12 +29,14 @@ namespace TheOrder.Audio
 
         #endregion
 
+        private const int PLAYER_LAYER = 8;
+
         #region Unity Lifecycle
 
         private void OnTriggerEnter(Collider other)
         {
-            // Only react to Player (layer 8)
-            if (other.gameObject.layer != 8) return;
+            // Only react to Player
+            if (other.gameObject.layer != PLAYER_LAYER) return;
 
             // Cooldown check
             if (Time.time - _lastCreakTime < _cooldown) return;

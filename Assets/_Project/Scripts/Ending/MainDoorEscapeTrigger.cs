@@ -24,7 +24,9 @@ namespace TheOrder.Ending
             if (_triggered) return;
 
             _triggered = true;
+#if UNITY_EDITOR
             Debug.Log("[MainDoorEscapeTrigger] Player escaped through the main door!");
+#endif
             GameEvents.CarRepairComplete();
         }
 

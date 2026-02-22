@@ -51,16 +51,6 @@ namespace TheOrder
             DontDestroyOnLoad(gameObject);
         }
 
-        private void OnEnable()
-        {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-
-        private void OnDisable()
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-        }
-
         #endregion
 
         #region State Machine
@@ -70,7 +60,6 @@ namespace TheOrder
         {
             if (_currentState == newState) return;
 
-            ExitState(_currentState);
             _currentState = newState;
             EnterState(newState);
 
@@ -108,11 +97,6 @@ namespace TheOrder
             }
         }
 
-        private void ExitState(GameState state)
-        {
-            // Reserved for cleanup when leaving a state
-        }
-
         /// <summary>Toggle between Playing and Paused states.</summary>
         public void TogglePause()
         {
@@ -136,17 +120,6 @@ namespace TheOrder
         public void LoadScene(string sceneName)
         {
             SceneManager.LoadScene(sceneName);
-        }
-
-        /// <summary>Load a scene asynchronously. Returns the AsyncOperation for progress tracking.</summary>
-        public AsyncOperation LoadSceneAsync(string sceneName)
-        {
-            return SceneManager.LoadSceneAsync(sceneName);
-        }
-
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            // Scene-specific state setup can be added here
         }
 
         #endregion

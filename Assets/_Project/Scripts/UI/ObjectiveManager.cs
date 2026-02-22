@@ -74,16 +74,6 @@ namespace TheOrder.UI
             };
         }
 
-        private void OnEnable()
-        {
-            GameEvents.OnClueCollected += HandleClueCollected;
-        }
-
-        private void OnDisable()
-        {
-            GameEvents.OnClueCollected -= HandleClueCollected;
-        }
-
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
@@ -91,14 +81,5 @@ namespace TheOrder.UI
 
         #endregion
 
-        #region Event Handlers
-
-        private void HandleClueCollected(ClueData clue)
-        {
-            // Objective only changes for major game events, not per-clue pickup.
-            // The clue counter on the HUD tracks collection progress.
-        }
-
-        #endregion
     }
 }

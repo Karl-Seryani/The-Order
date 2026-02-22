@@ -83,14 +83,6 @@ namespace TheOrder.Items
             if (_pickupSound != null)
                 AudioSource.PlayClipAtPoint(_pickupSound, transform.position, _pickupVolume);
             GameEvents.ItemPickedUp(_itemData);
-            
-            // Wake up rigidbody if this was a pre-placed kinematic item
-            var rb = GetComponent<Rigidbody>();
-            if (rb != null && rb.isKinematic)
-            {
-                rb.isKinematic = false;
-            }
-            
             Destroy(gameObject);
         }
 

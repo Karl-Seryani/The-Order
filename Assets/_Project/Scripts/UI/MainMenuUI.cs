@@ -201,7 +201,9 @@ namespace TheOrder.UI
             }
             else
             {
+#if UNITY_EDITOR
                 Debug.Log("[MainMenu] Settings panel not yet assigned.");
+#endif
             }
         }
 

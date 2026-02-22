@@ -28,11 +28,13 @@ namespace TheOrder.Audio
 
         #endregion
 
+        private const int PLAYER_LAYER = 8;
+
         #region Unity Lifecycle
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.gameObject.layer != 8) return;
+            if (other.gameObject.layer != PLAYER_LAYER) return;
             if (_audioManager == null) return;
 
             if (_isOutdoorZone)
@@ -48,7 +50,7 @@ namespace TheOrder.Audio
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.gameObject.layer != 8) return;
+            if (other.gameObject.layer != PLAYER_LAYER) return;
             if (_audioManager == null) return;
 
             if (_isOutdoorZone)

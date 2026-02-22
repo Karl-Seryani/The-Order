@@ -52,8 +52,6 @@ namespace TheOrder.Audio
 
         private void OnEnable()
         {
-            GameEvents.OnDoorOpened += HandleDoorOpened;
-            GameEvents.OnDoorClosed += HandleDoorClosed;
             GameEvents.OnPlayerMoved += HandlePlayerMoved;
             GameEvents.OnGameStateChanged += HandleGameStateChanged;
             GameEvents.OnInteractableNoise += HandleInteractableNoise;
@@ -64,8 +62,6 @@ namespace TheOrder.Audio
 
         private void OnDisable()
         {
-            GameEvents.OnDoorOpened -= HandleDoorOpened;
-            GameEvents.OnDoorClosed -= HandleDoorClosed;
             GameEvents.OnPlayerMoved -= HandlePlayerMoved;
             GameEvents.OnGameStateChanged -= HandleGameStateChanged;
             GameEvents.OnInteractableNoise -= HandleInteractableNoise;
@@ -105,20 +101,6 @@ namespace TheOrder.Audio
         #endregion
 
         #region Event Handlers
-
-        private void HandleDoorOpened(Vector3 position)
-        {
-            PlaySFXAtPoint(_config != null ? _config.DoorOpenClip : null,
-                           position,
-                           _config != null ? _config.DoorVolume : 0.7f);
-        }
-
-        private void HandleDoorClosed(Vector3 position)
-        {
-            PlaySFXAtPoint(_config != null ? _config.DoorCloseClip : null,
-                           position,
-                           _config != null ? _config.DoorVolume : 0.7f);
-        }
 
         private void HandlePlayerMoved(Vector3 position, float speed)
         {
@@ -320,23 +302,6 @@ namespace TheOrder.Audio
             {
                 _ambientSource.Stop();
             }
-        }
-
-        /// <summary>
-        /// Play a one-shot creepy ambient clip when re-entering the bunker.
-        /// The clip plays once then the source stops (no loop).
-        /// </summary>
-        public void PlayIndoorAmbientOnce()
-        {
-            if (_config == null || _ambientSource == null) return;
-
-            var clip = _config.IndoorAmbientOneShot;
-            if (clip == null) return;
-
-            _ambientSource.clip = clip;
-            _ambientSource.volume = _config.IndoorOneShotVolume;
-            _ambientSource.loop = false;
-            _ambientSource.Play();
         }
 
         #endregion
