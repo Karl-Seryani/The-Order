@@ -28,8 +28,8 @@ namespace TheOrder
         /// <summary>True for Medium and Hard (Hunter hears footsteps, doors, noise).</summary>
         public bool HunterFullDetection => _currentDifficulty >= DifficultyLevel.Medium;
 
-        /// <summary>True for Practice and Hard (car repair escape required).</summary>
-        public bool RequiresCarRepair => _currentDifficulty == DifficultyLevel.Hard || _currentDifficulty == DifficultyLevel.Practice;
+        /// <summary>True for Practice, Hard, and Nightmare (car repair escape required).</summary>
+        public bool RequiresCarRepair => _currentDifficulty == DifficultyLevel.Hard || _currentDifficulty == DifficultyLevel.Practice || _currentDifficulty == DifficultyLevel.Nightmare;
 
         /// <summary>Set the difficulty level before loading the game scene.</summary>
         public void SetDifficulty(DifficultyLevel level)

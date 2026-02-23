@@ -173,6 +173,24 @@ namespace TheOrder.Items
             if (RunStateManager.Instance.TryGetItemDropPosition(id, out Vector3 dropPos))
             {
                 transform.position = dropPos;
+
+                // Strip concave MeshColliders and add a fitted BoxCollider (same as ItemSpawner)
+                foreach (var c in GetComponentsInChildren<Collider>())
+                {
+                    c.enabled = false;
+                    Object.Destroy(c);
+                }
+                var box = gameObject.AddComponent<BoxCollider>();
+                ItemSpawner.FitBoxColliderToMesh(gameObject, box);
+
+                // Add physics so the item settles at drop position
+                var rb = GetComponent<Rigidbody>();
+                if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
+                rb.isKinematic = false;
+                rb.useGravity = true;
+                rb.mass = 1.5f;
+                rb.linearDamping = 0.05f;
+                rb.angularDamping = 0.2f;
             }
         }
 

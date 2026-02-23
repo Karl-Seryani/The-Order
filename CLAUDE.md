@@ -65,7 +65,8 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - **NavigateTo** — two-pass Y-constraint: 0.5m tight first, 2m fallback rejects Y-delta > 2m (prevents cross-floor pathing)
 - **Sound detection** — doors/interactable noise ignored if Y-delta > 3m. Sprint heard across floors (NavigateTo constrains).
 - **Flashlight detection** — obstruction raycast from player to Hunter blocks through walls/doors/floors. Stairwell LOS works.
-- **Auto-drop on death** — `CatchPlayer()` calls `Drop()` before death cinematic. Saves Hunter position for respawn persistence.
+- **Auto-drop on death** — `CatchPlayer()` calls `DropSilently()` before death cinematic (low damping, no sound). Saves Hunter position for respawn persistence.
+- **Nightmare config** — `_nightmareConfig` serialized field swapped in `Start()` when Nightmare difficulty. `NightmareHunterConfig` SO: chase 7.0, sight 12, catch 3.0.
 
 ### Items
 - `ItemData` SO — defines tools/keys with mesh, icon, impact audio. `Id` field used as persistence key.
@@ -103,16 +104,18 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - Keys persist within a run (cleared on new game or game over). Items track drop positions.
 
 ### Difficulty System
-- `DifficultyLevel` enum — Practice, Easy, Medium, Hard (in `Enums.cs`)
+- `DifficultyLevel` enum — Practice, Easy, Medium, Hard, Nightmare (in `Enums.cs`)
 - `GameManager` stores `CurrentDifficulty`, set via `SetDifficulty()` before scene load
-- Convenience booleans: `HunterEnabled` (!= Practice), `HunterFullDetection` (>= Medium), `RequiresCarRepair` (Practice or Hard)
+- Convenience booleans: `HunterEnabled` (!= Practice), `HunterFullDetection` (>= Medium), `RequiresCarRepair` (Practice, Hard, or Nightmare)
 - **Practice** — no Hunter (deactivated in Start), car repair escape
 - **Easy** — sight-only Hunter (sound/flashlight/door/noise detection disabled), main door escape
 - **Medium** — full Hunter, main door escape
 - **Hard** — full Hunter, car repair escape (original behavior)
+- **Nightmare** — enhanced Hunter (faster, wider detection, `NightmareHunterConfig` SO swapped in `HunterAI.Start()`), car repair escape. Chase speed 7.0 (faster than player sprint 5.5).
 - `MainDoorEscapeTrigger` — IInteractable on `Asylum/MainDoor/Door`, fires `CarRepairComplete` on E press. Disables itself (`enabled = false`) when `RequiresCarRepair`. `PlayerInteraction` prioritizes it over `LockedDoor` when enabled.
 - `MainMenuUI` — Play button shows difficulty panel, difficulty buttons call `SetDifficulty` + `LoadScene`
 - `ObjectiveManager` — difficulty-aware initial objective text
+- `FlickeringText` — MonoBehaviour on Nightmare button text, oscillates alpha (0.3–1.0) with random speed + glitches
 
 ### Endings
 - `EndingData` SO — 9 ending combinations (3 knowledge levels × 3 choices)
@@ -122,16 +125,16 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 ### UI
 - `HUDManager` — interaction prompts, crosshair, clue panel, item notifications, objective fade
 - `DeathScreenUI` — fade to black, "YOU DIED", death stinger. Day 1/2: advance day + reload (full day overlay + wake-up). Day 3: "GAME OVER" → reset + MainMenu.
-- `DayOverlayUI` — black screen with "Day X" text. Driven by BunkerSceneBootstrap. Timing: 2s black → fade in → 3s hold → fade out → 1s gap → OnComplete chains wake-up. Freezes camera directly (no WakeUpStarted to avoid audio). Day 3 text in blood red. DayOverlayCanvas sortingOrder=200 (above WakeUpCanvas=100).
-- `MainMenuUI` — Play (→ difficulty panel) / Tutorial / Settings / Quit, background music
-- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape) with prev/next navigation. Main menu only.
+- `DayOverlayUI` — black screen with "Day X" text. Driven by BunkerSceneBootstrap. Timing: 2s black → fade in → 3s hold → fade out → 1s gap → OnComplete chains wake-up. Freezes camera directly (no WakeUpStarted to avoid audio). Day 3 text in blood red with dying-light flicker effect (sine oscillation + blackout glitches). DayOverlayCanvas sortingOrder=200 (above WakeUpCanvas=100).
+- `MainMenuUI` — Play (→ difficulty panel) / Tutorial / Settings / Quit, background music with 2s fade-out on difficulty select before scene load
+- `TutorialUI` — 4-section tabbed tutorial (Controls, The Hunter, Survival, Escape 2pg) with prev/next navigation. Main menu only. Escape page 2 covers Nightmare.
 - `PauseMenuUI` — Escape toggles, Resume/Settings/Quit. Button borders removed (Image alpha=0). Explicit cursor unlock on sub-panel switch. Blocked during day overlay and wake-up (`FirstPersonCamera.IsEnabled` check).
 - `ObjectiveManager` — objective text management
 - `HorrorFontApplier` — runtime font override on Canvas Awake. Nosifer (title, >=28pt) + Creepster (body). Attached to all canvases.
 
 ### Audio
 - `AudioConfig` SO — centralized audio tuning (ambient, stingers, footsteps, outdoor/indoor ambient)
-- `AmbientAudioManager` — ambient sound management, stinger playback, outdoor/indoor ambient swap
+- `AmbientAudioManager` — ambient sound management with dual-source crossfade (1.5s), stinger fade-then-play (0.5s), outdoor/indoor ambient transitions
 - `AudioZoneTrigger` — trigger collider that switches audio on zone transitions (config-swap or outdoor mode)
 - `FloorCreakTrigger` — trigger zone plays creak SFX + fires `InteractableNoise` for Hunter alert
 - `PlayerAudio` — breathing FSM
@@ -209,6 +212,10 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `CarPartPickup._currentlyHeld` is static — resets on domain reload. Only one car part can be held at a time.
 - Car parts are root scene objects (no parent). `Place()` sets `transform.position` to world home position. Drop sets `transform.position` to drop position.
 - `HunterConfig.CanOpenDoors` field controls whether Hunter can open doors (disabled for outdoor area).
+- `ItemSpawner` sets `linearDamping = 0.05f` — higher values cause items to float instead of falling naturally.
+- `ItemPickup.RestoreRunState()` strips concave MeshColliders and adds fitted BoxCollider before Rigidbody — FBX import colliders are concave, incompatible with dynamic RB.
+- Flashlight obstruction raycast must use `RaycastNonAlloc` + `IsSelfCollider` skip — simple `Physics.Raycast` with `~_playerLayer` hits Hunter's own colliders.
+- `ChaseState` tracks consecutive `NavigateTo` failures — gives up after 5 and returns to Patrol (prevents log spam when player is in non-NavMesh area like outdoors).
 
 ---
 
@@ -222,9 +229,12 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - [x] Settings panel UI (mouse sensitivity slider 0.1-5.0, PlayerPrefs persistence, live FirstPersonCamera update)
 - [x] Pause menu (Escape toggles, Resume/Tutorial/Settings/Quit, cursor management, borderless buttons)
 - [x] Horror UI — Nosifer + Creepster fonts, blood red/parchment palette, 1920x1080 canvas, Very High quality
-- [x] Difficulty system (Practice/Easy/Medium/Hard with Hunter + escape variants)
+- [x] Difficulty system (Practice/Easy/Medium/Hard/Nightmare with Hunter + escape variants)
 - [x] Car repair escape system (4 parts + drill + car key → escape ending)
 - [x] Item progression system (ItemPickup → HeldItemController → ToolReceiver → LockedDoor chain works)
 - [x] Clue collection system (18 notes, knowledge levels, journal)
 - [x] Audio system (breathing FSM, door sounds, item impacts, ambient, flashlight click, drill, car start)
 - [x] Audio enhancements (MachineRoomKey cinematic stinger, outdoor forest ambient, floor creak triggers + Hunter alert)
+- [x] Audio crossfade system (dual ambient source crossfade, stinger fade-then-play, menu music fade-out)
+- [x] Item respawn fix (strip concave MeshColliders + fitted BoxCollider before Rigidbody)
+- [x] Flashlight detection fix (obstruction raycast now skips Hunter's own colliders)

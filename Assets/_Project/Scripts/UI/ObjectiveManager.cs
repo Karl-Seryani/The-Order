@@ -70,6 +70,7 @@ namespace TheOrder.UI
                 DifficultyLevel.Easy => "Find the main door and escape",
                 DifficultyLevel.Medium => "Find the main door and escape",
                 DifficultyLevel.Hard => "Find car parts and repair the car to escape",
+                DifficultyLevel.Nightmare => "Find car parts and repair the car to escape",
                 _ => _initialObjective
             };
         }

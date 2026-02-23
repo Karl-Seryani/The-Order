@@ -40,6 +40,15 @@ namespace TheOrder.Items
 
         #endregion
 
+        #region Unity Lifecycle
+
+        private void Start()
+        {
+            RestoreRunState();
+        }
+
+        #endregion
+
         #region IInteractable
 
         /// <summary>Unscrew if holding the correct tool.</summary>
@@ -123,7 +132,31 @@ namespace TheOrder.Items
 
             _isUnscrewed = true;
             _isUnscrewing = false;
+            SaveRunState();
             Unscrewed?.Invoke(this);
+            gameObject.SetActive(false);
+        }
+
+        #endregion
+
+        #region Run State Persistence
+
+        /// <summary>Whether this screw was already unscrewed in a previous day.</summary>
+        public bool IsRestoredUnscrewed => _isUnscrewed;
+
+        private void SaveRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            RunStateManager.Instance.MarkScrewUnscrewed(transform.GetPersistenceId());
+        }
+
+        private void RestoreRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            string id = transform.GetPersistenceId();
+            if (!RunStateManager.Instance.IsScrewUnscrewed(id)) return;
+
+            _isUnscrewed = true;
             gameObject.SetActive(false);
         }
 

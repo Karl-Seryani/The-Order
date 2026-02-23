@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace TheOrder.Ending
@@ -50,6 +51,17 @@ namespace TheOrder.Ending
             }
         }
 
+        private void Start()
+        {
+            StartCoroutine(DelayedRecount());
+        }
+
+        private IEnumerator DelayedRecount()
+        {
+            yield return null;
+            RecountInstalledParts();
+        }
+
         #endregion
 
         #region Public API
@@ -61,6 +73,7 @@ namespace TheOrder.Ending
         public void StartCarFromIgnition()
         {
             if (_carStarted) return;
+            if (!AllPartsDrilled) return;
 
             var inventory = Player.PlayerInventory.Instance;
             if (inventory == null || !inventory.HasKey(_carKeyItemData)) return;
@@ -164,16 +177,17 @@ namespace TheOrder.Ending
         }
 
         /// <summary>Returns prompt text for a specific zone.</summary>
-        public string GetZonePromptText(Items.CarPartPickup zonePart)
+        public string GetZonePromptText(Items.CarPartPickup zonePart, string zoneName = "")
         {
             if (_carStarted) return "";
             if (_installedCount >= _requiredParts.Length) return "";
 
             var heldItem = Items.HeldItemController.Instance;
+            string label = string.IsNullOrEmpty(zoneName) ? "Car" : zoneName;
 
             if (heldItem == null || !heldItem.HasItem)
             {
-                return $"Car  [{_installedCount}/{_requiredParts.Length}]";
+                return $"{label}  [{_installedCount}/{_requiredParts.Length}]";
             }
 
             // Holding drill — check this specific zone's wheel
@@ -181,9 +195,9 @@ namespace TheOrder.Ending
             {
                 if (zonePart != null && zonePart.RequiresDrill && zonePart.IsPlaced && !zonePart.IsInstalled)
                 {
-                    return "Drill wheel";
+                    return $"Drill {label}";
                 }
-                return $"Car  [{_installedCount}/{_requiredParts.Length}]";
+                return $"{label}  [{_installedCount}/{_requiredParts.Length}]";
             }
 
             // Holding a car part — check if it matches this zone
@@ -198,7 +212,7 @@ namespace TheOrder.Ending
                 return $"Wrong spot  -  holding {heldItem.CurrentItem.DisplayName}";
             }
 
-            return $"Car  [{_installedCount}/{_requiredParts.Length}]";
+            return $"{label}  [{_installedCount}/{_requiredParts.Length}]";
         }
 
         #endregion
@@ -229,6 +243,17 @@ namespace TheOrder.Ending
         #endregion
 
         #region Private Methods
+
+        /// <summary>Recount installed parts from actual part states (for run persistence restore).</summary>
+        private void RecountInstalledParts()
+        {
+            _installedCount = 0;
+            for (int i = 0; i < _requiredParts.Length; i++)
+            {
+                if (_requiredParts[i] != null && _requiredParts[i].IsInstalled)
+                    _installedCount++;
+            }
+        }
 
         private bool IsCarPart(Items.ItemData item)
         {

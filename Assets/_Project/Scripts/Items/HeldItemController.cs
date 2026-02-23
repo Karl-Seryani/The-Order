@@ -150,6 +150,7 @@ namespace TheOrder.Items
             {
                 // Toss forward with upward arc — same feel as Q drop
                 rb.linearVelocity = transform.forward * 1.5f + Vector3.up * 1f;
+                rb.linearDamping = 0.05f;
                 rb.angularVelocity = new Vector3(
                     Random.Range(-1f, 1f),
                     Random.Range(-2f, 2f),

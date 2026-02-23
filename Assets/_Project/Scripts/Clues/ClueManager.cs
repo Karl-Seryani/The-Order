@@ -37,6 +37,19 @@ namespace TheOrder.Clues
         /// <summary>Total number of clues in the game.</summary>
         public int TotalClues => _totalClues;
 
+        /// <summary>Check if a clue has already been collected by ID.</summary>
+        public bool IsClueCollected(string clueId)
+        {
+            return !string.IsNullOrEmpty(clueId) && _collectedClueIds.Contains(clueId);
+        }
+
+        /// <summary>Clear all collected clues. Used when starting a fresh run.</summary>
+        public void ClearAll()
+        {
+            _collectedClueIds.Clear();
+            _collectedClues.Clear();
+        }
+
         /// <summary>
         /// Calculates knowledge level based on total clues collected.
         /// None = 0, Low = less than half, Medium = half or more, High = all.

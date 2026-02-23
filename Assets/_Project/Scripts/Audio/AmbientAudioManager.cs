@@ -6,6 +6,7 @@ namespace TheOrder.Audio
     /// <summary>
     /// Manages ambient audio atmosphere: looping drone, door SFX, and footstep sounds.
     /// Subscribes to GameEvents for audio triggers.
+    /// Uses dual ambient sources for smooth crossfading between indoor/outdoor zones.
     /// </summary>
     public class AmbientAudioManager : MonoBehaviour
     {
@@ -31,6 +32,18 @@ namespace TheOrder.Audio
         private bool _isPlaying;
         private bool _isOutdoor;
         private Coroutine _activeStingerCoroutine;
+        private Coroutine _chaseFadeCoroutine;
+
+        // Dual ambient source crossfade
+        private AudioSource _ambientSourceB;
+        private AudioSource _activeAmbientSource;
+        private Coroutine _ambientCrossfadeCoroutine;
+
+        // Stinger fade-then-play
+        private Coroutine _stingerFadeCoroutine;
+        private AudioClip _pendingStingerClip;
+        private float _pendingStingerVolume;
+        private float _pendingStingerDuration;
 
         #endregion
 
@@ -39,6 +52,16 @@ namespace TheOrder.Audio
         private void Start()
         {
             if (_config == null || _ambientSource == null) return;
+
+            // Create second ambient source by cloning settings from the primary
+            _ambientSourceB = gameObject.AddComponent<AudioSource>();
+            _ambientSourceB.outputAudioMixerGroup = _ambientSource.outputAudioMixerGroup;
+            _ambientSourceB.spatialBlend = _ambientSource.spatialBlend;
+            _ambientSourceB.playOnAwake = false;
+            _ambientSourceB.loop = true;
+            _ambientSourceB.volume = 0f;
+
+            _activeAmbientSource = _ambientSource;
 
             // Start ambient loop
             if (_config.AmbientLoopClip != null)
@@ -162,13 +185,28 @@ namespace TheOrder.Audio
             {
                 case GameState.Playing:
                     _ambientSource.UnPause();
+                    if (_ambientSourceB != null) _ambientSourceB.UnPause();
                     _isPlaying = true;
                     ResetRandomStingerTimer();
                     break;
                 case GameState.Paused:
+                    _ambientSource.Pause();
+                    if (_ambientSourceB != null) _ambientSourceB.Pause();
+                    _isPlaying = false;
+                    break;
                 case GameState.Death:
                     _ambientSource.Pause();
+                    if (_ambientSourceB != null) _ambientSourceB.Pause();
                     _isPlaying = false;
+                    // Fade out chase music on death (Hunter stays in Chase, never triggers state change)
+                    if (_stingerSource != null && _stingerSource.isPlaying
+                        && _config != null && _stingerSource.clip == _config.ChaseMusicClip)
+                    {
+                        _stingerSource.loop = false;
+                        if (_chaseFadeCoroutine != null)
+                            StopCoroutine(_chaseFadeCoroutine);
+                        _chaseFadeCoroutine = StartCoroutine(FadeOutChaseMusic(3f));
+                    }
                     break;
             }
         }
@@ -188,6 +226,13 @@ namespace TheOrder.Audio
 
             if (newState == HunterState.Chase)
             {
+                // Cancel any active fade-out before starting new chase music
+                if (_chaseFadeCoroutine != null)
+                {
+                    StopCoroutine(_chaseFadeCoroutine);
+                    _chaseFadeCoroutine = null;
+                }
+
                 // Stop any one-shot stinger so chase music takes over
                 StopActiveStinger();
                 _stingerSource.clip = _config.ChaseMusicClip;
@@ -197,11 +242,11 @@ namespace TheOrder.Audio
             }
             else
             {
-                // Stop chase music when leaving Chase state
+                // Fade out chase music when leaving Chase state (3s fade)
                 if (_stingerSource.isPlaying && _stingerSource.clip == _config.ChaseMusicClip)
                 {
-                    _stingerSource.Stop();
                     _stingerSource.loop = false;
+                    _chaseFadeCoroutine = StartCoroutine(FadeOutChaseMusic(3f));
                 }
             }
         }
@@ -246,19 +291,17 @@ namespace TheOrder.Audio
 
             _config = newConfig;
 
-            // Switch ambient loop
-            if (_ambientSource != null && newConfig.AmbientLoopClip != null)
+            // Crossfade ambient loop to new config
+            if (newConfig.AmbientLoopClip != null)
             {
-                _ambientSource.clip = newConfig.AmbientLoopClip;
-                _ambientSource.volume = newConfig.AmbientVolume;
-                if (_isPlaying) _ambientSource.Play();
+                CrossfadeAmbient(newConfig.AmbientLoopClip, newConfig.AmbientVolume);
             }
 
             ResetRandomStingerTimer();
         }
 
         /// <summary>
-        /// Switch ambient source to a random outdoor forest loop.
+        /// Switch ambient source to a random outdoor forest loop with crossfade.
         /// </summary>
         public void PlayOutdoorAmbient()
         {
@@ -270,38 +313,91 @@ namespace TheOrder.Audio
             _isOutdoor = true;
 
             // Don't restart if already playing an outdoor clip
-            if (_ambientSource.isPlaying && System.Array.IndexOf(clips, _ambientSource.clip) >= 0)
+            if (_activeAmbientSource != null && _activeAmbientSource.isPlaying
+                && System.Array.IndexOf(clips, _activeAmbientSource.clip) >= 0)
                 return;
 
             var clip = clips[Random.Range(0, clips.Length)];
             if (clip == null) return;
 
-            _ambientSource.clip = clip;
-            _ambientSource.volume = _config.OutdoorAmbientVolume;
-            _ambientSource.loop = true;
-            _ambientSource.Play();
+            CrossfadeAmbient(clip, _config.OutdoorAmbientVolume);
         }
 
         /// <summary>
-        /// Stop outdoor ambient and restore the indoor ambient loop.
+        /// Stop outdoor ambient and crossfade back to the indoor ambient loop.
         /// </summary>
         public void StopOutdoorAmbient()
         {
             _isOutdoor = false;
-            if (_config == null || _ambientSource == null) return;
+            if (_config == null) return;
 
-            // Restore indoor ambient loop
             if (_config.AmbientLoopClip != null)
             {
-                _ambientSource.clip = _config.AmbientLoopClip;
-                _ambientSource.volume = _config.AmbientVolume;
-                _ambientSource.loop = true;
-                _ambientSource.Play();
+                CrossfadeAmbient(_config.AmbientLoopClip, _config.AmbientVolume);
             }
-            else
+            else if (_activeAmbientSource != null)
             {
-                _ambientSource.Stop();
+                _activeAmbientSource.Stop();
             }
+        }
+
+        #endregion
+
+        #region Ambient Crossfade
+
+        /// <summary>
+        /// Crossfade from the active ambient source to a new clip over the given duration.
+        /// Uses dual AudioSources — fades out the active one while fading in the inactive one.
+        /// </summary>
+        private void CrossfadeAmbient(AudioClip clip, float targetVolume, float duration = 1.5f)
+        {
+            if (_ambientSourceB == null) return;
+
+            // Cancel any running crossfade
+            if (_ambientCrossfadeCoroutine != null)
+            {
+                StopCoroutine(_ambientCrossfadeCoroutine);
+                _ambientCrossfadeCoroutine = null;
+            }
+
+            // Pick the inactive source
+            AudioSource incoming = (_activeAmbientSource == _ambientSource)
+                ? _ambientSourceB
+                : _ambientSource;
+
+            incoming.clip = clip;
+            incoming.volume = 0f;
+            incoming.loop = true;
+            incoming.Play();
+
+            AudioSource outgoing = _activeAmbientSource;
+
+            _ambientCrossfadeCoroutine = StartCoroutine(
+                CrossfadeCoroutine(outgoing, incoming, targetVolume, duration));
+        }
+
+        private IEnumerator CrossfadeCoroutine(AudioSource outgoing, AudioSource incoming,
+            float targetVolume, float duration)
+        {
+            float elapsed = 0f;
+            float startVolume = outgoing.volume;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                outgoing.volume = Mathf.Lerp(startVolume, 0f, t);
+                incoming.volume = Mathf.Lerp(0f, targetVolume, t);
+                yield return null;
+            }
+
+            outgoing.volume = 0f;
+            outgoing.Stop();
+            incoming.volume = targetVolume;
+
+            _activeAmbientSource = incoming;
+            _ambientCrossfadeCoroutine = null;
         }
 
         #endregion
@@ -333,12 +429,62 @@ namespace TheOrder.Audio
             // Don't interrupt chase music
             if (_stingerSource.isPlaying && _stingerSource.loop) return;
 
+            // If a stinger is already playing, fade it out then play the new one
+            if (_stingerSource.isPlaying)
+            {
+                // Cancel any pending stinger queue
+                if (_stingerFadeCoroutine != null)
+                {
+                    StopCoroutine(_stingerFadeCoroutine);
+                    _stingerFadeCoroutine = null;
+                }
+
+                _pendingStingerClip = clip;
+                _pendingStingerVolume = volume;
+                _pendingStingerDuration = duration;
+                _stingerFadeCoroutine = StartCoroutine(FadeOutThenPlayStinger(0.5f));
+                return;
+            }
+
             StopActiveStinger();
             _stingerSource.clip = clip;
             _stingerSource.volume = volume;
             _stingerSource.loop = false;
             _stingerSource.Play();
             _activeStingerCoroutine = StartCoroutine(StopAfterDuration(duration));
+        }
+
+        /// <summary>
+        /// Fade out the current stinger, then play the pending one.
+        /// Most-recent-wins: if another request arrives during fade, the pending clip is replaced.
+        /// </summary>
+        private IEnumerator FadeOutThenPlayStinger(float fadeDuration)
+        {
+            float startVolume = _stingerSource.volume;
+            float elapsed = 0f;
+
+            while (elapsed < fadeDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _stingerSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / fadeDuration);
+                yield return null;
+            }
+
+            _stingerSource.Stop();
+            _stingerFadeCoroutine = null;
+
+            // Play the pending stinger (most recent request wins)
+            if (_pendingStingerClip != null)
+            {
+                StopActiveStinger();
+                _stingerSource.clip = _pendingStingerClip;
+                _stingerSource.volume = _pendingStingerVolume;
+                _stingerSource.loop = false;
+                _stingerSource.Play();
+                _activeStingerCoroutine = StartCoroutine(StopAfterDuration(_pendingStingerDuration));
+
+                _pendingStingerClip = null;
+            }
         }
 
         private IEnumerator StopAfterDuration(float duration)
@@ -375,6 +521,25 @@ namespace TheOrder.Audio
                 _stingerSource.Stop();
                 _stingerSource.loop = false;
             }
+        }
+
+        private IEnumerator FadeOutChaseMusic(float duration)
+        {
+            if (_stingerSource == null) yield break;
+
+            float startVolume = _stingerSource.volume;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                _stingerSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+                yield return null;
+            }
+
+            _stingerSource.Stop();
+            _stingerSource.volume = startVolume;
+            _chaseFadeCoroutine = null;
         }
 
         private void ResetRandomStingerTimer()

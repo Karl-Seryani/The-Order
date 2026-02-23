@@ -38,6 +38,12 @@ namespace TheOrder.Player
             return key != null && _keys.Contains(key);
         }
 
+        /// <summary>Clear all keys. Used when resetting a run from DeathScreenUI.</summary>
+        public static void ClearKeys()
+        {
+            _keys.Clear();
+        }
+
         #endregion
 
         #region Unity Lifecycle
@@ -51,9 +57,14 @@ namespace TheOrder.Player
             }
             Instance = this;
 
-            // Clear keys on fresh game start (not respawn)
-            // SkipWakeUpSequence is true only on respawn after death
-            if (GameManager.Instance == null || !GameManager.Instance.SkipWakeUpSequence)
+            // Clear keys on fresh game start (Day 1 of a new run)
+            // Keys persist between deaths within a run (Day 2, Day 3)
+            if (RunStateManager.Instance != null)
+            {
+                if (RunStateManager.Instance.CurrentDay <= 1)
+                    _keys.Clear();
+            }
+            else if (GameManager.Instance == null || !GameManager.Instance.SkipWakeUpSequence)
             {
                 _keys.Clear();
             }

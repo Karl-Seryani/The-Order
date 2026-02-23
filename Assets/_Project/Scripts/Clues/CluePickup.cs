@@ -30,6 +30,22 @@ namespace TheOrder.Clues
 
         #endregion
 
+        #region Unity Lifecycle
+
+        private void Start()
+        {
+            // If this clue was already collected in a previous day, hide it
+            if (_clueData != null && !_isNote && !string.IsNullOrEmpty(_clueData.Id))
+            {
+                if (ClueManager.Instance != null && ClueManager.Instance.IsClueCollected(_clueData.Id))
+                {
+                    gameObject.SetActive(false);
+                }
+            }
+        }
+
+        #endregion
+
         #region IInteractable
 
         /// <summary>

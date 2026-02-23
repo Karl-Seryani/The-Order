@@ -49,6 +49,7 @@ namespace TheOrder.UI
         private Image _crosshairDot;
         private GameObject _crosshairX;
         private CanvasGroup _promptCanvasGroup;
+        private bool _isShowingBlockedMessage;
 
         #endregion
 
@@ -206,6 +207,8 @@ namespace TheOrder.UI
             {
                 if (_crosshairDot != null) _crosshairDot.gameObject.SetActive(false);
                 if (_crosshairX != null) _crosshairX.SetActive(false);
+                if (_promptCanvasGroup != null && !_isShowingBlockedMessage)
+                    _promptCanvasGroup.alpha = 0f;
                 return;
             }
 
@@ -222,6 +225,28 @@ namespace TheOrder.UI
             // Dot when no target, X when aiming at any interactable
             if (_crosshairDot != null) _crosshairDot.gameObject.SetActive(!hasTarget);
             if (_crosshairX != null) _crosshairX.SetActive(hasTarget);
+
+            // Show prompt text when aiming at interactable (blocked message takes priority)
+            if (_interactionPromptText != null && _promptCanvasGroup != null && !_isShowingBlockedMessage)
+            {
+                if (hasTarget)
+                {
+                    string prompt = _playerInteraction.PromptText;
+                    if (!string.IsNullOrEmpty(prompt))
+                    {
+                        _interactionPromptText.text = prompt;
+                        _promptCanvasGroup.alpha = 1f;
+                    }
+                    else
+                    {
+                        _promptCanvasGroup.alpha = 0f;
+                    }
+                }
+                else
+                {
+                    _promptCanvasGroup.alpha = 0f;
+                }
+            }
         }
 
         #endregion
@@ -244,6 +269,8 @@ namespace TheOrder.UI
 
         private IEnumerator FadeBlockedMessage()
         {
+            _isShowingBlockedMessage = true;
+
             // Fade in (fast)
             float elapsed = 0f;
             const float FADE_IN_DURATION = 0.15f;
@@ -268,6 +295,7 @@ namespace TheOrder.UI
                 yield return null;
             }
             _promptCanvasGroup.alpha = 0f;
+            _isShowingBlockedMessage = false;
             _blockedMessageCoroutine = null;
         }
 

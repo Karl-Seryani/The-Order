@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -29,6 +30,7 @@ namespace TheOrder.UI
         [SerializeField] private Button _easyButton;
         [SerializeField] private Button _mediumButton;
         [SerializeField] private Button _hardButton;
+        [SerializeField] private Button _nightmareButton;
         [SerializeField] private Button _difficultyBackButton;
 
         [Header("Settings")]
@@ -77,6 +79,7 @@ namespace TheOrder.UI
             if (_easyButton != null) _easyButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Easy));
             if (_mediumButton != null) _mediumButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Medium));
             if (_hardButton != null) _hardButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Hard));
+            if (_nightmareButton != null) _nightmareButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Nightmare));
             if (_difficultyBackButton != null) _difficultyBackButton.onClick.AddListener(OnDifficultyBackClicked);
         }
 
@@ -130,6 +133,7 @@ namespace TheOrder.UI
             if (_easyButton != null) _easyButton.onClick.RemoveAllListeners();
             if (_mediumButton != null) _mediumButton.onClick.RemoveAllListeners();
             if (_hardButton != null) _hardButton.onClick.RemoveAllListeners();
+            if (_nightmareButton != null) _nightmareButton.onClick.RemoveAllListeners();
             if (_difficultyBackButton != null) _difficultyBackButton.onClick.RemoveAllListeners();
         }
 
@@ -170,11 +174,19 @@ namespace TheOrder.UI
         private void OnDifficultySelected(DifficultyLevel level)
         {
             PlayClickSfx();
+
+            // Reset run state for a fresh game
+            if (RunStateManager.Instance != null)
+                RunStateManager.Instance.ResetRun();
+            Player.PlayerInventory.ClearKeys();
+            if (Clues.ClueManager.Instance != null)
+                Clues.ClueManager.Instance.ClearAll();
+
             if (GameManager.Instance != null)
-            {
                 GameManager.Instance.SetDifficulty(level);
-                GameManager.Instance.LoadScene(_gameSceneName);
-            }
+
+            // Fade out music, then load scene after fade completes
+            StartCoroutine(FadeOutMusicThenLoad(2f));
         }
 
         private void OnDifficultyBackClicked()
@@ -225,6 +237,33 @@ namespace TheOrder.UI
         {
             if (_buttonClickSfx != null && _sfxSource != null)
                 _sfxSource.PlayOneShot(_buttonClickSfx, _sfxVolume);
+        }
+
+        /// <summary>Fade out menu music, then load the game scene.</summary>
+        private IEnumerator FadeOutMusicThenLoad(float duration)
+        {
+            // Disable all buttons so player can't double-click
+            if (_difficultyPanel != null)
+                foreach (var btn in _difficultyPanel.GetComponentsInChildren<Button>())
+                    btn.interactable = false;
+
+            if (_musicSource != null && _musicSource.isPlaying)
+            {
+                float startVolume = _musicSource.volume;
+                float elapsed = 0f;
+
+                while (elapsed < duration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    _musicSource.volume = Mathf.Lerp(startVolume, 0f, elapsed / duration);
+                    yield return null;
+                }
+
+                _musicSource.Stop();
+            }
+
+            if (GameManager.Instance != null)
+                GameManager.Instance.LoadScene(_gameSceneName);
         }
 
         #endregion

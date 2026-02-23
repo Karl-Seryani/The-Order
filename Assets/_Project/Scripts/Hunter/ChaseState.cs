@@ -16,8 +16,10 @@ namespace TheOrder.Hunter
         private float _losTimer;
         private bool _hasLos;
         private float _repathTimer;
+        private int _navFailCount;
 
         private const float REPATH_INTERVAL = 0.2f;
+        private const int MAX_NAV_FAILURES = 5;
 
         #endregion
 
@@ -39,6 +41,7 @@ namespace TheOrder.Hunter
             _hasLos = true;
             _losTimer = _ai.Config.LosTimeout;
             _repathTimer = 0f;
+            _navFailCount = 0;
 
             GameEvents.PlayerDetected();
 
@@ -97,15 +100,36 @@ namespace TheOrder.Hunter
             {
                 _repathTimer = REPATH_INTERVAL;
 
+                bool navSuccess;
                 if (_hasLos && _ai.HasPlayerPosition)
                 {
                     // Path directly to player when visible
-                    _ai.NavigateTo(_ai.PlayerPosition);
+                    navSuccess = _ai.NavigateTo(_ai.PlayerPosition);
                 }
                 else if (_ai.HasLastKnownPosition)
                 {
                     // Path to last known position when not visible
-                    _ai.NavigateTo(_ai.GetMostRecentKnownPosition());
+                    navSuccess = _ai.NavigateTo(_ai.GetMostRecentKnownPosition());
+                }
+                else
+                {
+                    navSuccess = true; // No target, nothing to fail
+                }
+
+                // Track consecutive nav failures — player may be in non-NavMesh area
+                if (!navSuccess)
+                {
+                    _navFailCount++;
+                    if (_navFailCount >= MAX_NAV_FAILURES)
+                    {
+                        GameEvents.PlayerLost();
+                        _ai.TransitionToPatrol();
+                        return;
+                    }
+                }
+                else
+                {
+                    _navFailCount = 0;
                 }
             }
 

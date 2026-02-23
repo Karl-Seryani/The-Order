@@ -10,6 +10,7 @@ namespace TheOrder.Ending
     public class CarInstallZone : MonoBehaviour, IInteractable
     {
         [SerializeField] private Items.CarPartPickup _assignedPart;
+        [SerializeField] private string _zoneName;
 
         /// <summary>The specific car part this zone handles.</summary>
         public Items.CarPartPickup AssignedPart => _assignedPart;
@@ -30,7 +31,7 @@ namespace TheOrder.Ending
         public string GetPromptText()
         {
             if (_station == null) return "";
-            return _station.GetZonePromptText(_assignedPart);
+            return _station.GetZonePromptText(_assignedPart, _zoneName);
         }
 
         public bool CanInteract(GameObject interactor)

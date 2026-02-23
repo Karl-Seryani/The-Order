@@ -77,9 +77,11 @@ namespace TheOrder.UI
                 "On EASY, the Hunter detects you by\n" +
                 "sight only. No flashlight, sprint, or\n" +
                 "noise detection.\n\n" +
-                "On MEDIUM and HARD, he hears your\n" +
-                "footsteps, doors, and flashlight.\n" +
-                "Every sound you make is a risk."
+                "On MEDIUM and above, he hears your\n" +
+                "footsteps, doors, and reacts to your\n" +
+                "flashlight. The light is visible from\n" +
+                "far away. Even behind him, he will\n" +
+                "notice and investigate."
             },
             // Survival
             new[]
@@ -122,11 +124,20 @@ namespace TheOrder.UI
                 "Hunter hears everything. Stay quiet.\n" +
                 "Find the Main Door Key to escape.\n\n" +
                 "HARD\n\n" +
-                "Same detection as Medium, but you must\n" +
-                "also build the car. Find 3 wheels + motor,\n" +
-                "place them on the car frame outside.\n" +
-                "Drill the wheels in. Find the car key\n" +
-                "in the 1st floor kitchen. Start the engine."
+                "Full detection. Build the car to escape.\n" +
+                "Find 3 wheels + motor, place them on\n" +
+                "the car frame outside. Drill the wheels.\n" +
+                "Find the car key. Start the engine.",
+                // Page 2
+                "NIGHTMARE\n\n" +
+                "The Hunter is faster than you.\n" +
+                "He sees further, hears more,\n" +
+                "and he never stops.\n\n" +
+                "Chase speed exceeds your sprint.\n" +
+                "Your only hope is to break line of\n" +
+                "sight and hide.\n\n" +
+                "Build the car to escape.\n" +
+                "Same repair steps as Hard."
             }
         };
 

@@ -52,7 +52,7 @@ namespace TheOrder.Items
             rb.isKinematic = false;
             rb.useGravity = true;
             rb.mass = 1.5f;
-            rb.linearDamping = 0.8f;
+            rb.linearDamping = 0.05f;
             rb.angularDamping = 1.0f;
             rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
             rb.interpolation = RigidbodyInterpolation.Interpolate;

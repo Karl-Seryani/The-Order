@@ -39,7 +39,23 @@ namespace TheOrder.Items
             foreach (var screw in _screws)
             {
                 if (screw != null)
+                {
                     screw.Unscrewed += HandleScrewRemoved;
+
+                    // Account for screws already unscrewed in a previous day
+                    if (screw.IsRestoredUnscrewed)
+                        _screwsRemaining--;
+                }
+            }
+
+            // If all screws were already removed, unlock immediately
+            if (_screwsRemaining <= 0)
+            {
+                foreach (var furniture in _targetFurniture)
+                {
+                    if (furniture != null)
+                        furniture.IsLocked = false;
+                }
             }
         }
 

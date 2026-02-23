@@ -5,21 +5,19 @@ namespace TheOrder.Hunter
     /// <summary>
     /// Investigate state — Hunter goes to the source of a disturbance.
     /// Plays Looking Around animation at destination.
-    /// On timeout, returns to last patrol position and transitions to Patrol.
-    /// Also handles post-chase searching (merged Search behavior).
+    /// On completion, returns to last patrol position and transitions to Patrol.
+    /// Safety timer only fires if Hunter gets stuck navigating (60s default).
     /// </summary>
     public class InvestigateState : IHunterState
     {
         #region Private Fields
 
         private readonly HunterAI _ai;
-        private float _timer;
+        private float _safetyTimer;
         private bool _hasReachedTarget;
         private bool _isLookingAround;
         private float _lookAroundTimer;
         private bool _isReturningToPatrol;
-
-        private const float LOOK_AROUND_DURATION = 4f;
 
         #endregion
 
@@ -38,7 +36,7 @@ namespace TheOrder.Hunter
         {
             _ai.Agent.speed = _ai.Config.InvestigateSpeed;
             _ai.SetLooking(false);
-            _timer = _ai.Config.InvestigateTimeout;
+            _safetyTimer = _ai.Config.InvestigateTimeout;
             _hasReachedTarget = false;
             _isLookingAround = false;
             _isReturningToPatrol = false;
@@ -50,7 +48,7 @@ namespace TheOrder.Hunter
 
         public void Update()
         {
-            _timer -= Time.deltaTime;
+            _safetyTimer -= Time.deltaTime;
 
             // Always check for player visibility — transition to Chase
             if (_ai.CanSeePlayer())
@@ -93,8 +91,8 @@ namespace TheOrder.Hunter
                 return;
             }
 
-            // Timeout — give up and return to patrol
-            if (_timer <= 0f)
+            // Safety timeout — only if stuck navigating (never reached target)
+            if (_safetyTimer <= 0f && !_hasReachedTarget)
             {
                 StartReturningToPatrol();
             }
@@ -112,7 +110,7 @@ namespace TheOrder.Hunter
         private void StartLookingAround()
         {
             _isLookingAround = true;
-            _lookAroundTimer = LOOK_AROUND_DURATION;
+            _lookAroundTimer = _ai.Config.LookAroundDuration;
             _ai.Agent.ResetPath();
             _ai.SetLooking(true);
         }

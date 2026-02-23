@@ -18,7 +18,7 @@ namespace TheOrder
         [SerializeField] private float _sightAngle = 110f;
         [SerializeField] private float _sightRange = 3f;
         [SerializeField] private float _flashlightSightMultiplier = 8f;
-        [SerializeField] private float _flashlightConeAngle = 60f;
+        [SerializeField] private float _flashlightConeAngle = 160f;
 
         [Header("Detection — Hearing")]
         [SerializeField] private float _sprintHearingRadius = 8f;
@@ -31,7 +31,8 @@ namespace TheOrder
         [SerializeField] private float _waypointIdleMax = 5f;
 
         [Header("Investigate")]
-        [SerializeField] private float _investigateTimeout = 8f;
+        [SerializeField] private float _investigateTimeout = 60f;
+        [SerializeField] private float _lookAroundDuration = 4f;
 
         [Header("Chase")]
         [SerializeField] private float _losTimeout = 3f;
@@ -65,6 +66,7 @@ namespace TheOrder
 
         // Investigate
         public float InvestigateTimeout => _investigateTimeout;
+        public float LookAroundDuration => _lookAroundDuration;
 
         // Chase
         public float LosTimeout => _losTimeout;

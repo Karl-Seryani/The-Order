@@ -17,6 +17,7 @@ namespace TheOrder.Hunter
 
         [Header("Configuration")]
         [SerializeField] private HunterConfig _config;
+        [SerializeField] private HunterConfig _nightmareConfig;
 
         [Header("References")]
         [SerializeField] private Transform _eyePoint;
@@ -189,6 +190,15 @@ namespace TheOrder.Hunter
                 return;
             }
 
+            // Nightmare mode — swap to enhanced config
+            if (GameManager.Instance != null && GameManager.Instance.CurrentDifficulty == DifficultyLevel.Nightmare && _nightmareConfig != null)
+            {
+                _config = _nightmareConfig;
+#if UNITY_EDITOR
+                Debug.Log("[HunterAI] Nightmare mode — using nightmare config.");
+#endif
+            }
+
 #if UNITY_EDITOR
             Debug.Log($"[HunterAI] Starting — {_patrolWaypoints.Length} waypoints, " +
                       $"onNavMesh={_agent.isOnNavMesh}, " +
@@ -230,7 +240,7 @@ namespace TheOrder.Hunter
 
         private void Update()
         {
-            if (_isPaused) return;
+            if (_isPaused || _stateMachine == null) return;
 
             _stateMachine.Update();
             UpdateAnimator();
@@ -327,13 +337,17 @@ namespace TheOrder.Hunter
                     _config.FlashlightConeAngle, GetEffectiveSightRange()))
                 return false;
 
-            // Obstruction check — light doesn't pass through walls/doors
+            // Obstruction check — cast all layers except player, skip Hunter's own colliders
             Vector3 toHunter = hunterPos - playerCenter;
             float distance = toHunter.magnitude;
-            if (Physics.Raycast(playerCenter, toHunter.normalized, distance,
-                    ~_playerLayer, QueryTriggerInteraction.Ignore))
+            int hitCount = Physics.RaycastNonAlloc(playerCenter, toHunter.normalized,
+                _raycastBuffer, distance, ~_playerLayer, QueryTriggerInteraction.Ignore);
+
+            System.Array.Sort(_raycastBuffer, 0, hitCount, _hitDistanceComparer);
+            for (int i = 0; i < hitCount; i++)
             {
-                return false; // Something between player and Hunter blocks the light
+                if (IsSelfCollider(_raycastBuffer[i].collider)) continue;
+                return false; // Non-Hunter hit = wall/door/floor blocks the light
             }
 
             return true;
@@ -549,9 +563,9 @@ namespace TheOrder.Hunter
 #if UNITY_EDITOR
             Debug.Log("[HunterAI] Player caught! Starting death cinematic.");
 #endif
-            // Auto-drop held item — same as pressing Q
+            // Auto-drop held item silently — no sound, no Hunter alert
             if (Items.HeldItemController.Instance != null && Items.HeldItemController.Instance.HasItem)
-                Items.HeldItemController.Instance.Drop();
+                Items.HeldItemController.Instance.DropSilently();
 
             // Save Hunter state for persistence — but not if kill was in the bedroom
             // (spawn room). Let Hunter reset to starting position so player isn't spawn-camped.

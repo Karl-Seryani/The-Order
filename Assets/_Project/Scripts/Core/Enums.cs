@@ -35,6 +35,18 @@ namespace TheOrder
         Practice,
         Easy,
         Medium,
-        Hard
+        Hard,
+        Nightmare
+    }
+
+    /// <summary>
+    /// Tracks the installation state of a car part across deaths.
+    /// </summary>
+    public enum CarPartState
+    {
+        None,
+        Collected,
+        Placed,
+        Installed
     }
 }

@@ -47,6 +47,11 @@ namespace TheOrder.Doors
             _doorController = GetComponent<DoorController>();
         }
 
+        private void Start()
+        {
+            RestoreRunState();
+        }
+
         #endregion
 
         #region IInteractable
@@ -61,6 +66,7 @@ namespace TheOrder.Doors
                 if (inventory != null && inventory.HasKey(_requiredItem))
                 {
                     _isUnlocked = true;
+                    SaveRunState();
                     if (_unlockSound != null)
                         AudioSource.PlayClipAtPoint(_unlockSound, transform.position, _soundVolume);
                     GameEvents.ItemUsed(_requiredItem);
@@ -109,6 +115,25 @@ namespace TheOrder.Doors
             if (_isUnlocked) return "";
             if (_requiredItem != null) return $"Need {_requiredItem.DisplayName}";
             return "Locked";
+        }
+
+        #endregion
+
+        #region Run State Persistence
+
+        private void SaveRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            RunStateManager.Instance.MarkDoorUnlocked(transform.GetPersistenceId());
+        }
+
+        private void RestoreRunState()
+        {
+            if (RunStateManager.Instance == null) return;
+            string id = transform.GetPersistenceId();
+            if (!RunStateManager.Instance.IsDoorUnlocked(id)) return;
+
+            _isUnlocked = true;
         }
 
         #endregion
