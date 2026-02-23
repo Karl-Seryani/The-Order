@@ -8,7 +8,8 @@
       "mcp__unity-mcp__find_gameobjects",
       "mcp__unity-mcp__create_script",
       "Bash(git add:*)",
-      "mcp__unity-mcp__refresh_unity"
+      "mcp__unity-mcp__refresh_unity",
+      "mcp__unity-mcp__manage_gameobject"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -26,8 +26,10 @@ namespace TheOrder.UI
         [Header("Timing")]
         [SerializeField] private float _fadeDuration = 0.5f;
         [SerializeField] private float _textFadeDuration = 0.3f;
-        [SerializeField] private float _holdDuration = 1.5f;
-        [SerializeField] private float _gameOverHoldDuration = 3f;
+        [SerializeField] private float _holdDuration = 5f;
+        [SerializeField] private float _gameOverHoldDuration = 5f;
+        [SerializeField] private float _textFadeOutDuration = 1f;
+        [SerializeField] private float _postTextDelay = 0.5f;
 
         #endregion
 
@@ -130,6 +132,10 @@ namespace TheOrder.UI
                 yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
                 yield return new WaitForSecondsRealtime(_gameOverHoldDuration);
 
+                // Fade GAME OVER text out
+                yield return StartCoroutine(FadeText(_deathText, 1f, 0f, _textFadeOutDuration));
+                yield return new WaitForSecondsRealtime(_postTextDelay);
+
                 // Reset everything for a fresh game
                 if (run != null) run.ResetRun();
                 Player.PlayerInventory.ClearKeys();
@@ -145,9 +151,13 @@ namespace TheOrder.UI
                 yield return StartCoroutine(FadeText(_deathText, 0f, 1f, _textFadeDuration));
                 yield return new WaitForSecondsRealtime(_holdDuration);
 
+                // Fade YOU DIED text out for seamless transition
+                yield return StartCoroutine(FadeText(_deathText, 1f, 0f, _textFadeOutDuration));
+                yield return new WaitForSecondsRealtime(_postTextDelay);
+
                 if (run != null) run.AdvanceDay();
 
-                // Reload scene — full day overlay + wake-up sequence plays again
+                // Reload scene — day overlay starts with black screen = seamless transition
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
         }

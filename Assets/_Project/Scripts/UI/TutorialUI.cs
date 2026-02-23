@@ -75,11 +75,10 @@ namespace TheOrder.UI
                 "If he sees you, he will chase.\n" +
                 "If he catches you, it is over.\n\n" +
                 "On EASY, the Hunter detects you by\n" +
-                "sight only. No flashlight, sprint, or\n" +
+                "sight only and flashlight. No sprint, or\n" +
                 "noise detection.\n\n" +
                 "On MEDIUM and above, he hears your\n" +
-                "footsteps, doors, and reacts to your\n" +
-                "flashlight. The light is visible from\n" +
+                "footsteps, doors. The light is visible from\n" +
                 "far away. Even behind him, he will\n" +
                 "notice and investigate."
             },

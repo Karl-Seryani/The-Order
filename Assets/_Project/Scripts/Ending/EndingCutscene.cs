@@ -88,7 +88,12 @@ namespace TheOrder.Ending
             // Brief pause before fade
             yield return new WaitForSecondsRealtime(0.5f);
 
-            // Fade to white
+            // Set black background before fading in
+            var bgImage = _fadeOverlay != null ? _fadeOverlay.GetComponentInChildren<Image>() : null;
+            if (bgImage != null)
+                bgImage.color = Color.black;
+
+            // Fade to black
             if (_fadeOverlay != null)
             {
                 _fadeOverlay.gameObject.SetActive(true);
@@ -102,11 +107,13 @@ namespace TheOrder.Ending
                 _fadeOverlay.alpha = 1f;
             }
 
-            // Show "YOU ESCAPED" text
+            // Show "YOU ESCAPED" text — smaller white text on black
             if (_escapedText != null)
             {
                 _escapedText.gameObject.SetActive(true);
                 _escapedText.text = "YOU ESCAPED";
+                _escapedText.color = Color.white;
+                _escapedText.fontSize = 48;
             }
 
             // Hold text
