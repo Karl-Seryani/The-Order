@@ -1,0 +1,147 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue
+}
+
+\title{\textbf{Level Design Document}\\[0.3em]\large The Order -- First-person horror escape}
+\author{Karl Seryani, Kirill Delyukin, Raghav Gulati}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\section{Design decisions}
+
+\subsection{Genre and game type}
+
+First-person horror with stealth and escape mechanics, similar in spirit to Granny. The player wakes up trapped in an abandoned asylum, hunted by a mutant creature we call The Hunter. The game loop is about evasion: find items, unlock areas, get out. The fun comes from the gameplay itself, not from story. The first-person camera was a given for this genre since horror works best when you can't see behind you.
+
+\subsection{2D vs. 3D}
+
+Full 3D with a first-person camera. We needed real spatial awareness for the stealth mechanics to work. The Hunter uses Unity's NavMesh for pathfinding and raycasts for line-of-sight detection, and both of those need a proper 3D environment. The asylum asset pack we're using (Abandoned Asylum) is a 3D interior, so this was never really a question.
+
+\subsection{Level structure}
+
+Semi-open with gated progression. The bunker has multiple rooms spread across two floors, but locked doors and item chains control where the player can go. You need a screwdriver to break open a cabinet, which gives you a key, which opens another area, and so on. It's not fully linear since you can explore accessible areas in any order, but the item gates keep things directed enough that players don't wander forever.
+
+We chose this over full linearity because horror needs exploration. If you're just walking down a corridor, there's no tension. The player needs to feel like they're choosing to go into the dark room, not being pushed into it.
+
+A secondary reason for the room layout was practical: we needed to fill every room in the bunker with something worth finding. Between clue items, keys, tools, and car parts, every room has a purpose for the player to discover.
+
+\subsection{Verticality and multi-layered design}
+
+Moderate. Two floors connected by a staircase. The ground floor has the main entrance, offices, and the machine room. The upper floor (which is actually where the player spawns) has the bedroom and connecting hallways. There's also a small outdoor area with the escape car.
+
+The two-floor layout matters a lot for the Hunter AI. We had to add Y-axis constraints to the NavMesh pathing so the Hunter doesn't try to path through the ceiling to reach you. Sound detection also checks vertical distance: door sounds from the floor below get filtered out, but sprint footsteps can still be heard across floors (the NavMesh constraint just prevents the Hunter from taking impossible routes to reach you).
+
+\subsection{Navigation and wayfinding}
+
+We deliberately keep wayfinding minimal. The asylum is dark. The player has a flashlight they can toggle, and there's a dim ambient spotlight on the camera so you can barely see ahead without it. Wall-mounted candles and ceiling lights provide sparse landmarks.
+
+Right now there's no objective text in the HUD, though we plan to add one for the next deliverable. Players figure things out by exploring, which is the point. The game is supposed to be difficult. Getting lost in a horror game isn't a bug, it's the tension.
+
+We do use light as a soft guide. The rooms that matter tend to have slightly more light, whether from a ceiling fixture or a candle. It's subtle enough that players don't consciously notice it, but it works.
+
+\subsection{Challenge and pacing}
+
+The 3-day run system handles pacing across deaths. Day 1 and Day 2 deaths send you back with all your keys and item progress preserved, just the Hunter resets (mostly). Day 3 is the last chance. If you die on Day 3, it's game over and you restart from scratch. This means early deaths are forgiving, almost tutorial-like, while Day 3 has real stakes.
+
+Difficulty also scales through five presets: Practice mode removes the Hunter entirely so you can learn the layout. Easy gives the Hunter sight-only detection (no sound, no flashlight awareness). Medium is the full experience with a main-door escape. Hard requires full car repair. Nightmare gives the Hunter faster speed than the player's sprint, so you literally cannot outrun him.
+
+\subsection{Enemy and encounter placement}
+
+One enemy: The Hunter. He's a mutant, not a person. He patrols a set of waypoints, investigates sounds (growling when something catches his attention), and chases on sight. The waypoint loop covers most of the accessible areas on both floors, so you're never fully safe. His patrol route deliberately passes through chokepoints like the main hallway and staircase, which forces the player to time their movements.
+
+There are no scripted encounters. Every interaction with the Hunter is emergent from his AI states (Patrol, Investigate, Chase). He responds to sprint footsteps, door sounds, flashlight visibility, and direct line-of-sight. The player quickly learns that sprinting is loud, flashlights are visible, and doors make noise.
+
+\subsection{Sightlines and occlusion}
+
+The asylum has a mix of rooms and corridors, some with L-shaped turns but mostly standard rooms with doorways. You rarely have long, clear sightlines. We want players to round corners without knowing what's there.
+
+The darkness itself is a form of occlusion. The player's flashlight has a cone, so you can only see what you're pointing at. The Hunter, on the other hand, has a wider detection radius. This asymmetry is where the horror comes from.
+
+Doors are also occlusion tools. Closed doors block the Hunter's line-of-sight raycast. The player can close doors behind them to break a chase (the Hunter can open them, but it buys time). Doors are on Layer 9 so they're excluded from NavMesh baking, meaning the Hunter walks through doorways but the doors themselves block vision.
+
+\subsection{Environmental storytelling}
+
+The game has two clue notes placed in the environment. One is a torn note about car keys hidden in a mug, written by someone who didn't make it out. The other is a crumpled diary page from a patient describing the Hunter's footsteps and hiding a wrench in a wheelchair cushion. Both tie directly to gameplay items.
+
+There's also a body in the surgery room with a screwdriver stuck in his chest. This is the guy who wrote those notes. He got further than anyone else, managed to hide tools and document escape routes, but didn't make it out. The player finds his body and his notes, and uses the information he left behind.
+
+Beyond the notes, the environment communicates through the asylum setting itself: medical equipment, abandoned rooms, and an outdoor area with a disassembled car.
+
+\section{Annotated map}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{topdown.png}
+\caption{Top-down view of the bunker. Upper section is the ground floor (main hall, offices, staircase hub). Lower section is the basement area (morgue, machine room, storage). The outdoor courtyard with the escape car is visible at the bottom.}
+\end{figure}
+
+\section{Screenshots}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{hallway.png}
+\caption{Player perspective: a dimly lit corridor with a wall-mounted candle as the only light source. The ambient camera light lets you barely see the floor tiles ahead.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{hunter_encounter.png}
+\caption{The Hunter spotted in a dark hallway. His glowing eyes are the only giveaway before he enters chase mode.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{pickup_screwdriver.png}
+\caption{Item interaction: the ``Pick up Screwdriver'' prompt appears when the player looks at a dropped tool. The notification in the top-right confirms a previous drop.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{requires_screwdriver.png}
+\caption{A locked cabinet with screws. The HUD shows ``Requires Screwdriver'' when the player attempts to interact without the right tool in hand. The screwdriver is visible in the player's hand at bottom-right.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{youdied.png}
+\caption{Death screen. On Day 1 or 2 this advances to the next day. On Day 3 it's game over.}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{day3.png}
+\caption{Day 3 overlay in blood-red text. This is the player's last chance before game over.}
+\end{figure}
+
+\section{Playtesting insights}
+
+We had teammates and friends playtest the game. A few things came up:
+
+Players said it was really difficult without guidance. Some said they would've never found items where we placed them. These opinions were mixed though, not everyone felt that way, and the game is meant to be hard. That's the fun part. We're planning to add objective text to the HUD for the next deliverable to give a minimum level of direction without hand-holding.
+
+The steering wheel on the car keeps spinning after it's placed. That's a bug we need to fix.
+
+The exterior walls are almost transparent from certain angles. Players figured out they could see into rooms from outside without going through the front door. We need to fix the wall rendering or add collision to block this.
+
+The flashlight toggle creates a genuine dilemma. You need it to see, but the Hunter detects it. Multiple testers instinctively turned it off when they heard the Hunter growling, even before we told them the mechanic existed. That felt like the design was working.
+
+Door noise as a mechanic was something nobody expected. Testers would open a door and then panic when the Hunter changed direction toward them. Once they figured out doors make sound, they started being more careful, which is exactly the behavior we wanted.
+
+For the next deliverable, we plan to add better animations, improved death scenes where the Hunter is shown killing the player in different ways on the final day, and fix the wall transparency and steering wheel bugs.
+
+\end{document}

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Main menu controller. Handles Play, Tutorial, Settings, and Quit buttons.
+    /// Main menu controller. Handles Play, Tutorial, and Quit buttons.
     /// Plays looping background music and button click SFX.
     /// Sets GameState.MainMenu on scene load.
     /// </summary>
@@ -22,7 +22,6 @@ namespace TheOrder.UI
         [Header("Buttons")]
         [SerializeField] private Button _playButton;
         [SerializeField] private Button _tutorialButton;
-        [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _quitButton;
 
         [Header("Difficulty Buttons")]
@@ -32,9 +31,6 @@ namespace TheOrder.UI
         [SerializeField] private Button _hardButton;
         [SerializeField] private Button _nightmareButton;
         [SerializeField] private Button _difficultyBackButton;
-
-        [Header("Settings")]
-        [SerializeField] private GameObject _settingsPanel;
 
         [Header("Audio")]
         [SerializeField] private AudioClip _bgMusic;
@@ -72,7 +68,6 @@ namespace TheOrder.UI
 
             if (_playButton != null) _playButton.onClick.AddListener(OnPlayClicked);
             if (_tutorialButton != null) _tutorialButton.onClick.AddListener(OnTutorialClicked);
-            if (_settingsButton != null) _settingsButton.onClick.AddListener(OnSettingsClicked);
             if (_quitButton != null) _quitButton.onClick.AddListener(OnQuitClicked);
 
             if (_practiceButton != null) _practiceButton.onClick.AddListener(() => OnDifficultySelected(DifficultyLevel.Practice));
@@ -90,7 +85,6 @@ namespace TheOrder.UI
 
             if (_menuPanel != null) _menuPanel.SetActive(true);
             if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
-            if (_settingsPanel != null) _settingsPanel.SetActive(false);
             if (_difficultyPanel != null) _difficultyPanel.SetActive(false);
 
             // Start background music
@@ -106,11 +100,6 @@ namespace TheOrder.UI
             if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
 
             // Escape backs out of whichever sub-panel is open
-            if (_settingsPanel != null && _settingsPanel.activeSelf)
-            {
-                ShowMainMenu();
-                return;
-            }
             if (_tutorialPanel != null && _tutorialPanel.activeSelf)
             {
                 ShowMainMenu();
@@ -127,7 +116,6 @@ namespace TheOrder.UI
         {
             if (_playButton != null) _playButton.onClick.RemoveAllListeners();
             if (_tutorialButton != null) _tutorialButton.onClick.RemoveAllListeners();
-            if (_settingsButton != null) _settingsButton.onClick.RemoveAllListeners();
             if (_quitButton != null) _quitButton.onClick.RemoveAllListeners();
             if (_practiceButton != null) _practiceButton.onClick.RemoveAllListeners();
             if (_easyButton != null) _easyButton.onClick.RemoveAllListeners();
@@ -146,7 +134,6 @@ namespace TheOrder.UI
         {
             PlayClickSfx();
             if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
-            if (_settingsPanel != null) _settingsPanel.SetActive(false);
             if (_difficultyPanel != null) _difficultyPanel.SetActive(false);
             if (_menuPanel != null) _menuPanel.SetActive(true);
         }
@@ -201,22 +188,6 @@ namespace TheOrder.UI
             PlayClickSfx();
             if (_menuPanel != null) _menuPanel.SetActive(false);
             if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
-        }
-
-        private void OnSettingsClicked()
-        {
-            PlayClickSfx();
-            if (_settingsPanel != null)
-            {
-                if (_menuPanel != null) _menuPanel.SetActive(false);
-                _settingsPanel.SetActive(true);
-            }
-            else
-            {
-#if UNITY_EDITOR
-                Debug.Log("[MainMenu] Settings panel not yet assigned.");
-#endif
-            }
         }
 
         private void OnQuitClicked()

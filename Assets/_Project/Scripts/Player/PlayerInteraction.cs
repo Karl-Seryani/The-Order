@@ -13,8 +13,9 @@ namespace TheOrder.Player
         [Header("Raycast")]
         [SerializeField] private float _interactionRange = 3.0f;
         [SerializeField] private LayerMask _interactionMask = ~0;
-        [SerializeField] private float _closePickupRadius = 0.5f;
-        [SerializeField] [Range(-1f, 1f)] private float _closePickupMinDot = -0.2f;
+        [SerializeField] private float _closePickupRadius = 0.9f;
+        [SerializeField] [Range(-1f, 1f)] private float _closePickupMinDot = 0.2f;
+        [SerializeField] [Range(0f, 1f)] private float _bodyPickupProbeDownFactor = 0.35f;
 
         [Header("References")]
         [SerializeField] private UnityEngine.Camera _playerCamera;
@@ -26,8 +27,10 @@ namespace TheOrder.Player
         private PlayerInputHandler _input;
         private IInteractable _currentTarget;
         private Items.HeldItemController _heldItemController;
-        private readonly RaycastHit[] _hitBuffer = new RaycastHit[16];
-        private readonly Collider[] _overlapBuffer = new Collider[16];
+        private CharacterController _characterController;
+        private CapsuleCollider _capsuleCollider;
+        private readonly RaycastHit[] _hitBuffer = new RaycastHit[64];
+        private readonly Collider[] _overlapBuffer = new Collider[64];
 
         #endregion
 
@@ -50,6 +53,8 @@ namespace TheOrder.Player
         {
             _input = GetComponent<PlayerInputHandler>();
             _heldItemController = GetComponent<Items.HeldItemController>();
+            _characterController = GetComponent<CharacterController>();
+            _capsuleCollider = GetComponent<CapsuleCollider>();
 
             if (_playerCamera == null)
             {
@@ -82,6 +87,8 @@ namespace TheOrder.Player
                     {
                         GameEvents.InteractionBlocked(blockedMessage);
                     }
+
+                    return;
                 }
 
                 _currentTarget.Interact(gameObject);
@@ -101,17 +108,23 @@ namespace TheOrder.Player
         {
             if (_playerCamera == null) { _currentTarget = null; return; }
 
-            // First check for very close pickups (when standing on top of items)
-            if (TryFindNearbyPickup(out var nearbyPickup))
+            Vector3 eyePos = _playerCamera.transform.position;
+            Vector3 eyeForward = _playerCamera.transform.forward;
+
+            // First check for very close pickups (when standing on top of items).
+            // Run both an eye-centered probe and a body-centered probe so floor items
+            // remain targetable when the camera is very close or directly above them.
+            if (TryFindNearbyPickup(eyePos, eyePos, eyeForward, out var nearbyPickup) ||
+                TryFindNearbyPickup(GetBodyPickupProbeOrigin(), eyePos, eyeForward, out nearbyPickup))
             {
                 _currentTarget = nearbyPickup;
                 return;
             }
 
-            Ray ray = new Ray(_playerCamera.transform.position, _playerCamera.transform.forward);
+            Ray ray = new Ray(eyePos, eyeForward);
 
-            // Try regular raycast
-            if (Physics.Raycast(ray, out RaycastHit hit, _interactionRange, _interactionMask, QueryTriggerInteraction.Ignore))
+            // Try regular raycast (ignore the player's own colliders).
+            if (TryFindNearestNonSelfRayHit(ray.origin, ray.direction, _interactionRange, QueryTriggerInteraction.Ignore, out RaycastHit hit))
             {
                 // Main door escape — Easy/Medium difficulty (overrides LockedDoor when enabled)
                 var escapeTrigger = hit.collider.GetComponentInParent<Ending.MainDoorEscapeTrigger>();
@@ -129,26 +142,18 @@ namespace TheOrder.Player
                     return;
                 }
 
+                // Car install zones can sit just behind the car body collider.
+                // Prefer the closest zone hit in a tiny depth window behind the first hit.
+                if (TryFindCarInstallZone(ray, hit.distance + 0.25f, out var carZone))
+                {
+                    _currentTarget = carZone;
+                    return;
+                }
+
                 // Check for screws behind overlapping furniture colliders.
                 // Do NOT do this for ItemPickup, otherwise closed furniture/doors can be bypassed
                 // and items inside can be grabbed through blockers.
-                int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, hit.distance + 0.15f, _interactionMask);
-                Items.ScrewInteractable closestScrew = null;
-                float closestScrewDistance = float.MaxValue;
-                for (int i = 0; i < hitCount; i++)
-                {
-                    if (_hitBuffer[i].collider.TryGetComponent(out Items.ScrewInteractable screw))
-                    {
-                        float screwDistance = _hitBuffer[i].distance;
-                        if (screwDistance < closestScrewDistance)
-                        {
-                            closestScrewDistance = screwDistance;
-                            closestScrew = screw;
-                        }
-                    }
-                }
-
-                if (closestScrew != null)
+                if (TryFindClosestScrewOnRay(ray, hit.distance + 0.15f, out var closestScrew))
                 {
                     _currentTarget = closestScrew;
                     return;
@@ -178,59 +183,54 @@ namespace TheOrder.Player
             _currentTarget = null;
         }
 
-        private bool TryFindNearbyPickup(out Items.ItemPickup pickup)
+        private bool TryFindNearbyPickup(
+            Vector3 overlapOrigin,
+            Vector3 eyePos,
+            Vector3 eyeForward,
+            out IInteractable nearbyInteractable)
         {
-            pickup = null;
+            nearbyInteractable = null;
 
             if (_closePickupRadius <= 0f) return false;
 
-            Vector3 eyePos = _playerCamera.transform.position;
-            Vector3 eyeForward = _playerCamera.transform.forward;
-
             int overlapCount = Physics.OverlapSphereNonAlloc(
-                eyePos,
+                overlapOrigin,
                 _closePickupRadius,
                 _overlapBuffer,
                 _interactionMask,
                 QueryTriggerInteraction.Collide
             );
 
-            float bestSqrDistance = float.MaxValue;
-            for (int i = 0; i < overlapCount; i++)
+            if (overlapCount == _overlapBuffer.Length)
             {
-                var overlapCollider = _overlapBuffer[i];
-                if (overlapCollider == null) continue;
-
-                var candidatePickup = overlapCollider.GetComponentInParent<Items.ItemPickup>();
-                if (candidatePickup == null) continue;
-
-                Vector3 closestPoint = overlapCollider.ClosestPoint(eyePos);
-                Vector3 toPickup = closestPoint - eyePos;
-                float sqrDistance = toPickup.sqrMagnitude;
-
-                if (sqrDistance > 0.0001f)
-                {
-                    Vector3 direction = toPickup.normalized;
-                    if (Vector3.Dot(eyeForward, direction) < _closePickupMinDot)
-                        continue;
-
-                    float distance = Mathf.Sqrt(sqrDistance);
-                    if (Physics.Raycast(eyePos, direction, out RaycastHit hit, distance + 0.02f, _interactionMask))
-                    {
-                        var visiblePickup = hit.collider.GetComponentInParent<Items.ItemPickup>();
-                        if (visiblePickup != candidatePickup)
-                            continue;
-                    }
-                }
-
-                if (sqrDistance < bestSqrDistance)
-                {
-                    bestSqrDistance = sqrDistance;
-                    pickup = candidatePickup;
-                }
+                Collider[] allOverlaps = Physics.OverlapSphere(
+                    overlapOrigin,
+                    _closePickupRadius,
+                    _interactionMask,
+                    QueryTriggerInteraction.Collide);
+                return TrySelectNearbyPickup(allOverlaps, allOverlaps.Length, eyePos, eyeForward, out nearbyInteractable);
             }
 
-            return pickup != null;
+            return TrySelectNearbyPickup(_overlapBuffer, overlapCount, eyePos, eyeForward, out nearbyInteractable);
+        }
+
+        private Vector3 GetBodyPickupProbeOrigin()
+        {
+            if (_characterController != null)
+            {
+                Bounds bounds = _characterController.bounds;
+                float y = bounds.center.y - (bounds.extents.y * _bodyPickupProbeDownFactor);
+                return new Vector3(bounds.center.x, y, bounds.center.z);
+            }
+
+            if (_capsuleCollider != null)
+            {
+                Bounds bounds = _capsuleCollider.bounds;
+                float y = bounds.center.y - (bounds.extents.y * _bodyPickupProbeDownFactor);
+                return new Vector3(bounds.center.x, y, bounds.center.z);
+            }
+
+            return transform.position + (Vector3.up * 0.6f);
         }
 
         private bool TryFindPickupBehindOpenBlocker(Ray ray, RaycastHit firstHit, out Items.ItemPickup pickup)
@@ -250,18 +250,224 @@ namespace TheOrder.Player
                 if (openDoor == null || !openDoor.IsOpen) return false;
             }
 
-            int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, _interactionRange, _interactionMask);
             float firstDistance = firstHit.distance;
+            int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, _interactionRange, _interactionMask);
+            if (hitCount == _hitBuffer.Length)
+            {
+                RaycastHit[] allHits = Physics.RaycastAll(ray, _interactionRange, _interactionMask, QueryTriggerInteraction.UseGlobal);
+                return TryFindPickupBehindOpenBlockerFromHits(allHits, allHits.Length, firstDistance, openFurniture, openDoor, out pickup);
+            }
+
+            return TryFindPickupBehindOpenBlockerFromHits(_hitBuffer, hitCount, firstDistance, openFurniture, openDoor, out pickup);
+        }
+
+        private static bool BelongsToOpenBlocker(
+            Collider collider,
+            Doors.SlidableFurniture openFurniture,
+            Doors.DoorController openDoor)
+        {
+            if (openFurniture != null)
+                return collider.GetComponentInParent<Doors.SlidableFurniture>() == openFurniture;
+
+            if (openDoor != null)
+                return collider.GetComponentInParent<Doors.DoorController>() == openDoor;
+
+            return false;
+        }
+
+        private bool TryFindCarInstallZone(Ray ray, float maxDistance, out Ending.CarInstallZone zone)
+        {
+            zone = null;
+
+            int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, maxDistance, _interactionMask, QueryTriggerInteraction.Ignore);
+            if (hitCount == _hitBuffer.Length)
+            {
+                RaycastHit[] allHits = Physics.RaycastAll(ray, maxDistance, _interactionMask, QueryTriggerInteraction.Ignore);
+                return TryFindCarInstallZoneFromHits(allHits, allHits.Length, out zone);
+            }
+
+            return TryFindCarInstallZoneFromHits(_hitBuffer, hitCount, out zone);
+        }
+
+        private bool TrySelectNearbyPickup(
+            Collider[] colliders,
+            int colliderCount,
+            Vector3 eyePos,
+            Vector3 eyeForward,
+            out IInteractable nearbyInteractable)
+        {
+            nearbyInteractable = null;
+            float bestSqrDistance = float.MaxValue;
+
+            for (int i = 0; i < colliderCount; i++)
+            {
+                var overlapCollider = colliders[i];
+                if (overlapCollider == null) continue;
+
+                if (!TryGetNearbyPickupCandidate(overlapCollider, out var candidateInteractable))
+                    continue;
+
+                Vector3 closestPoint = overlapCollider.ClosestPoint(eyePos);
+                float selectionSqrDistance = (closestPoint - eyePos).sqrMagnitude;
+                Vector3 toPickup = closestPoint - eyePos;
+                if (toPickup.sqrMagnitude <= 0.0001f)
+                {
+                    // If eye is effectively on/inside collider surface, use bounds center
+                    // to preserve directional filtering instead of auto-selecting by distance.
+                    toPickup = overlapCollider.bounds.center - eyePos;
+                }
+                if (toPickup.sqrMagnitude <= 0.0001f)
+                {
+                    // Final fallback for tiny/degenerate bounds.
+                    toPickup = eyeForward;
+                }
+
+                Vector3 direction = toPickup.normalized;
+                if (Vector3.Dot(eyeForward, direction) < _closePickupMinDot)
+                    continue;
+
+                float visibilityDistance = Mathf.Sqrt(toPickup.sqrMagnitude);
+                if (visibilityDistance > 0.03f)
+                {
+                    if (TryFindNearestNonSelfRayHit(
+                        eyePos,
+                        direction,
+                        visibilityDistance + 0.02f,
+                        QueryTriggerInteraction.Ignore,
+                        out RaycastHit hit))
+                    {
+                        if (!TryGetNearbyPickupCandidate(hit.collider, out var visibleInteractable))
+                            continue;
+
+                        if (visibleInteractable != candidateInteractable)
+                            continue;
+                    }
+                }
+
+                if (selectionSqrDistance < bestSqrDistance)
+                {
+                    bestSqrDistance = selectionSqrDistance;
+                    nearbyInteractable = candidateInteractable;
+                }
+            }
+
+            return nearbyInteractable != null;
+        }
+
+        private bool TryFindClosestScrewOnRay(Ray ray, float maxDistance, out Items.ScrewInteractable screw)
+        {
+            screw = null;
+
+            int hitCount = Physics.RaycastNonAlloc(ray, _hitBuffer, maxDistance, _interactionMask);
+            if (hitCount == _hitBuffer.Length)
+            {
+                RaycastHit[] allHits = Physics.RaycastAll(ray, maxDistance, _interactionMask, QueryTriggerInteraction.UseGlobal);
+                return TryFindClosestScrewFromHits(allHits, allHits.Length, out screw);
+            }
+
+            return TryFindClosestScrewFromHits(_hitBuffer, hitCount, out screw);
+        }
+
+        private bool TryFindNearestNonSelfRayHit(
+            Vector3 origin,
+            Vector3 direction,
+            float maxDistance,
+            QueryTriggerInteraction queryTriggerInteraction,
+            out RaycastHit nearestHit)
+        {
+            nearestHit = default;
+
+            int hitCount = Physics.RaycastNonAlloc(
+                origin,
+                direction,
+                _hitBuffer,
+                maxDistance,
+                _interactionMask,
+                queryTriggerInteraction);
+
+            if (hitCount == _hitBuffer.Length)
+            {
+                RaycastHit[] allHits = Physics.RaycastAll(
+                    origin,
+                    direction,
+                    maxDistance,
+                    _interactionMask,
+                    queryTriggerInteraction);
+                return TryFindNearestNonSelfRayHitFromHits(allHits, allHits.Length, out nearestHit);
+            }
+
+            return TryFindNearestNonSelfRayHitFromHits(_hitBuffer, hitCount, out nearestHit);
+        }
+
+        private bool TryFindNearestNonSelfRayHitFromHits(RaycastHit[] hits, int hitCount, out RaycastHit nearestHit)
+        {
+            nearestHit = default;
+            float nearestDistance = float.MaxValue;
+            bool found = false;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = hits[i].collider;
+                if (hitCollider == null || IsSelfCollider(hitCollider))
+                    continue;
+
+                float distance = hits[i].distance;
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestHit = hits[i];
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private bool IsSelfCollider(Collider collider)
+        {
+            return collider.transform.IsChildOf(transform);
+        }
+
+        private static bool TryFindClosestScrewFromHits(RaycastHit[] hits, int hitCount, out Items.ScrewInteractable screw)
+        {
+            screw = null;
+            float closestScrewDistance = float.MaxValue;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                if (hits[i].collider.TryGetComponent(out Items.ScrewInteractable candidateScrew))
+                {
+                    float screwDistance = hits[i].distance;
+                    if (screwDistance < closestScrewDistance)
+                    {
+                        closestScrewDistance = screwDistance;
+                        screw = candidateScrew;
+                    }
+                }
+            }
+
+            return screw != null;
+        }
+
+        private static bool TryFindPickupBehindOpenBlockerFromHits(
+            RaycastHit[] hits,
+            int hitCount,
+            float firstDistance,
+            Doors.SlidableFurniture openFurniture,
+            Doors.DoorController openDoor,
+            out Items.ItemPickup pickup)
+        {
+            pickup = null;
             float nearestPickupDistance = float.MaxValue;
             Items.ItemPickup nearestPickup = null;
             float nearestBlockingDistance = float.MaxValue;
 
             for (int i = 0; i < hitCount; i++)
             {
-                var candidateCollider = _hitBuffer[i].collider;
+                var candidateCollider = hits[i].collider;
                 if (candidateCollider == null) continue;
 
-                float candidateDistance = _hitBuffer[i].distance;
+                float candidateDistance = hits[i].distance;
                 if (candidateDistance <= firstDistance + 0.01f) continue;
 
                 var candidatePickup = candidateCollider.GetComponentInParent<Items.ItemPickup>();
@@ -289,16 +495,55 @@ namespace TheOrder.Player
             return true;
         }
 
-        private static bool BelongsToOpenBlocker(
-            Collider collider,
-            Doors.SlidableFurniture openFurniture,
-            Doors.DoorController openDoor)
+        private static bool TryFindCarInstallZoneFromHits(RaycastHit[] hits, int hitCount, out Ending.CarInstallZone zone)
         {
-            if (openFurniture != null)
-                return collider.GetComponentInParent<Doors.SlidableFurniture>() == openFurniture;
+            zone = null;
+            float closestZoneDistance = float.MaxValue;
 
-            if (openDoor != null)
-                return collider.GetComponentInParent<Doors.DoorController>() == openDoor;
+            for (int i = 0; i < hitCount; i++)
+            {
+                var hitCollider = hits[i].collider;
+                if (hitCollider == null) continue;
+
+                var candidateZone = hitCollider.GetComponentInParent<Ending.CarInstallZone>();
+                if (candidateZone == null) continue;
+
+                float distance = hits[i].distance;
+                if (distance < closestZoneDistance)
+                {
+                    closestZoneDistance = distance;
+                    zone = candidateZone;
+                }
+            }
+
+            return zone != null;
+        }
+
+        private static bool TryGetNearbyPickupCandidate(Collider collider, out IInteractable interactable)
+        {
+            interactable = null;
+            if (collider == null) return false;
+
+            var itemPickup = collider.GetComponentInParent<Items.ItemPickup>();
+            if (itemPickup != null)
+            {
+                interactable = itemPickup;
+                return true;
+            }
+
+            var carPartPickup = collider.GetComponentInParent<Items.CarPartPickup>();
+            if (carPartPickup != null)
+            {
+                interactable = carPartPickup;
+                return true;
+            }
+
+            var cluePickup = collider.GetComponentInParent<Clues.CluePickup>();
+            if (cluePickup != null)
+            {
+                interactable = cluePickup;
+                return true;
+            }
 
             return false;
         }

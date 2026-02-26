@@ -7,8 +7,7 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Settings panel UI. Manages mouse sensitivity slider with PlayerPrefs persistence.
-    /// Works in both main menu and pause menu contexts via OnBackAction callback.
+    /// Settings panel UI for the pause menu. Manages mouse sensitivity slider with PlayerPrefs persistence.
     /// </summary>
     public class SettingsUI : MonoBehaviour
     {
@@ -17,6 +16,8 @@ namespace TheOrder.UI
         private const float SENSITIVITY_MIN = 0.1f;
         private const float SENSITIVITY_MAX = 5f;
         private const float SENSITIVITY_DEFAULT = 2f;
+        private const int TITLE_FONT_SIZE = 72;
+        private const int BODY_FONT_SIZE = 48;
 
         #endregion
 
@@ -27,20 +28,20 @@ namespace TheOrder.UI
         [SerializeField] private Text _sensitivityLabel;
         [SerializeField] private Button _backButton;
 
-        [Header("References")]
-        [SerializeField] private MainMenuUI _mainMenuUI;
-
         #endregion
 
         #region Private Fields
 
+        private static readonly Color TITLE_COLOR = new Color(0.85f, 0.12f, 0.1f, 1f);
+
         private FirstPersonCamera _camera;
+        private bool _colorsApplied;
 
         #endregion
 
         #region Public API
 
-        /// <summary>Override back action for use outside main menu (e.g. pause menu).</summary>
+        /// <summary>Callback invoked when back button is clicked.</summary>
         public Action OnBackAction { get; set; }
 
         #endregion
@@ -72,6 +73,40 @@ namespace TheOrder.UI
                 _sensitivitySlider.value = savedValue;
 
             UpdateLabel(savedValue);
+
+            if (!_colorsApplied) ApplySettingsStyle();
+        }
+
+        private void ApplySettingsStyle()
+        {
+            _colorsApplied = true;
+
+            // Force consistent sizes + colors regardless of HorrorFontApplier multiplier
+            var parent = transform;
+            if (parent.childCount > 0)
+            {
+                var titleText = parent.GetChild(0).GetComponent<Text>();
+                if (titleText != null)
+                {
+                    titleText.color = TITLE_COLOR;
+                    titleText.fontSize = TITLE_FONT_SIZE;
+                }
+            }
+
+            for (int i = 1; i < parent.childCount; i++)
+            {
+                foreach (var text in parent.GetChild(i).GetComponentsInChildren<Text>(true))
+                {
+                    text.color = Color.white;
+                    text.fontSize = BODY_FONT_SIZE;
+                }
+            }
+
+            if (_backButton != null)
+            {
+                var img = _backButton.GetComponent<Image>();
+                if (img != null) img.color = new Color(1f, 1f, 1f, 0f);
+            }
         }
 
         private void Update()
@@ -103,10 +138,7 @@ namespace TheOrder.UI
 
         private void OnBackClicked()
         {
-            if (OnBackAction != null)
-                OnBackAction();
-            else if (_mainMenuUI != null)
-                _mainMenuUI.ShowMainMenu();
+            OnBackAction?.Invoke();
         }
 
         #endregion

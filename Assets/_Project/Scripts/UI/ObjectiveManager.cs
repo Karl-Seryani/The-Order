@@ -125,8 +125,6 @@ namespace TheOrder.UI
 
         private void HandleClueCollected(ClueData clue)
         {
-            if (clue == null) return;
-            SetObjective("Something feels different...");
         }
 
         private void HandleCarRepairComplete()

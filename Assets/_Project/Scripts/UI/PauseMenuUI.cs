@@ -30,6 +30,8 @@ namespace TheOrder.UI
 
         #region Private Fields
 
+        private static readonly Color TITLE_COLOR = new Color(0.85f, 0.12f, 0.1f, 1f);
+
         private Canvas _canvas;
         private AudioSource _sfxSource;
         private PlayerCamera.FirstPersonCamera _fpsCam;
@@ -62,6 +64,26 @@ namespace TheOrder.UI
         private void Start()
         {
             HideAll();
+            ApplyPauseMenuColors();
+        }
+
+        private void ApplyPauseMenuColors()
+        {
+            // Override HorrorFontApplier — title red, buttons white
+            if (_pausePanel != null && _pausePanel.transform.childCount > 0)
+            {
+                var titleText = _pausePanel.transform.GetChild(0).GetComponent<Text>();
+                if (titleText != null) titleText.color = TITLE_COLOR;
+            }
+
+            foreach (var btn in new[] { _resumeButton, _settingsButton, _quitButton })
+            {
+                if (btn != null)
+                {
+                    var text = btn.GetComponentInChildren<Text>();
+                    if (text != null) text.color = Color.white;
+                }
+            }
         }
 
         private void Update()

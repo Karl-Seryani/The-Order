@@ -48,7 +48,7 @@ namespace TheOrder.PlayerCamera
         /// <summary>Set mouse sensitivity and persist to PlayerPrefs.</summary>
         public void SetSensitivity(float value)
         {
-            _mouseSensitivity = Mathf.Clamp(value, 0.5f, 5f);
+            _mouseSensitivity = Mathf.Clamp(value, 0.1f, 5f);
             PlayerPrefs.SetFloat(SENSITIVITY_PREF_KEY, _mouseSensitivity);
             PlayerPrefs.Save();
         }

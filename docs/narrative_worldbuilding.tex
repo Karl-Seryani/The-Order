@@ -1,0 +1,153 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue
+}
+
+\title{\textbf{Narrative Design \& Worldbuilding}\\[0.3em]\large The Order -- First-person horror escape}
+\author{Karl Seryani, Kirill Delyukin, Raghav Gulati}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\section{Narrative brief}
+
+\subsection{What happened in this world before the player arrived?}
+
+The building is an abandoned asylum. At some point it was a functioning medical facility, but whatever happened here went wrong. The staff either left or disappeared. What remains is The Hunter, a mutant creature that patrols the halls. He's not human anymore, if he ever was.
+
+Other people have been trapped here before the player. At least one of them got close to escaping. He found car keys and hid them in a kitchen mug. He hid a wrench inside a wheelchair cushion because "he searches everything, but not the cushions. Not yet." He wrote notes documenting what he'd figured out. He didn't make it. His body is in the surgery room with a screwdriver in his chest. He was the closest anyone got to getting out.
+
+\subsection{Who are the key figures or entities that shaped this world?}
+
+There are two: The Hunter and the dead guy in the surgery room.
+
+The Hunter is a mutant creature. He patrols the asylum in a loop, growls when something catches his attention, and chases on sight. He can hear you sprint, he can see your flashlight, and he can open doors. We gave him no dialogue, no backstory. He's more like an animal than a character. The horror comes from not understanding what he is.
+
+The previous captive exists through his notes and his body. He's in the surgery room, screwdriver in his chest. He was resourceful. He mapped out where tools were, hid them in places the Hunter wouldn't check, and documented escape routes. His two notes are the closest thing the game has to a narrative. One tells the player where the car keys are. The other tells them about the wrench and warns them about the Hunter. Everything he figured out, the player inherits.
+
+\subsection{How does the environment reflect this history?}
+
+The asylum has medical equipment, beds, abandoned rooms. The surgery room with the body is the most direct piece of environmental storytelling. The screwdriver in his chest tells the player that escape is dangerous, that people have tried, and that The Hunter is lethal.
+
+The outdoor area has a car missing its wheels and motor. Car parts are scattered across different rooms in the bunker. We placed them this way partly to fill every room with something worth finding, but it also gives the sense that someone was stockpiling parts for an escape attempt.
+
+\subsection{What interactive elements reinforce this story without cutscenes?}
+
+Everything is diegetic. There are no cutscenes during gameplay (only a brief wake-up sequence at the start of each day and a scene when you escape).
+
+The two clue notes are physical pickups in the world. You walk up to a piece of paper, press E, and it displays on screen. Each one ties directly to a gameplay item: the car key note tells you where to look, the diary page tells you where the wrench is hidden. The storytelling and the game mechanics are the same thing.
+
+The 3-day run system also tells a story without exposition. You die, you wake up again. Your keys are still in your pocket. The Hunter is back on patrol. The game never explains why you get three chances. It just happens.
+
+Audio zones change the ambient sound when you move between areas. Walking near the main door triggers outdoor forest ambiance (birds, wind), which contrasts with the indoor silence. The Hunter growls when he's investigating a noise, so you can hear when something has caught his attention even if you can't see him.
+
+\subsection{Additional notes}
+
+We're not trying to tell a deep story here. This is a gameplay-focused horror game, similar to Granny. Granny wasn't fun because of its story, it was fun because of the tension, the hiding, the figuring-things-out. That's what we're going for. The narrative exists to give the asylum a reason to feel like a real place, not to deliver a plot.
+
+\newpage
+
+\section{Environmental storytelling implementation}
+
+\subsection{Prop-based storytelling}
+
+The asylum rooms contain medical beds, wheelchairs, cabinets with items inside, and drawers that slide open. The bedroom where the player wakes up has a bed positioned near the door, facing away from the hallway.
+
+The surgery room is the strongest storytelling prop in the game. There's a body with a screwdriver in his chest. This is the guy who wrote the clue notes. He got further than anyone, documented escape routes and tool locations, but The Hunter caught him. The player finds his body before they find his notes, so by the time they read his writing, they already know how it ended.
+
+The outdoor area has the car frame with empty wheel mounts and an open engine bay. The parts are spread across different rooms in the bunker. Every room has something in it, either a clue, a tool, a key, or a car part.
+
+\subsection{Light and atmosphere}
+
+The asylum uses URP with very low ambient light. The player's camera has a dim spotlight (0.5 intensity, 140 degree cone) that lets them barely see a few meters ahead without the flashlight. Wall-mounted candles and sparse ceiling fixtures create small pools of light in specific rooms.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.85\textwidth]{hallway.png}
+\caption{A corridor lit only by a single wall candle. The ambient camera light lets you see the floor, but everything beyond a few meters is black.}
+\end{figure}
+
+The flashlight is the main light source and it doubles as a gameplay mechanic. The Hunter can detect it, so turning it on is always a trade-off.
+
+\subsection{Decals and details}
+
+The Abandoned Asylum asset pack provides wall textures with stains, peeling paint, and grime. Floor tiles are cracked in places. We added floor creak trigger zones in specific hallways. These are invisible BoxColliders that play a creak sound effect when the player walks over them and fire a noise event to the Hunter AI. The building creaks under your feet in the dangerous spots.
+
+\section{Interactive narrative trigger}
+
+The clue pickup system is our interactive narrative trigger. Each clue is a physical object in the scene with a BoxCollider and the CluePickup component. When the player presses E near one, it opens a reading panel on the HUD with the clue's title and text.
+
+The reading panel pauses the player's movement, creating a tense moment. You're standing still, reading a dead person's note, and the Hunter is still patrolling. The game doesn't pause. We want players to feel the pressure of choosing to read something in an unsafe environment.
+
+Audio also functions as a narrative element. The Hunter growls when he's investigating a disturbance, so even without seeing him, the player knows something has caught his attention. Walking near the main door triggers outdoor forest ambiance (birds, wind, rustling), which contrasts with the indoor silence. The shift in soundscape tells the player they're close to outside without any text or UI prompt.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.85\textwidth]{requires_screwdriver.png}
+\caption{The screw-locked cabinet requires the right tool. The prompt updates based on what the player is holding, tying item mechanics to environmental gating.}
+\end{figure}
+
+\section{Dynamic worldbuilding system}
+
+We chose "Player Impact on the World" as our dynamic worldbuilding system.
+
+The 3-day run system (RunStateManager) tracks the state of the world across player deaths. When you die on Day 1 or Day 2, you respawn into the same world but advanced one day. Doors you unlocked stay unlocked. Keys you collected stay in your inventory. Items you dropped remain where you dropped them. The Hunter's last known position is saved (unless he killed you near the spawn point, in which case he resets to prevent spawn-camping).
+
+This means the world changes based on what you did in previous lives. A player who unlocked the basement on Day 1 wakes up on Day 2 with the basement already open. A player who was carrying the motor when they died will find it on the floor where they dropped it. The world remembers your progress, which makes each death feel like it cost something specific rather than just resetting everything.
+
+The ToolReceiver system also changes the world permanently within a run. Using a hammer on a padlock destroys the lock and opens whatever it was guarding. Using a screwdriver on screws removes them and drops the lock they were holding. These state changes persist across deaths, so the world gets progressively more opened up as the player makes progress.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.85\textwidth]{day3.png}
+\caption{Day 3 overlay. The blood-red text signals finality. Die here and it's game over.}
+\end{figure}
+
+\newpage
+
+\section{Playtest reflection}
+
+We had teammates and friends play through the game without any instructions beyond the controls.
+
+\subsection{What players inferred from the environment}
+
+Everyone understood they were in some kind of hospital or asylum within the first minute. The medical beds and equipment made that obvious. Most players turned on the flashlight immediately and started exploring.
+
+The surgery room body landed well. Players who found it before reading the notes understood that someone had tried to escape and failed. When they later found the clue notes, the connection clicked.
+
+The Hunter was perceived as threatening from the first encounter. His growling when investigating a noise made players freeze up. Nobody tried to confront him. Everyone ran.
+
+\subsection{Intended vs. actual player perception}
+
+Players said it was really difficult without guidance. Some said they would've never found items where we placed them. Not everyone felt that way though, and the opinions were subjective. The game is meant to be hard. That's the fun part. Still, we plan to add objective text for the next deliverable so there's a minimum level of direction.
+
+The transparent exterior walls were a problem. Players figured out they could see into rooms from outside the building without going through the front door. That needs to be fixed.
+
+The steering wheel on the car keeps spinning after placement. Visual bug, needs fixing.
+
+The Hunter was perceived exactly as intended: something dangerous and unpredictable that you want to avoid. His growling during investigation was mentioned by testers as an effective audio cue, it gave them a heads-up that he was distracted by something.
+
+\subsection{What we'd improve}
+
+Better animations. The current ones are functional but stiff. We want to improve movement and interaction animations across the board.
+
+Better death scenes. On the final day, we want the Hunter to kill the player in different ways with proper death cinematics, not just a fade to black.
+
+Fix the exterior wall transparency and the steering wheel bug.
+
+Add objective text to the HUD so players have a minimum sense of direction. The game should still be hard, but players shouldn't have zero information about what to do next.
+
+\end{document}
