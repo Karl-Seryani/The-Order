@@ -6,9 +6,8 @@ using UnityEngine.UI;
 namespace TheOrder.Ending
 {
     /// <summary>
-    /// Triggers the escape cutscene when the Main Door is unlocked.
-    /// Sequence: disable input → fade to white → show "YOU ESCAPED" → load MainMenu.
-    /// Place on a persistent scene object (e.g., GameManager or dedicated EndingManager).
+    /// Triggers the escape cutscene when the player escapes (main door or car repair).
+    /// Sequence: disable input → fade to black → show "YOU ESCAPED" → load MainMenu.
     /// </summary>
     public class EndingCutscene : MonoBehaviour
     {

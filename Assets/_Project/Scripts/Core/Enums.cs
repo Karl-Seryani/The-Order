@@ -16,14 +16,6 @@ namespace TheOrder
         Chase
     }
 
-    public enum KnowledgeLevel
-    {
-        None,
-        Low,
-        Medium,
-        High
-    }
-
     public enum ItemType
     {
         Tool,

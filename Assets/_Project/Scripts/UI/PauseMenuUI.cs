@@ -32,6 +32,8 @@ namespace TheOrder.UI
 
         private Canvas _canvas;
         private AudioSource _sfxSource;
+        private PlayerCamera.FirstPersonCamera _fpsCam;
+        private bool _fpsCamSearched;
 
         #endregion
 
@@ -73,9 +75,22 @@ namespace TheOrder.UI
                 if (state == GameState.Death || state == GameState.Ending || state == GameState.MainMenu) return;
             }
 
+            // Cache FirstPersonCamera reference (search once)
+            if (!_fpsCamSearched)
+            {
+                _fpsCam = FindFirstObjectByType<PlayerCamera.FirstPersonCamera>();
+                _fpsCamSearched = true;
+            }
+
             // Block pause during day overlay and wake-up sequence
-            var fpsCam = FindFirstObjectByType<PlayerCamera.FirstPersonCamera>();
-            if (fpsCam != null && !fpsCam.IsEnabled) return;
+            if (_fpsCam != null && !_fpsCam.IsEnabled) return;
+
+            // If reading a clue, Escape dismisses it instead of opening pause
+            if (Clues.CluePickup.IsReading)
+            {
+                Clues.CluePickup.DismissCurrentClue();
+                return;
+            }
 
             // If settings sub-panel is open, go back to pause panel
             if (_settingsPanel != null && _settingsPanel.activeSelf)

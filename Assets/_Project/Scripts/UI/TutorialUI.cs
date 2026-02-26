@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace TheOrder.UI
 {
     /// <summary>
-    /// Multi-page tutorial with tabbed sections: Controls, Survival Tips, Clues &amp; Endings.
+    /// Multi-page tutorial with tabbed sections: Controls, The Hunter, Survival, Escape.
     /// Navigated via tab buttons, prev/next, and back to main menu.
     /// </summary>
     public class TutorialUI : MonoBehaviour

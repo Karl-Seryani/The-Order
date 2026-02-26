@@ -64,6 +64,13 @@ namespace TheOrder.Player
 
         private void Update()
         {
+            // If reading a clue, E dismisses it from anywhere (no need to look at the note)
+            if (_input.InteractPressed && Clues.CluePickup.IsReading)
+            {
+                Clues.CluePickup.DismissCurrentClue();
+                return;
+            }
+
             DetectInteractable();
 
             if (_input.InteractPressed && _currentTarget != null)

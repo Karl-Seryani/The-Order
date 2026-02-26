@@ -81,10 +81,6 @@ namespace TheOrder
 
         #endregion
 
-        #region Doors
-
-        #endregion
-
         #region Interaction Noise
 
         /// <summary>Fired during interactions (doors, furniture). Loudness 0-1 scales with interaction speed.</summary>

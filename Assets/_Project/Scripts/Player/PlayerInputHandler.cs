@@ -30,9 +30,6 @@ namespace TheOrder.Player
         /// <summary>True on the frame the pause button is pressed.</summary>
         public bool PausePressed { get; private set; }
 
-        /// <summary>True on the frame the journal button is pressed.</summary>
-        public bool JournalPressed { get; private set; }
-
         /// <summary>True on the frame the drop button is pressed.</summary>
         public bool DropPressed { get; private set; }
 
@@ -50,7 +47,6 @@ namespace TheOrder.Player
         private InputAction _interactAction;
         private InputAction _flashlightAction;
         private InputAction _pauseAction;
-        private InputAction _journalAction;
         private InputAction _dropAction;
         private InputAction _crouchAction;
 
@@ -69,7 +65,6 @@ namespace TheOrder.Player
             _interactAction = playerMap.FindAction("Interact");
             _flashlightAction = playerMap.FindAction("Flashlight");
             _pauseAction = playerMap.FindAction("Pause");
-            _journalAction = playerMap.FindAction("Journal");
             _dropAction = playerMap.FindAction("Drop");
             _crouchAction = playerMap.FindAction("Crouch");
         }
@@ -100,7 +95,6 @@ namespace TheOrder.Player
             InteractPressed = _interactAction.WasPressedThisFrame();
             FlashlightPressed = _flashlightAction.WasPressedThisFrame();
             PausePressed = _pauseAction.WasPressedThisFrame();
-            JournalPressed = _journalAction.WasPressedThisFrame();
             DropPressed = _dropAction != null && _dropAction.WasPressedThisFrame();
             CrouchPressed = _crouchAction != null && _crouchAction.WasPressedThisFrame();
         }
@@ -118,9 +112,8 @@ namespace TheOrder.Player
                     break;
                 case GameState.Paused:
                     _playerInput.actions.FindActionMap("Player").Disable();
-                    // Keep pause and journal actions available while paused
+                    // Keep pause action available while paused
                     _pauseAction.Enable();
-                    _journalAction.Enable();
                     break;
                 case GameState.Death:
                 case GameState.MainMenu:

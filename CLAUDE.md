@@ -7,7 +7,7 @@
 - **Engine:** Unity 6000.3.2f1 | **Pipeline:** URP | **Language:** C# | **Namespace:** `TheOrder`
 - **Target:** Windows build | **Build Settings:** MainMenu=0, Bunker=1
 
-Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items to unlock areas, solve item-chain puzzles, and escape. Player can hide in lockers.
+Player wakes up trapped, stalked by a mutant creature ("The Hunter"). Find items to unlock areas, solve item-chain puzzles, and escape.
 
 ---
 
@@ -22,15 +22,15 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ## Architecture Rules
 
-1. **Event Bus** — ALL system-to-system communication via `GameEvents.cs` (20 event groups). No direct references between systems.
-2. **ScriptableObject Data** — all gameplay values in SOs (`HunterConfig`, `ItemData`, `ClueData`, `EndingData`). Never hardcode in MonoBehaviours.
+1. **Event Bus** — ALL system-to-system communication via `GameEvents.cs` (21 events). No direct references between systems.
+2. **ScriptableObject Data** — all gameplay values in SOs (`HunterConfig`, `ItemData`, `ClueData`). Never hardcode in MonoBehaviours.
 3. **New Input System Only** — never use `UnityEngine.Input`. Use `.inputactions` asset via `PlayerInputHandler`.
 4. **`TheOrder` Namespace** — every script. Sub-namespaces: `Player`, `Hunter`, `Items`, `Doors`, `Clues`, `Ending`, `UI`, `Audio`, `PlayerCamera`.
-5. **IInteractable Interface** — all interactables implement it. `PlayerInteraction` raycasts → `Interact()`. 10 types: DoorController, LockedDoor, SlidableFurniture, ItemPickup, ToolReceiver, ScrewInteractable, CluePickup, CarPartPickup, CarInstallZone, MainDoorEscapeTrigger.
+5. **IInteractable Interface** — all interactables implement it. `PlayerInteraction` raycasts → `Interact()`. 13 types: DoorController, LockedDoor, SlidableFurniture, ItemPickup, ToolReceiver, ScrewInteractable, CluePickup, CarPartPickup, CarInstallZone, CarRepairStation, MainDoorEscapeTrigger, CarIgnition, CarSeat.
 6. **NavMesh Validation** — `NavMesh.SamplePosition()` before every `SetDestination()`.
 7. **URP Volume Overrides** — no legacy post-processing.
 8. **PlayerMoved Always Fires** — every frame (even speed 0) for Hunter vision detection.
-9. **Hunter Is Silent** — footsteps only. No breathing or voice. Chase music is allowed as ambient atmosphere (not from the Hunter).
+9. **Hunter Minimal Audio** — footsteps + investigation growls + death cinematic sound. No breathing or voice. Chase music is allowed as ambient atmosphere (not from the Hunter).
 10. **`_isPaused` Flag** — never toggle `enabled` on event-driven MonoBehaviours (triggers OnDisable).
 11. **Static Batching** — uncheck Static on any object that moves at runtime (SlidableFurniture, etc.).
 12. **Singletons** — `GameManager`, `PlayerInventory`, `HeldItemController`, `ClueManager`, `RunStateManager` persist across scenes.
@@ -61,7 +61,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - **Investigate** → navigates to sound, looks around 4s, 60s safety timeout → back to patrol
 - **Chase** → full-speed pursuit, repath every 0.2s, 3s LOS grace, catch at ≤2.5m
 - `HunterConfig` SO — all AI tuning (speeds, ranges, timeouts, flashlight multiplier)
-- `HunterAudio` — footstep sounds only
+- `HunterAudio` — footsteps, investigation growls, death cinematic sound
 - **NavigateTo** — two-pass Y-constraint: 0.5m tight first, 2m fallback rejects Y-delta > 2m (prevents cross-floor pathing)
 - **Sound detection** — doors/interactable noise ignored if Y-delta > 3m. Sprint heard across floors (NavigateTo constrains).
 - **Flashlight detection** — obstruction raycast from player to Hunter blocks through walls/doors/floors. Stairwell LOS works.
@@ -82,9 +82,9 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `SlidableFurniture` — drawers/cabinets slide along configurable axis. Init in `Awake()`.
 
 ### Clues
-- `ClueData` SO — 18 notes with title, text, sprite, optional audio
-- `ClueManager` — singleton tracker, knowledge level calculation (Low/Medium/High)
-- `CluePickup` — IInteractable pickup
+- `ClueData` SO — clue pickups with title, text, sprite, optional audio
+- `ClueManager` — singleton collection tracker
+- `CluePickup` — IInteractable pickup, static `IsReading`/`DismissCurrentClue()` for dismiss-from-anywhere UX
 
 ### Car Repair / Escape
 - `CarRepairStation` — on Body_Goblin (car frame, outdoor area). Manages part installation, drill logic, car key start. Delegates zone-specific interactions to `CarInstallZone` children.
@@ -118,7 +118,6 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `FlickeringText` — MonoBehaviour on Nightmare button text, oscillates alpha (0.3–1.0) with random speed + glitches
 
 ### Endings
-- `EndingData` SO — 9 ending combinations (3 knowledge levels × 3 choices)
 - `EndingCutscene` — wired to `OnCarRepairComplete` event
 - `CarSeat` — IInteractable on car seat, enter/exit with camera transition, caches exact player position/rotation for clean restore
 
@@ -138,7 +137,7 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 - `AudioZoneTrigger` — trigger collider that switches audio on zone transitions (config-swap or outdoor mode)
 - `FloorCreakTrigger` — trigger zone plays creak SFX + fires `InteractableNoise` for Hunter alert
 - `PlayerAudio` — breathing FSM
-- `HunterAudio` — footstep sounds
+- `HunterAudio` — footsteps, investigation growls, death cinematic sound
 
 ---
 
@@ -155,20 +154,18 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 | `OnHunterStateChanged` | `Action<HunterState>` | FSM transition |
 | `OnPlayerDetected` | `Action` | Chase start |
 | `OnPlayerLost` | `Action` | Chase end |
-| `OnPlayerCaught` | `Action` | Death trigger |
+| `OnDeathCinematicStart` | `Action` | Hunter catch triggers cinematic |
+| `OnPlayerCaught` | `Action` | Death trigger (after cinematic) |
 | `OnClueViewed` | `Action<ClueData>` | Show reading panel |
 | `OnClueCollected` | `Action<ClueData>` | Track + notification |
-| `OnDoorUnlocked` | `Action<ItemData, Vector3>` | Key used on door |
-| `OnLockedDoorAttempt` | `Action<ItemData>` | Wrong key feedback |
-| `OnDoorOpened` / `OnDoorClosed` | `Action<Vector3>` | Hunter hearing |
+| `OnDoorOpened` | `Action<Vector3>` | Hunter hearing |
 | `OnInteractableNoise` | `Action<Vector3, float>` | Furniture/door noise for Hunter |
+| `OnInteractionBlocked` | `Action<string>` | Blocked interaction feedback |
 | `OnItemPickedUp` | `Action<ItemData>` | UI notification |
 | `OnItemDropped` | `Action<ItemData, Vector3>` | Sound + Hunter alert |
 | `OnItemUsed` | `Action<ItemData>` | Tool consumption |
 | `OnObjectiveChanged` | `Action<string>` | HUD objective text |
-| `OnCarPartInstalled` | `Action<ItemData, int, int>` | Part installed (part, count, total) |
 | `OnCarRepairComplete` | `Action` | All parts installed + car started |
-| `OnEndingTriggered` | `Action<EndingData>` | Ending sequence |
 
 ---
 
@@ -221,18 +218,18 @@ Player wakes up trapped, stalked by a silent killer ("The Hunter"). Find items t
 
 ## Upcoming
 
-- [ ] Death cinematic sequence (reverted — needs full redesign with better animations)
+- [x] Death cinematic sequence (camera lock, attack animation, blood overlay, fall, then death screen)
 - [ ] Hiding system (locker assets imported, no C# mechanic yet)
 - [ ] Car Key pickup needs to be placed in the bunker scene
 - [x] 3-day run system (RunStateManager persistence, day overlay, item/key/door/Hunter position tracking, auto-drop on death)
 - [x] Hunter AI improvements (Y-constrained navigation, flashlight obstruction raycast, cross-floor sound filtering, wake-up delay)
 - [x] Settings panel UI (mouse sensitivity slider 0.1-5.0, PlayerPrefs persistence, live FirstPersonCamera update)
-- [x] Pause menu (Escape toggles, Resume/Tutorial/Settings/Quit, cursor management, borderless buttons)
+- [x] Pause menu (Escape toggles, Resume/Settings/Quit, cursor management, borderless buttons)
 - [x] Horror UI — Nosifer + Creepster fonts, blood red/parchment palette, 1920x1080 canvas, Very High quality
 - [x] Difficulty system (Practice/Easy/Medium/Hard/Nightmare with Hunter + escape variants)
 - [x] Car repair escape system (4 parts + drill + car key → escape ending)
 - [x] Item progression system (ItemPickup → HeldItemController → ToolReceiver → LockedDoor chain works)
-- [x] Clue collection system (18 notes, knowledge levels, journal)
+- [x] Clue collection system (clue pickups, collection tracking)
 - [x] Audio system (breathing FSM, door sounds, item impacts, ambient, flashlight click, drill, car start)
 - [x] Audio enhancements (MachineRoomKey cinematic stinger, outdoor forest ambient, floor creak triggers + Hunter alert)
 - [x] Audio crossfade system (dual ambient source crossfade, stinger fade-then-play, menu music fade-out)

@@ -241,7 +241,7 @@ namespace TheOrder.Items
             // Add physics so it falls like a real dropped tool
             AddDropPhysics();
 
-            // Destroy the phantom ItemPickup that ItemSpawner spawned (has no mesh)
+            // Destroy the duplicate ItemPickup that ItemSpawner spawned (CarPartPickup manages its own mesh)
             var allPickups = FindObjectsByType<ItemPickup>(FindObjectsSortMode.None);
             float closestSqr = float.MaxValue;
             ItemPickup phantom = null;

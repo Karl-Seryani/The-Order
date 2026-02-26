@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TheOrder.Items
 {
     /// <summary>
-    /// An object that requires a specific item to interact with (e.g., locked drawer needs Hammer).
+    /// An object that requires a specific item to interact with (e.g., barricaded door needs Hammer).
     /// When the player uses the correct held item, it opens/breaks and optionally spawns a reward item.
     /// </summary>
     public class ToolReceiver : MonoBehaviour, IInteractable

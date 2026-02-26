@@ -30,6 +30,35 @@ namespace TheOrder.Clues
 
         #endregion
 
+        #region Static Reading State
+
+        private static CluePickup _currentlyReading;
+
+        /// <summary>True if the player is currently reading any clue/note.</summary>
+        public static bool IsReading => _currentlyReading != null;
+
+        /// <summary>
+        /// Dismisses the currently open clue/note from anywhere.
+        /// Called by PlayerInteraction (E press) and PauseMenuUI (Escape press).
+        /// </summary>
+        public static void DismissCurrentClue()
+        {
+            if (_currentlyReading == null) return;
+
+            var pickup = _currentlyReading;
+            _currentlyReading = null;
+            pickup._isReading = false;
+
+            if (pickup._clueData != null)
+                GameEvents.ClueCollected(pickup._clueData);
+
+            // Clue mode — destroy after collecting
+            if (!pickup._isNote && pickup._clueData != null && !string.IsNullOrEmpty(pickup._clueData.Id))
+                Destroy(pickup.gameObject);
+        }
+
+        #endregion
+
         #region Unity Lifecycle
 
         private void Start()
@@ -42,6 +71,12 @@ namespace TheOrder.Clues
                     gameObject.SetActive(false);
                 }
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_currentlyReading == this)
+                _currentlyReading = null;
         }
 
         #endregion
@@ -64,30 +99,15 @@ namespace TheOrder.Clues
             {
                 // First press — show content on screen
                 _isReading = true;
+                _currentlyReading = this;
                 if (_paperSound != null)
                     AudioSource.PlayClipAtPoint(_paperSound, transform.position, _paperVolume);
                 GameEvents.ClueViewed(_clueData);
             }
             else
             {
-                if (_isNote)
-                {
-                    // Note mode — dismiss reading panel, stay in world
-                    _isReading = false;
-                    GameEvents.ClueCollected(_clueData);
-                }
-                else
-                {
-                    // Clue mode — collect and destroy
-                    if (string.IsNullOrEmpty(_clueData.Id))
-                    {
-                        Debug.LogWarning($"[CluePickup] Clue '{_clueData.Title}' has no ID — not collecting.", this);
-                        _isReading = false;
-                        return;
-                    }
-                    GameEvents.ClueCollected(_clueData);
-                    Destroy(gameObject);
-                }
+                // Second press — delegate to static dismiss
+                DismissCurrentClue();
             }
         }
 

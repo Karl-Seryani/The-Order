@@ -25,7 +25,7 @@ namespace TheOrder
         /// <summary>True unless Practice mode (Hunter is deactivated).</summary>
         public bool HunterEnabled => _currentDifficulty != DifficultyLevel.Practice;
 
-        /// <summary>True for Medium and Hard (Hunter hears footsteps, doors, noise).</summary>
+        /// <summary>True for Medium, Hard, and Nightmare (Hunter hears footsteps, doors, noise).</summary>
         public bool HunterFullDetection => _currentDifficulty >= DifficultyLevel.Medium;
 
         /// <summary>True for Practice, Hard, and Nightmare (car repair escape required).</summary>

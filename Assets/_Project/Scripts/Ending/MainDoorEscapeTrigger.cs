@@ -5,7 +5,7 @@ namespace TheOrder.Ending
     /// <summary>
     /// IInteractable on the main door for Easy/Medium escape.
     /// Requires the same key as the sibling LockedDoor before allowing escape.
-    /// Disables itself on Practice/Hard (car repair required).
+    /// Disables itself on Practice/Hard/Nightmare (car repair required).
     /// Lives on the same GO as LockedDoor — PlayerInteraction prioritizes this when enabled.
     /// </summary>
     public class MainDoorEscapeTrigger : MonoBehaviour, IInteractable

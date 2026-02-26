@@ -50,19 +50,6 @@ namespace TheOrder.Clues
             _collectedClues.Clear();
         }
 
-        /// <summary>
-        /// Calculates knowledge level based on total clues collected.
-        /// None = 0, Low = less than half, Medium = half or more, High = all.
-        /// </summary>
-        public KnowledgeLevel GetKnowledgeLevel()
-        {
-            int count = CollectedCount;
-            if (count == 0) return KnowledgeLevel.None;
-            if (count >= _totalClues) return KnowledgeLevel.High;
-            if (count * 2 >= _totalClues) return KnowledgeLevel.Medium;
-            return KnowledgeLevel.Low;
-        }
-
         #endregion
 
         #region Unity Lifecycle

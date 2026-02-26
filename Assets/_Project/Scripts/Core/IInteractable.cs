@@ -5,7 +5,8 @@ namespace TheOrder
     /// <summary>
     /// Interface for all interactable objects in the game.
     /// Implemented by: CluePickup, DoorController, LockedDoor, SlidableFurniture,
-    /// ItemPickup, ScrewInteractable, ToolReceiver, CarPartPickup, CarInstallZone, CarRepairStation.
+    /// ItemPickup, ScrewInteractable, ToolReceiver, CarPartPickup, CarInstallZone,
+    /// CarRepairStation, MainDoorEscapeTrigger, CarIgnition, CarSeat.
     /// </summary>
     public interface IInteractable
     {

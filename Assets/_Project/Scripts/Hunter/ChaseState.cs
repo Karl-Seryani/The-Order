@@ -4,7 +4,7 @@ namespace TheOrder.Hunter
 {
     /// <summary>
     /// Chase state — Hunter pursues the player at full speed.
-    /// Catches the player if within CatchDistance (instant death, reload scene).
+    /// Catches the player if within CatchDistance (triggers death cinematic sequence).
     /// 3-second LOS grace: if player leaves vision cone, waits 3s before transitioning.
     /// Opens closed doors in the way.
     /// </summary>
