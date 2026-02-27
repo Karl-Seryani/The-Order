@@ -14,7 +14,7 @@ namespace TheOrder.Player
         [SerializeField] private float _interactionRange = 3.0f;
         [SerializeField] private LayerMask _interactionMask = ~0;
         [SerializeField] private float _closePickupRadius = 0.9f;
-        [SerializeField] [Range(-1f, 1f)] private float _closePickupMinDot = 0.2f;
+        [SerializeField] [Range(-1f, 1f)] private float _closePickupMinDot = 0.55f;
         [SerializeField] [Range(0f, 1f)] private float _bodyPickupProbeDownFactor = 0.35f;
 
         [Header("References")]
@@ -111,16 +111,6 @@ namespace TheOrder.Player
             Vector3 eyePos = _playerCamera.transform.position;
             Vector3 eyeForward = _playerCamera.transform.forward;
 
-            // First check for very close pickups (when standing on top of items).
-            // Run both an eye-centered probe and a body-centered probe so floor items
-            // remain targetable when the camera is very close or directly above them.
-            if (TryFindNearbyPickup(eyePos, eyePos, eyeForward, out var nearbyPickup) ||
-                TryFindNearbyPickup(GetBodyPickupProbeOrigin(), eyePos, eyeForward, out nearbyPickup))
-            {
-                _currentTarget = nearbyPickup;
-                return;
-            }
-
             Ray ray = new Ray(eyePos, eyeForward);
 
             // Try regular raycast (ignore the player's own colliders).
@@ -178,6 +168,16 @@ namespace TheOrder.Player
                     _currentTarget = parentInteractable;
                     return;
                 }
+            }
+
+            // Fallback for very close pickups (standing on top of items).
+            // This runs after precise ray targeting so specific interactions
+            // (seat/ignition/doors/zones) are not overridden by nearby items.
+            if (TryFindNearbyPickup(eyePos, eyePos, eyeForward, out var nearbyPickup) ||
+                TryFindNearbyPickup(GetBodyPickupProbeOrigin(), eyePos, eyeForward, out nearbyPickup))
+            {
+                _currentTarget = nearbyPickup;
+                return;
             }
 
             _currentTarget = null;
