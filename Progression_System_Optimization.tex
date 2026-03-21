@@ -1,0 +1,319 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Group 47 -- The Order}
+\lhead{Progression System Optimization}
+\rfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+{\LARGE \textbf{Progression System Optimization:}\\[4pt]\textbf{Audit, Benchmark, and Playtest}}\\[12pt]
+\textbf{Team:} Group 47 \quad|\quad \textbf{Game:} \textit{The Order} \quad|\quad Karl Seryani, Raghav Gulati, Kirill Delyukin
+\end{center}
+
+\vspace{0.5cm}
+
+\section{1. Progression System Audit}
+
+\subsection{Progression Model}
+
+\textit{The Order} uses \textbf{world-gated progression} rather than XP or leveling. The player advances by discovering items, solving item-chain puzzles, and unlocking new areas of the bunker. Progression is measured by \textit{access}---how much of the map the player can reach---and by proximity to escape.
+
+\subsection{Progression Map}
+
+\begin{quote}
+\texttt{START: Wake up in bedroom (Day 1)}\\
+\texttt{~├── Find Flashlight (immediate area)}\\
+\texttt{~│~~~~└─ Risk/reward tool: see items vs. attract Hunter}\\
+\texttt{~├── Explore accessible rooms → find Keys}\\
+\texttt{~│~~~~└─ Key → Locked Door → new wing/area}\\
+\texttt{~├── Find Tools (Crowbar, Screwdriver, etc.)}\\
+\texttt{~│~~~~└─ Tool → ToolReceiver (break lock) → new area + rewards}\\
+\texttt{~├── Screw-locked barriers}\\
+\texttt{~│~~~~└─ Screwdriver → unscrew all screws → ScrewLock opens}\\
+\texttt{~├── Clue Pickups (lore/narrative, scattered throughout)}\\
+\texttt{~│~~~~└─ Optional collection --- story context, no mechanical gate}\\
+\texttt{~├── [Easy/Medium] Find Main Door Key → escape via main door}\\
+\texttt{~└── [Practice/Hard/Nightmare] Car Repair Escape:}\\
+\texttt{~~~~~~├─ Find Motor, 3 Wheels, Drill (scattered across bunker)}\\
+\texttt{~~~~~~├─ Carry each to car frame (outdoor area)}\\
+\texttt{~~~~~~├─ Install parts → drill wheels → find Car Key → start car}\\
+\texttt{~~~~~~└─ Engine start → Ending Cutscene}
+\end{quote}
+
+\subsection{Difficulty as Meta-Progression}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Tier} & \textbf{Hunter} & \textbf{Detection} & \textbf{Escape Route} & \textbf{Intended Audience} \\
+\midrule
+Practice & None & N/A & Car repair & First-time players \\
+Easy & Sight only & Visual only & Main door (1 key) & Casual horror fans \\
+Medium & Full AI & Sight+sound+flashlight & Main door (1 key) & Standard experience \\
+Hard & Full AI & Full detection & Car repair (6 items) & Experienced players \\
+Nightmare & Enhanced AI & Full+extended ranges & Car repair (6 items) & Mastery challenge \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{3-Day Run System (Death Progression)}
+
+Death is not a hard reset---it advances the day counter (Day 1 $\to$ Day 2 $\to$ Day 3). On Day 3, the next death triggers Game Over and returns to the main menu. This creates a \textbf{death budget}: players can die twice before facing elimination pressure. State persists across deaths within a run:
+
+\begin{itemize}[nosep]
+\item Keys remain in inventory; unlocked doors stay open
+\item Used ToolReceivers stay broken; unscrewed screws stay removed
+\item Dropped items retain their positions; Hunter position persists
+\end{itemize}
+
+\subsection{Identified Weak Points}
+
+\textbf{1. Front-loaded exploration, back-loaded payoff.} The first 10--15 minutes involve searching dark rooms with minimal feedback. Keys and tools look similar to environmental clutter. Players reported items being ``hidden too well with no visual indication.'' The progression feels flat until the first locked door is opened, creating a slow start that risks losing player engagement.
+
+\textbf{2. No intermediate milestones or feedback.} Between finding an item and using it (which may be minutes apart), there is no progression signal. No map percentage, no area-clear indicator, no ``you're getting closer'' feedback. The only progression cue is occasional objective text updates.
+
+\textbf{3. Knowledge as invisible progression.} The most significant form of progression---learning the map layout, Hunter patrol routes, and item locations---is entirely invisible. A player on their 5th attempt is dramatically more capable than on their 1st, but nothing in the game acknowledges this learning. Deaths feel punishing rather than educational.
+
+\textbf{4. Car repair objective complexity spike.} On Hard/Nightmare, players must locate 6 separate items (4 parts + drill + car key), carry them one at a time to the outdoor area, and complete a multi-step installation process. This roughly triples required exploration time compared to the main-door escape (1 key).
+
+\textbf{5. Flashlight as a trap mechanic (Medium+).} The flashlight's 12$\times$ detection multiplier makes it a death sentence on Medium and above. Players universally stop using it, removing a core mechanic and making item discovery slower and more frustrating.
+
+\textbf{6. Clue collection has no mechanical reward.} Clues provide narrative context but offer no gameplay advantage, making them feel disconnected from the core survival-escape loop.
+
+\textbf{7. Difficulty tier gaps create walls, not ramps.} Medium $\to$ Hard simultaneously changes the escape objective (1 key $\to$ 6 items) and maintains full Hunter AI. Deaths spike 3--5$\times$ between adjacent tiers rather than scaling gradually.
+
+\newpage
+
+\section{2. Competitor Benchmarking}
+
+\subsection{Games Selected}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Game} & \textbf{Genre} & \textbf{Why Selected} \\
+\midrule
+\textbf{Granny} (DVloper, 2017) & FP horror escape & Direct genre match: item chains, stalker AI, day system \\
+\textbf{Outlast} (Red Barrels, 2013) & FP survival horror & No-combat horror, battery management $\approx$ flashlight \\
+\textbf{Amnesia} (Frictional, 2010) & FP survival horror & Sanity/light management, puzzle-based progression \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Progression Breakdown}
+
+\subsubsection{Granny}
+\begin{itemize}[nosep]
+\item \textbf{Structure:} 5-day death budget (vs.\ The Order's 3-day). Each death = next day. Day 5 death = game over.
+\item \textbf{Item progression:} $\sim$10 items needed to escape, with multiple escape routes (front door, car, helicopter in sequels). Items are color-coded and visually distinct from the environment.
+\item \textbf{Area gating:} Keys unlock rooms; some items unlock shortcuts (cutting pliers $\to$ fan vent). Map is compact---most items reachable within 2 minutes.
+\item \textbf{Difficulty scaling:} Easy/Normal/Hard/Extreme---each tier adjusts \textit{one axis} at a time (enemy speed, hiding spots).
+\item \textbf{Feedback:} Items visually snap into escape mechanisms. Player sees tangible progress toward escape with each placement.
+\item \textbf{Death penalty:} Minimal---wake up in same room, items stay where placed/dropped.
+\end{itemize}
+
+\textit{Key takeaway:} Granny's progression is transparent---items are visually distinct, escape mechanisms show partial completion, and each item placed is a visible step toward freedom. The Order's items blend into the environment with no visual distinction.
+
+\subsubsection{Outlast}
+\begin{itemize}[nosep]
+\item \textbf{Structure:} Linear level progression through an asylum. Checkpoint-based respawn, no death counter.
+\item \textbf{Item progression:} Batteries (consumable, manage camera night-vision), documents (lore), key items (valves, fuses) gate specific doors.
+\item \textbf{Difficulty scaling:} Normal/Hard/Nightmare (no checkpoints)/Insane (permadeath). Difficulty affects enemy damage and resource scarcity, \textit{not} objective complexity.
+\item \textbf{Risk/reward tool:} Night-vision camera drains batteries but is essential for navigation---directly parallels The Order's flashlight. Key difference: battery scarcity creates \textit{gradual} tension rather than binary on/off risk.
+\end{itemize}
+
+\textit{Key takeaway:} Outlast's battery system creates graduated risk (batteries deplete over time) whereas The Order's flashlight is binary (on = detected, off = safe). Outlast also keeps objectives clear with frequent updates and a single critical path.
+
+\subsubsection{Amnesia: The Dark Descent}
+\begin{itemize}[nosep]
+\item \textbf{Structure:} Semi-linear hub areas with locked wings. Progression unlocks new areas of a castle.
+\item \textbf{Item progression:} Tinderboxes (light sources, limited), oil (lantern fuel), puzzle items (chemicals, machine parts). Dual resource management.
+\item \textbf{Difficulty scaling:} No traditional difficulty settings. Difficulty emerges from resource management---using tinderboxes/oil freely makes later areas darker and more dangerous.
+\item \textbf{Feedback:} Sanity system provides constant feedback: darkness and monster proximity degrade sanity (screen distortion, hallucinations). Staying in light restores it. Creates a tension loop between safety (light) and resource conservation.
+\end{itemize}
+
+\textit{Key takeaway:} Amnesia's sanity system gives constant invisible-to-visible feedback about player state. The Order lacks an equivalent feedback mechanism---the player's ``state'' is only communicated by whether the Hunter is visible.
+
+\subsection{Comparative Analysis}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Feature} & \textbf{Granny} & \textbf{Outlast} & \textbf{Amnesia} & \textbf{The Order} \\
+\midrule
+Item visibility & High (color-coded) & Medium (glow) & Medium (highlight) & Low (none) \\
+Progression feedback & Visual (snap-in) & Textual (objectives) & Systemic (sanity) & Minimal \\
+Risk/reward tool & Stun gun (limited) & Camera (batteries) & Lantern (oil) & Flashlight (binary) \\
+Death penalty & Low (items persist) & Low (checkpoints) & Low (checkpoints) & Medium (3-day) \\
+Difficulty scaling & Single-axis & Single-axis & Emergent & Multi-axis \\
+Escape clarity & High & High & Medium & Low on Hard+ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Takeaways for The Order}
+
+\begin{enumerate}[nosep]
+\item \textbf{Add item visibility cues.} All three competitors make interactive objects visually distinguishable. A subtle glow or particle effect on pickupable items would address the \#1 playtester complaint without breaking immersion.
+\item \textbf{Graduate the flashlight risk.} Outlast and Amnesia use consumable-resource tools that create tension through scarcity rather than instant punishment. Reducing the flashlight multiplier (12$\times$ $\to$ 4$\times$) would shift it from ``never use'' to ``use carefully.''
+\item \textbf{Show partial escape progress.} Granny visually shows items placed on the escape mechanism. For car-repair mode, a HUD counter (``Parts: 2/4 | Drilled: 1/3'') would reinforce progress.
+\item \textbf{Single-axis difficulty scaling.} All three competitors scale one dimension per tier. The Order's Medium $\to$ Hard jump changes both AI and objectives simultaneously, creating a compounding spike.
+\item \textbf{Reduce death penalty variance.} Granny gives 5 days; Outlast/Amnesia use checkpoints. A 4th day on Hard/Nightmare could smooth the experience given longer completion times.
+\end{enumerate}
+
+\newpage
+
+\section{3. Progression Playtesting}
+
+\subsection{Methodology}
+
+We conducted structured playtest sessions across all 5 difficulty levels with 3 team members (5+ hours total). Each player completed full runs on Easy through Hard; Nightmare was attempted by all 3, completed by 1. Players rated progression aspects on a 1--10 scale and provided qualitative feedback at defined checkpoints.
+
+\subsection{Playtest Checkpoints}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Checkpoint} & \textbf{Description} & \textbf{Progression Stage} \\
+\midrule
+CP1 & First 5 minutes --- initial exploration & Early (no items found) \\
+CP2 & First key/tool found & Early-mid (first unlock) \\
+CP3 & First locked area opened & Mid (area expansion) \\
+CP4 & First death & Mid (death system engagement) \\
+CP5 & 50\% of escape items collected & Late-mid (approaching endgame) \\
+CP6 & Escape attempt & Endgame \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Quantitative Ratings (1--10 scale, averaged across 3 testers)}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Aspect} & \textbf{Easy} & \textbf{Medium} & \textbf{Hard} & \textbf{Nightmare} \\
+\midrule
+Pacing of unlocks & 7 & 6 & 4 & 3 \\
+Balance of challenge \& reward & 8 & 7 & 5 & 3 \\
+Power/capability growth feeling & 5 & 5 & 4 & 2 \\
+Clarity of next objective & 7 & 6 & 4 & 4 \\
+Satisfaction of item discovery & 6 & 5 & 5 & 4 \\
+Overall progression satisfaction & 7 & 6 & 4 & 3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Quantitative Metrics}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Metric} & \textbf{Easy} & \textbf{Medium} & \textbf{Hard} & \textbf{Nightmare} \\
+\midrule
+Avg.\ deaths per run & 1--2 & 3--4 & 10--15 & 20+ \\
+Avg.\ completion time & 6--10\,min & 20--30\,min & 20--40\,min & $\sim$1\,hr \\
+Completion rate (team) & 3/3 & 3/3 & 3/3 & 1/3 \\
+Flashlight usage (est.) & High & Low & Minimal & Almost never \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Qualitative Feedback}
+
+\textbf{What moments felt most rewarding?}
+\begin{itemize}[nosep]
+\item Opening the first locked door after finding a key (``felt like real progress'')
+\item Finding items hidden inside furniture drawers (discovery satisfaction)
+\item Surviving a Hunter chase through corner-juking (``adrenaline rush, felt earned'')
+\item Reaching the outdoor area for the first time (environment change = progress signal)
+\item Completing the car repair and hearing the engine start (strong endgame payoff)
+\end{itemize}
+
+\textbf{When did players feel stuck or frustrated?}
+\begin{itemize}[nosep]
+\item First 5--10 minutes of every run: ``wandering in the dark with no idea where to go''
+\item Items blending into the environment---``couldn't tell what was pickupable vs.\ decoration.'' Players suggested adding a subtle glow to pickupable objects
+\item After finding a key but not knowing which door it opens---no directional hint
+\item Carrying car parts one at a time across the entire map while dodging the Hunter
+\item Flashlight usage on Medium+ described as ``a death wish''---unanimously abandoned
+\end{itemize}
+
+\textbf{What part of progression was least satisfying?}
+\begin{itemize}[nosep]
+\item ``Power growth'' scored lowest (2--5/10). Players never feel ``stronger''---capabilities are identical from minute 1 to minute 60. Progression is purely spatial.
+\item Clue collection felt disconnected: ``cool lore but doesn't help me escape''
+\item The Medium $\to$ Hard jump was described as ``hitting a wall''
+\item Knowledge progression was acknowledged as real but invisible: ``I got better but the game doesn't know that''
+\end{itemize}
+
+\subsection{Identified Pain Points (Priority Ranked)}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Priority} & \textbf{Issue} & \textbf{Affected Tiers} & \textbf{Impact} \\
+\midrule
+HIGH & No item visual distinction & All & Wasted time, frustration \\
+HIGH & Flashlight unusable (12$\times$ multiplier) & Med/Hard/Night & Core mechanic eliminated \\
+HIGH & Medium$\to$Hard difficulty wall & Hard, Nightmare & 3--5$\times$ death increase \\
+MEDIUM & No intermediate progression feedback & All & Flat pacing \\
+MEDIUM & No mechanical power growth & All & Static capability \\
+LOW & Clue collection has no gameplay reward & All & Disconnected content \\
+LOW & Knowledge progression is invisible & All & Unacknowledged skill growth \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recommended Adjustments}
+
+\textbf{Immediate (parameter changes, no code):}
+\begin{enumerate}[nosep]
+\item Reduce flashlight detection multiplier from 12$\times$ to 4$\times$ (ScriptableObject tweak)
+\item Increase stamina regen during chase: 10 $\to$ 15/s, delay 1.5 $\to$ 0.75\,s (ScriptableObject tweak)
+\end{enumerate}
+
+\textbf{Short-term (minor code/scene changes):}
+\begin{enumerate}[nosep,start=3]
+\item Add subtle emissive glow or particle effect to pickupable items
+\item Add HUD progress indicator for car-repair mode (``Parts: 2/4 | Drilled: 1/3'')
+\item Update objective text more frequently with directional hints
+\end{enumerate}
+
+\textbf{Medium-term (design changes):}
+\begin{enumerate}[nosep,start=6]
+\item Decouple objective complexity from AI difficulty
+\item Consider a 4th day on Hard/Nightmare to reduce per-run pressure
+\item Introduce minor mechanical progression (e.g., sprint duration increases after each day survived)
+\end{enumerate}
+
+\end{document}
